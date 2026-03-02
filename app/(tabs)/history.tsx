@@ -181,7 +181,7 @@ export default function HistoryScreen() {
                     </Text>
                   </View>
 
-                  {budget && budget > 0 && (
+                  {!!budget && budget > 0 && (
                     <View className="mt-1">
                       <Text className="text-xs text-muted mb-1">
                         Orçamento: R$ {budget.toFixed(2)}{' '}
