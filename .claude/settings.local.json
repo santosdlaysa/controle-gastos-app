@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(NODE_TLS_REJECT_UNAUTHORIZED=0 pnpm drizzle-kit push:*)",
+      "Bash(git stash:*)",
+      "Bash(pnpm db:push:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm drizzle-kit generate:*)",
+      "Bash(pnpm rebuild:*)",
+      "Bash(node -e:*)",
+      "Bash(pnpm install:*)"
     ]
   }
 }

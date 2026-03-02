@@ -5,15 +5,17 @@
   "main": "expo-router/entry",
   "scripts": {
     "dev": "concurrently -k \"pnpm dev:server\" \"pnpm dev:metro\"",
+    "dev:android": "concurrently -k \"pnpm dev:server\" \"pnpm dev:metro:android\"",
     "dev:server": "cross-env NODE_ENV=development tsx watch server/_core/index.ts",
-    "dev:metro": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 npx expo start --web --port ${EXPO_PORT:-8081}",
+    "dev:metro": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 npx expo start --web --port 8081",
+    "dev:metro:android": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 npx expo start --android --port 8081",
     "build": "esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
     "lint": "expo lint",
     "format": "prettier --write .",
     "test": "vitest run",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate",
+    "db:push": "node scripts/db-push.mjs",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "qr": "node scripts/generate_qr.mjs"
@@ -83,7 +85,7 @@
     "concurrently": "^9.2.1",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.31.8",
-    "esbuild": "^0.25.12",
+    "esbuild": "0.27.3",
     "eslint": "^9.39.2",
     "eslint-config-expo": "~10.0.0",
     "prettier": "^3.7.4",
@@ -93,5 +95,11 @@
     "typescript": "~5.9.3",
     "vitest": "^2.1.9"
   },
-  "packageManager": "pnpm@9.12.0"
+  "packageManager": "pnpm@9.12.0",
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.27.3",
+      "ws": "^8.18.0"
+    }
+  }
 }

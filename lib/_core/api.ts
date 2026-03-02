@@ -89,6 +89,27 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
   }
 }
 
+// Email + password auth
+export async function login(
+  email: string,
+  password: string,
+): Promise<{ token: string; user: any }> {
+  return apiCall<{ token: string; user: any }>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function register(
+  email: string,
+  password: string,
+): Promise<{ token: string; user: any }> {
+  return apiCall<{ token: string; user: any }>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
 // OAuth callback handler - exchange code for session token
 // Calls /api/oauth/mobile endpoint which returns JSON with app_session_id and user
 export async function exchangeOAuthCode(
