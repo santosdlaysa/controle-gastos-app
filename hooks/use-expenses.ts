@@ -37,15 +37,25 @@ export function useExpenses(month: string) {
         AsyncStorage.getItem(INCOME_KEY),
       ]);
 
-      // Income is global — independent of month
-      if (incomeRaw) {
-        setIncome(JSON.parse(incomeRaw));
-      } else {
-        setIncome(DEFAULT_INCOME);
-      }
-
       if (expensesRaw) {
         const allData: Record<string, MonthlyData> = JSON.parse(expensesRaw);
+
+        // Migration: if income_settings doesn't exist yet, migrate from the most
+        // recent month that has income saved and persist it globally
+        if (!incomeRaw) {
+          const sorted = Object.keys(allData).sort().reverse();
+          for (const m of sorted) {
+            const inc = allData[m]?.income;
+            if (inc && (inc.salary > 0 || inc.vale > 0 || inc.other > 0)) {
+              await AsyncStorage.setItem(INCOME_KEY, JSON.stringify(inc));
+              setIncome(inc);
+              break;
+            }
+          }
+        } else {
+          setIncome(JSON.parse(incomeRaw));
+        }
+
         const monthData = allData[month];
 
         if (monthData) {
@@ -58,6 +68,12 @@ export function useExpenses(month: string) {
           setCategoryBudgets({});
         }
       } else {
+        // No expenses data at all
+        if (incomeRaw) {
+          setIncome(JSON.parse(incomeRaw));
+        } else {
+          setIncome(DEFAULT_INCOME);
+        }
         setExpenses([]);
         setBudget(0);
         setCategoryBudgets({});
