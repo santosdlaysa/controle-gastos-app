@@ -10,6 +10,7 @@ import {
 import { ScreenContainer } from '@/components/screen-container';
 import { useExpenses } from '@/hooks/use-expenses';
 import { CATEGORY_LABELS, ExpenseCategory, Income } from '@/types/expense';
+import { useAuth } from '@/hooks/use-auth';
 
 const getCurrentMonth = () => {
   const now = new Date();
@@ -26,6 +27,7 @@ export default function SettingsScreen() {
     updateBudget,
     updateCategoryBudgets,
   } = useExpenses(month);
+  const { logout } = useAuth({ autoFetch: false });
   const [salary, setSalary] = useState('');
   const [vale, setVale] = useState('');
   const [other, setOther] = useState('');
@@ -229,6 +231,24 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
         </View>
+
+        {/* Logout button */}
+        <TouchableOpacity
+          onPress={() =>
+            Alert.alert('Sair', 'Deseja deslogar da sua conta?', [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Sair', style: 'destructive', onPress: logout },
+            ])
+          }
+          activeOpacity={0.8}
+          className="mb-8"
+        >
+          <View className="border border-red-500 rounded-lg p-4 items-center">
+            <Text className="text-red-500 font-semibold text-base">
+              Sair da conta
+            </Text>
+          </View>
+        </TouchableOpacity>
       </ScrollView>
     </ScreenContainer>
   );
