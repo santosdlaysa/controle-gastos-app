@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ScrollView,
   Text,
@@ -6,11 +6,17 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Modal,
+  Switch,
+  Pressable,
 } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ScreenContainer } from '@/components/screen-container';
 import { useExpenses } from '@/hooks/use-expenses';
 import { CATEGORY_LABELS, ExpenseCategory, Income } from '@/types/expense';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuthContext } from '@/lib/auth-context';
+import { useThemeContext } from '@/lib/theme-provider';
+import { useColors } from '@/hooks/use-colors';
 
 const getCurrentMonth = () => {
   const now = new Date();
@@ -27,7 +33,12 @@ export default function SettingsScreen() {
     updateBudget,
     updateCategoryBudgets,
   } = useExpenses(month);
-  const { logout } = useAuth({ autoFetch: false });
+  const { logout } = useAuthContext();
+  const { colorScheme, setColorScheme } = useThemeContext();
+  const colors = useColors();
+  const isDark = colorScheme === 'dark';
+
+  const [menuVisible, setMenuVisible] = useState(false);
   const [salary, setSalary] = useState('');
   const [vale, setVale] = useState('');
   const [other, setOther] = useState('');
@@ -78,7 +89,6 @@ export default function SettingsScreen() {
     };
 
     await updateIncome(newIncome);
-
     await updateBudget(monthlyBudgetNum);
 
     const newCategoryBudgets: Record<ExpenseCategory, number> = {} as Record<
@@ -94,8 +104,15 @@ export default function SettingsScreen() {
     });
 
     await updateCategoryBudgets(newCategoryBudgets);
-
     Alert.alert('Sucesso', 'Configurações financeiras atualizadas com sucesso!');
+  };
+
+  const handleLogout = () => {
+    setMenuVisible(false);
+    Alert.alert('Sair', 'Deseja deslogar da sua conta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Sair', style: 'destructive', onPress: logout },
+    ]);
   };
 
   const totalIncome =
@@ -105,11 +122,102 @@ export default function SettingsScreen() {
 
   return (
     <ScreenContainer className="p-6">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Text className="text-3xl font-bold text-foreground mb-6">
+      {/* Header */}
+      <View className="flex-row items-center justify-between mb-6">
+        <Text className="text-3xl font-bold text-foreground">
           Configurações
         </Text>
+        <TouchableOpacity
+          onPress={() => setMenuVisible(true)}
+          activeOpacity={0.7}
+          style={{ padding: 4 }}
+        >
+          <MaterialIcons name="menu" size={28} color={colors.foreground} />
+        </TouchableOpacity>
+      </View>
 
+      {/* Hamburger dropdown menu */}
+      <Modal
+        transparent
+        visible={menuVisible}
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <Pressable
+          style={{ flex: 1 }}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View
+            style={{
+              position: 'absolute',
+              top: 60,
+              right: 24,
+              backgroundColor: colors.surface,
+              borderRadius: 12,
+              paddingVertical: 8,
+              minWidth: 200,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 8,
+              elevation: 8,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            {/* Dark mode row */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <MaterialIcons
+                  name={isDark ? 'dark-mode' : 'light-mode'}
+                  size={20}
+                  color={colors.foreground}
+                />
+                <Text style={{ color: colors.foreground, fontSize: 15 }}>
+                  Modo escuro
+                </Text>
+              </View>
+              <Switch
+                value={isDark}
+                onValueChange={(val) => setColorScheme(val ? 'dark' : 'light')}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor="#fff"
+              />
+            </View>
+
+            {/* Divider */}
+            <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 8 }} />
+
+            {/* Logout row */}
+            <TouchableOpacity
+              onPress={handleLogout}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+              }}
+            >
+              <MaterialIcons name="logout" size={20} color="#ef4444" />
+              <Text style={{ color: '#ef4444', fontSize: 15, fontWeight: '600' }}>
+                Sair da conta
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
         {/* Income and planning section */}
         <View className="bg-surface rounded-2xl p-6 mb-6">
           <Text className="text-xl font-bold text-foreground mb-4">
@@ -220,10 +328,7 @@ export default function SettingsScreen() {
           </View>
 
           {/* Save button */}
-          <TouchableOpacity
-            onPress={handleSave}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity onPress={handleSave} activeOpacity={0.8}>
             <View className="bg-primary rounded-lg p-4 items-center">
               <Text className="text-background font-semibold text-base">
                 Salvar
@@ -231,24 +336,6 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
         </View>
-
-        {/* Logout button */}
-        <TouchableOpacity
-          onPress={() =>
-            Alert.alert('Sair', 'Deseja deslogar da sua conta?', [
-              { text: 'Cancelar', style: 'cancel' },
-              { text: 'Sair', style: 'destructive', onPress: logout },
-            ])
-          }
-          activeOpacity={0.8}
-          className="mb-8"
-        >
-          <View className="border border-red-500 rounded-lg p-4 items-center">
-            <Text className="text-red-500 font-semibold text-base">
-              Sair da conta
-            </Text>
-          </View>
-        </TouchableOpacity>
       </ScrollView>
     </ScreenContainer>
   );

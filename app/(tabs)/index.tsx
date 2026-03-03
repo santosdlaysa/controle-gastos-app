@@ -301,13 +301,13 @@ export default function HomeScreen() {
                 style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
               >
                 <View
-                  className={`px-3 py-1.5 rounded-full border text-xs ${
+                  className={`px-3 py-1.5 rounded-full border ${
                     showOnlyUnpaid
-                      ? 'bg-success/20 border-success text-success'
-                      : 'bg-surface border-border text-foreground'
+                      ? 'bg-success/20 border-success'
+                      : 'bg-surface border-border'
                   }`}
                 >
-                  <Text>
+                  <Text className={`text-xs ${showOnlyUnpaid ? 'text-success' : 'text-foreground'}`}>
                     Somente não pagas
                   </Text>
                 </View>
@@ -320,13 +320,13 @@ export default function HomeScreen() {
                 style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
               >
                 <View
-                  className={`px-3 py-1.5 rounded-full border text-xs ${
+                  className={`px-3 py-1.5 rounded-full border ${
                     showOnlyInstallments
-                      ? 'bg-primary/20 border-primary text-primary'
-                      : 'bg-surface border-border text-foreground'
+                      ? 'bg-primary/20 border-primary'
+                      : 'bg-surface border-border'
                   }`}
                 >
-                  <Text>
+                  <Text className={`text-xs ${showOnlyInstallments ? 'text-primary' : 'text-foreground'}`}>
                     Somente parcelas
                   </Text>
                 </View>

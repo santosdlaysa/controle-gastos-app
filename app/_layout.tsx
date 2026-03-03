@@ -18,7 +18,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
-import { useAuth } from "@/hooks/use-auth";
+import { AuthProvider, useAuthContext } from "@/lib/auth-context";
 import { useMigration } from "@/hooks/use-migration";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -57,7 +57,7 @@ function MigrationGate({ children }: { children: React.ReactNode }) {
 }
 
 function NavLayout() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading } = useAuthContext();
   const segments = useSegments();
   const router = useRouter();
 
@@ -160,7 +160,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          <NavLayout />
+          <AuthProvider>
+            <NavLayout />
+          </AuthProvider>
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>
