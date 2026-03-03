@@ -18,7 +18,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, AuthContext } from "@/hooks/use-auth";
 import { useMigration } from "@/hooks/use-migration";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -57,9 +57,16 @@ function MigrationGate({ children }: { children: React.ReactNode }) {
 }
 
 function NavLayout() {
-  const { isAuthenticated, loading } = useAuth();
+  const auth = useAuth();
+  const { isAuthenticated, loading } = auth;
   const segments = useSegments();
   const router = useRouter();
+  // Track whether the initial auth check has ever completed
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
+
+  useEffect(() => {
+    if (!loading) setInitialCheckDone(true);
+  }, [loading]);
 
   useEffect(() => {
     if (loading) return;
@@ -73,36 +80,30 @@ function NavLayout() {
     }
   }, [isAuthenticated, loading, segments, router]);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+  const stack = (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
+      <Stack.Screen name="oauth/callback" />
+      <Stack.Screen name="(tabs)" />
+    </Stack>
+  );
 
-  if (!isAuthenticated) {
+  // Only show the global spinner on the very first load, not on subsequent refresh() calls
+  if (!initialCheckDone && loading) {
     return (
-      <>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
-          <Stack.Screen name="oauth/callback" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-        <StatusBar style="auto" />
-      </>
+      <AuthContext.Provider value={auth}>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator size="large" />
+        </View>
+      </AuthContext.Provider>
     );
   }
 
   return (
-    <MigrationGate>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
-        <Stack.Screen name="oauth/callback" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
+    <AuthContext.Provider value={auth}>
+      {isAuthenticated ? <MigrationGate>{stack}</MigrationGate> : stack}
       <StatusBar style="auto" />
-    </MigrationGate>
+    </AuthContext.Provider>
   );
 }
 

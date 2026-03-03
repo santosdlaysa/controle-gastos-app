@@ -9,7 +9,13 @@
       "Bash(pnpm drizzle-kit generate:*)",
       "Bash(pnpm rebuild:*)",
       "Bash(node -e:*)",
-      "Bash(pnpm install:*)"
+      "Bash(pnpm install:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(rm:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

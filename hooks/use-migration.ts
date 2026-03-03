@@ -60,7 +60,8 @@ export function useMigration() {
       setError(err instanceof Error ? err.message : "Erro ao verificar migração");
       setState("error");
     }
-  }, [statusQuery]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const runMigration = useCallback(async () => {
     setState("in_progress");
