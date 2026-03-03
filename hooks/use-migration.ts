@@ -23,12 +23,16 @@ export function useMigration() {
     enabled: false, // only fetch on demand
   });
   const { mutateAsync: importAll } = trpc.migration.importAll.useMutation();
+  const { mutateAsync: applyMigrations } = trpc.migration.applyMigrations.useMutation();
 
   const checkAndMigrate = useCallback(async () => {
     setState("checking");
     setError(null);
 
     try {
+      // Apply any pending schema migrations on the server
+      await applyMigrations();
+
       // Check if migration already completed locally
       const doneFlagRaw = await AsyncStorage.getItem(MIGRATION_DONE_KEY);
       if (doneFlagRaw === "true") {
@@ -60,7 +64,7 @@ export function useMigration() {
       setError(err instanceof Error ? err.message : "Erro ao verificar migração");
       setState("error");
     }
-  }, [refetchStatus]);
+  }, [refetchStatus, applyMigrations]);
 
   const runMigration = useCallback(async () => {
     setState("in_progress");

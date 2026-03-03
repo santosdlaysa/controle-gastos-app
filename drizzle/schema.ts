@@ -86,6 +86,7 @@ export const budgets = pgTable(
     userId: integer("userId").notNull(),
     month: varchar("month", { length: 7 }).notNull(),
     totalBudget: numeric("totalBudget", { precision: 10, scale: 2 }).default("0"),
+    incomeOverride: numeric("incomeOverride", { precision: 10, scale: 2 }),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
   (t) => [uniqueIndex("budgets_user_month_idx").on(t.userId, t.month)],

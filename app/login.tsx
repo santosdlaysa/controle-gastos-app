@@ -1,6 +1,7 @@
 import { ScreenContainer } from "@/components/screen-container";
 import * as Api from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
+import { useAuthContext } from "@/lib/auth-context";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -19,6 +20,7 @@ type Mode = "login" | "register";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { refresh } = useAuthContext();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +52,8 @@ export default function LoginScreen() {
         lastSignedIn: new Date(result.user.lastSignedIn),
       });
 
-      router.replace("/(tabs)");
+      // Atualiza o estado compartilhado — NavLayout cuida do redirect
+      await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar.");
     } finally {
@@ -146,6 +149,8 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
               editable={!loading}
             />
           </View>
@@ -163,6 +168,8 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              autoComplete={mode === "register" ? "new-password" : "current-password"}
+              textContentType={mode === "register" ? "newPassword" : "password"}
               editable={!loading}
             />
           </View>

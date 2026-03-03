@@ -115,6 +115,22 @@ export async function upsertBudget(
     });
 }
 
+export async function upsertIncomeOverride(
+  userId: number,
+  month: string,
+  incomeOverride: string | null,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .insert(budgets)
+    .values({ userId, month, incomeOverride })
+    .onConflictDoUpdate({
+      target: [budgets.userId, budgets.month],
+      set: { incomeOverride, updatedAt: new Date() },
+    });
+}
+
 export async function getCategoryBudgets(userId: number, month: string) {
   const db = await getDb();
   if (!db) return [];

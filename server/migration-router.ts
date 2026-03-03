@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "./_core/trpc";
 import { bulkCreateExpenses, upsertIncome, upsertBudget, upsertCategoryBudgets, countExpenses } from "./expense-db";
+import { runRawSql } from "./db";
 import { EXPENSE_CATEGORIES } from "../drizzle/schema";
 
 const categoryEnum = z.enum(EXPENSE_CATEGORIES);
@@ -24,6 +25,13 @@ const monthlyDataSchema = z.object({
 });
 
 export const migrationRouter = router({
+  applyMigrations: protectedProcedure.mutation(async () => {
+    await runRawSql(
+      `ALTER TABLE budgets ADD COLUMN IF NOT EXISTS "incomeOverride" numeric(10,2)`,
+    );
+    return { success: true };
+  }),
+
   status: protectedProcedure.query(async ({ ctx }) => {
     const expenseCount = await countExpenses(ctx.user.id);
     return {

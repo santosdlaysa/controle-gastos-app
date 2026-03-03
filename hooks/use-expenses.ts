@@ -59,6 +59,11 @@ export function useExpenses(month: string) {
     [budgetQuery.data],
   );
 
+  const incomeOverride: number | null = useMemo(() => {
+    const raw = budgetQuery.data?.budget?.incomeOverride;
+    return raw != null ? parseFloat(raw) : null;
+  }, [budgetQuery.data]);
+
   const categoryBudgets: CategoryBudgets = useMemo(() => {
     const rows = budgetQuery.data?.categoryBudgets ?? [];
     const result: CategoryBudgets = {};
@@ -80,6 +85,7 @@ export function useExpenses(month: string) {
   const incomeUpdateMut = trpc.income.update.useMutation({ onSuccess: invalidateIncome });
   const budgetTotalMut = trpc.budget.updateTotal.useMutation({ onSuccess: invalidateBudget });
   const budgetCatMut = trpc.budget.updateCategories.useMutation({ onSuccess: invalidateBudget });
+  const incomeOverrideMut = trpc.budget.updateIncomeOverride.useMutation();
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
 
@@ -182,6 +188,12 @@ export function useExpenses(month: string) {
     await budgetTotalMut.mutateAsync({ month, totalBudget: newBudget });
   };
 
+  const updateIncomeOverride = async (value: number | null) => {
+    const targetMonth = month; // captura o mês atual antes de qualquer re-render
+    await incomeOverrideMut.mutateAsync({ month: targetMonth, incomeOverride: value });
+    await utils.budget.get.invalidate({ month: targetMonth });
+  };
+
   const updateCategoryBudgets = async (newCategoryBudgets: CategoryBudgets) => {
     const entries = Object.entries(newCategoryBudgets)
       .filter(([, amount]) => amount != null && amount > 0)
@@ -199,7 +211,8 @@ export function useExpenses(month: string) {
   };
 
   // ─── Derived values ──────────────────────────────────────────────────────────
-  const totalIncome = income.salary + income.vale + income.other;
+  const baseIncome = income.salary + income.vale + income.other;
+  const totalIncome = incomeOverride !== null ? incomeOverride : baseIncome;
   const totalExpenses = expenses.reduce((sum, exp) => sum + exp.value, 0);
   const balance = totalIncome - totalExpenses;
 
@@ -209,6 +222,7 @@ export function useExpenses(month: string) {
     loading,
     budget,
     categoryBudgets,
+    incomeOverride,
     totalIncome,
     totalExpenses,
     balance,
@@ -220,6 +234,7 @@ export function useExpenses(month: string) {
     updateIncome,
     updateBudget,
     updateCategoryBudgets,
+    updateIncomeOverride,
     reload,
   };
 }
