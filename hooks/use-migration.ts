@@ -19,16 +19,20 @@ export function useMigration() {
   const [state, setState] = useState<MigrationState>("idle");
   const [error, setError] = useState<string | null>(null);
 
-  const statusQuery = trpc.migration.status.useQuery(undefined, {
+  const { refetch: refetchStatus } = trpc.migration.status.useQuery(undefined, {
     enabled: false, // only fetch on demand
   });
-  const importMut = trpc.migration.importAll.useMutation();
+  const { mutateAsync: importAll } = trpc.migration.importAll.useMutation();
+  const { mutateAsync: applyMigrations } = trpc.migration.applyMigrations.useMutation();
 
   const checkAndMigrate = useCallback(async () => {
     setState("checking");
     setError(null);
 
     try {
+      // Apply any pending schema migrations on the server
+      await applyMigrations();
+
       // Check if migration already completed locally
       const doneFlagRaw = await AsyncStorage.getItem(MIGRATION_DONE_KEY);
       if (doneFlagRaw === "true") {
@@ -46,7 +50,7 @@ export function useMigration() {
       }
 
       // Check server status
-      const serverStatus = await statusQuery.refetch();
+      const serverStatus = await refetchStatus();
       if (serverStatus.data?.hasMigrated) {
         // Server already has data — mark migration done
         await AsyncStorage.setItem(MIGRATION_DONE_KEY, "true");
@@ -60,8 +64,7 @@ export function useMigration() {
       setError(err instanceof Error ? err.message : "Erro ao verificar migração");
       setState("error");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refetchStatus, applyMigrations]);
 
   const runMigration = useCallback(async () => {
     setState("in_progress");
@@ -80,7 +83,7 @@ export function useMigration() {
       const income: Income | null = incomeRaw ? JSON.parse(incomeRaw) : null;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await importMut.mutateAsync({ income, months: months as any });
+      await importAll({ income, months: months as any });
 
       await AsyncStorage.setItem(MIGRATION_DONE_KEY, "true");
       setState("done");
@@ -88,7 +91,7 @@ export function useMigration() {
       setError(err instanceof Error ? err.message : "Erro durante a migração");
       setState("error");
     }
-  }, [importMut]);
+  }, [importAll]);
 
   // Auto-check on mount
   useEffect(() => {

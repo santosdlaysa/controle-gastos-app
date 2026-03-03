@@ -10,12 +10,12 @@
       "Bash(pnpm rebuild:*)",
       "Bash(node -e:*)",
       "Bash(pnpm install:*)",
-      "Bash(npm install:*)",
       "Bash(pnpm add:*)",
-      "Bash(rm:*)",
-      "Bash(pnpm dev:*)",
-      "Bash(netstat:*)",
-      "Bash(taskkill:*)"
+      "Bash(git restore:*)",
+      "Bash(git push:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

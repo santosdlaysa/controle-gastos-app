@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ScrollView,
   Text,
@@ -7,7 +7,11 @@ import {
   FlatList,
   Pressable,
   ActivityIndicator,
+  TextInput,
+  Alert,
 } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useColors } from '@/hooks/use-colors';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenContainer } from '@/components/screen-container';
 import { ExpenseItem } from '@/components/expense-item';
@@ -49,13 +53,49 @@ export default function HomeScreen() {
     balance,
     budget,
     categoryBudgets,
+    incomeOverride,
     addExpense,
     updateExpense,
     deleteExpense,
     moveExpenseToNextMonth,
     generateRemainingInstallments,
+    updateIncomeOverride,
     reload,
   } = useExpenses(currentMonth);
+
+  const colors = useColors();
+  const [editingIncome, setEditingIncome] = useState(false);
+  const [incomeInput, setIncomeInput] = useState('');
+  const incomeInputRef = useRef<TextInput>(null);
+
+  const handleStartEditIncome = () => {
+    setIncomeInput(totalIncome > 0 ? totalIncome.toFixed(2) : '');
+    setEditingIncome(true);
+    setTimeout(() => incomeInputRef.current?.focus(), 50);
+  };
+
+  const handleSaveIncome = async () => {
+    const val = parseFloat(incomeInput);
+    if (isNaN(val) || val < 0) {
+      Alert.alert('Valor inválido', 'Digite um valor numérico válido.');
+      return;
+    }
+    try {
+      await updateIncomeOverride(val);
+      setEditingIncome(false);
+    } catch (err) {
+      Alert.alert('Erro ao salvar', err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const handleClearIncomeOverride = async () => {
+    try {
+      await updateIncomeOverride(null);
+      setEditingIncome(false);
+    } catch (err) {
+      Alert.alert('Erro ao restaurar', err instanceof Error ? err.message : String(err));
+    }
+  };
 
   const {
     categoryTotals,
@@ -207,9 +247,55 @@ export default function HomeScreen() {
         <View className="px-6 py-4 gap-3">
           {/* Total Income */}
           <View className="bg-success/10 rounded-2xl p-4">
-            <Text className="text-sm text-muted mb-1">Renda Total</Text>
-            <Text className="text-2xl font-bold text-success">
-              R$ {totalIncome.toFixed(2)}
+            <View className="flex-row items-center justify-between mb-1">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-sm text-muted">Renda Total</Text>
+                {incomeOverride !== null && (
+                  <View className="bg-success/30 rounded-full px-2 py-0.5">
+                    <Text className="text-success text-[10px] font-semibold">personalizada</Text>
+                  </View>
+                )}
+              </View>
+              {incomeOverride !== null && !editingIncome && (
+                <Pressable onPress={handleClearIncomeOverride} hitSlop={8} className="flex-row items-center gap-1">
+                  <MaterialIcons name="restart-alt" size={16} color={colors.muted} />
+                  <Text className="text-muted text-[11px]">Restaurar padrão</Text>
+                </Pressable>
+              )}
+            </View>
+
+            {editingIncome ? (
+              <View className="flex-row items-center gap-2">
+                <Text className="text-2xl font-bold text-success">R$</Text>
+                <TextInput
+                  ref={incomeInputRef}
+                  value={incomeInput}
+                  onChangeText={setIncomeInput}
+                  onSubmitEditing={handleSaveIncome}
+                  keyboardType="decimal-pad"
+                  style={{ fontSize: 24, fontWeight: 'bold', color: colors.success, flex: 1 }}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.muted}
+                />
+                <Pressable onPress={handleSaveIncome} hitSlop={8}>
+                  <MaterialIcons name="check-circle" size={28} color={colors.success} />
+                </Pressable>
+              </View>
+            ) : (
+              <View className="flex-row items-center gap-2">
+                <Text className="text-2xl font-bold text-success">
+                  R$ {totalIncome.toFixed(2)}
+                </Text>
+                <Pressable onPress={handleStartEditIncome} hitSlop={8}>
+                  <MaterialIcons name="edit" size={18} color={colors.muted} />
+                </Pressable>
+              </View>
+            )}
+
+            <Text className="text-[11px] text-muted mt-1">
+              {incomeOverride !== null
+                ? `Padrão: R$ ${(income.salary + income.vale + income.other).toFixed(2)} · Toque em ✎ para editar`
+                : 'Toque em ✎ para ajustar a renda deste mês'}
             </Text>
           </View>
 
@@ -301,13 +387,13 @@ export default function HomeScreen() {
                 style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
               >
                 <View
-                  className={`px-3 py-1.5 rounded-full border text-xs ${
+                  className={`px-3 py-1.5 rounded-full border ${
                     showOnlyUnpaid
-                      ? 'bg-success/20 border-success text-success'
-                      : 'bg-surface border-border text-foreground'
+                      ? 'bg-success/20 border-success'
+                      : 'bg-surface border-border'
                   }`}
                 >
-                  <Text>
+                  <Text className={`text-xs ${showOnlyUnpaid ? 'text-success' : 'text-foreground'}`}>
                     Somente não pagas
                   </Text>
                 </View>
@@ -320,13 +406,13 @@ export default function HomeScreen() {
                 style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
               >
                 <View
-                  className={`px-3 py-1.5 rounded-full border text-xs ${
+                  className={`px-3 py-1.5 rounded-full border ${
                     showOnlyInstallments
-                      ? 'bg-primary/20 border-primary text-primary'
-                      : 'bg-surface border-border text-foreground'
+                      ? 'bg-primary/20 border-primary'
+                      : 'bg-surface border-border'
                   }`}
                 >
-                  <Text>
+                  <Text className={`text-xs ${showOnlyInstallments ? 'text-primary' : 'text-foreground'}`}>
                     Somente parcelas
                   </Text>
                 </View>

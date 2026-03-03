@@ -3,6 +3,7 @@ import { router, protectedProcedure } from "./_core/trpc";
 import {
   getBudget,
   upsertBudget,
+  upsertIncomeOverride,
   getCategoryBudgets,
   upsertCategoryBudgets,
 } from "./expense-db";
@@ -30,6 +31,22 @@ export const budgetRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       await upsertBudget(ctx.user.id, input.month, input.totalBudget.toFixed(2));
+      return { success: true };
+    }),
+
+  updateIncomeOverride: protectedProcedure
+    .input(
+      z.object({
+        month: z.string().regex(/^\d{4}-\d{2}$/),
+        incomeOverride: z.number().min(0).nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await upsertIncomeOverride(
+        ctx.user.id,
+        input.month,
+        input.incomeOverride !== null ? input.incomeOverride.toFixed(2) : null,
+      );
       return { success: true };
     }),
 
