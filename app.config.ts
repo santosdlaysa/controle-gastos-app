@@ -8,7 +8,7 @@ import type { ExpoConfig } from "expo/config";
  * - Each segment must start with a letter (Android requirement)
  */
 
-const rawBundleId = "space.manus.controle.gastos.app.t20260302100000";
+const rawBundleId = "space.manus.controle.gastos.dev";
 
 const bundleId =
   rawBundleId
