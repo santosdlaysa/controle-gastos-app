@@ -10,7 +10,9 @@
       "Bash(pnpm rebuild:*)",
       "Bash(node -e:*)",
       "Bash(pnpm install:*)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(git restore:*)",
+      "Bash(git push:*)"
     ]
   }
 }
