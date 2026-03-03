@@ -12,7 +12,10 @@
       "Bash(pnpm install:*)",
       "Bash(pnpm add:*)",
       "Bash(git restore:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
