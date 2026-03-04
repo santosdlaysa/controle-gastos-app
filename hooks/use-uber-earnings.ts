@@ -15,7 +15,7 @@ function toUberEntry(row: {
     id: row.id.toString(),
     description: row.description,
     category: row.category as UberCategory,
-    entryType: (row.entryType ?? "ganho") as UberEntryType,
+    entryType: ((row.entryType ?? "ganho") as UberEntryType),
     value: parseFloat(row.value),
     date: row.date,
     month: row.month,

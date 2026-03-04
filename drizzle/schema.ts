@@ -131,7 +131,7 @@ export const uberEarnings = pgTable("uber_earnings", {
   userId: integer("userId").notNull(),
   description: varchar("description", { length: 255 }).notNull(),
   category: varchar("category", { length: 50 }).notNull(),
-  entryType: varchar("entryType", { length: 10 }).notNull().default("ganho"),
+  entryType: varchar("entryType", { length: 10 }).default("ganho"),
   value: numeric("value", { precision: 10, scale: 2 }).notNull(),
   date: varchar("date", { length: 30 }).notNull(),
   month: varchar("month", { length: 7 }).notNull(),
