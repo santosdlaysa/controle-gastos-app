@@ -9,8 +9,10 @@ import {
   ActivityIndicator,
   TextInput,
   Alert,
+  Modal,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/use-colors';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenContainer } from '@/components/screen-container';
@@ -37,8 +39,10 @@ const addMonths = (monthStr: string, months: number) => {
 };
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth());
   const [modalVisible, setModalVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>();
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'all'>('all');
   const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(false);
@@ -235,13 +239,54 @@ export default function HomeScreen() {
           <Text className="text-lg font-semibold text-foreground capitalize">
             {getMonthName(currentMonth)}
           </Text>
-          <Pressable
-            onPress={handleNextMonth}
-            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-          >
-            <Text className="text-2xl text-primary">→</Text>
-          </Pressable>
+          <View className="flex-row items-center gap-3">
+            <Pressable
+              onPress={handleNextMonth}
+              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+            >
+              <Text className="text-2xl text-primary">→</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setMenuVisible(true)}
+              hitSlop={8}
+              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+            >
+              <MaterialIcons name="menu" size={26} color={colors.foreground} />
+            </Pressable>
+          </View>
         </View>
+
+        {/* Menu sanduíche modal */}
+        <Modal
+          visible={menuVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <Pressable
+            className="flex-1"
+            onPress={() => setMenuVisible(false)}
+            style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+          >
+            <View
+              style={{ position: 'absolute', top: 90, right: 16 }}
+              className="bg-background rounded-2xl shadow-lg border border-border overflow-hidden"
+            >
+              <Pressable
+                onPress={() => {
+                  setMenuVisible(false);
+                  router.push('/uber-earnings');
+                }}
+                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+              >
+                <View className="flex-row items-center gap-3 px-5 py-4">
+                  <MaterialIcons name="directions-car" size={22} color="#10B981" />
+                  <Text className="text-base font-semibold text-foreground">Ganhos de Uber</Text>
+                </View>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Modal>
 
         {/* Summary Cards */}
         <View className="px-6 py-4 gap-3">

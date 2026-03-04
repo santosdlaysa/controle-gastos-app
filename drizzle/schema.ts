@@ -1,5 +1,16 @@
 import { boolean, integer, numeric, pgEnum, pgTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 
+// ─── Uber Earning categories ──────────────────────────────────────────────────
+
+export const UBER_EARNING_CATEGORIES = [
+  "corrida",
+  "uber_eats",
+  "bonus",
+  "outro",
+] as const;
+
+export type UberEarningCategory = (typeof UBER_EARNING_CATEGORIES)[number];
+
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 
 /**
@@ -112,3 +123,21 @@ export const categoryBudgets = pgTable(
 
 export type DbCategoryBudget = typeof categoryBudgets.$inferSelect;
 export type InsertCategoryBudget = typeof categoryBudgets.$inferInsert;
+
+// ─── uber_earnings ─────────────────────────────────────────────────────────────
+
+export const uberEarnings = pgTable("uber_earnings", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  userId: integer("userId").notNull(),
+  description: varchar("description", { length: 255 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull(),
+  entryType: varchar("entryType", { length: 10 }).notNull().default("ganho"),
+  value: numeric("value", { precision: 10, scale: 2 }).notNull(),
+  date: varchar("date", { length: 30 }).notNull(),
+  month: varchar("month", { length: 7 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type DbUberEarning = typeof uberEarnings.$inferSelect;
+export type InsertUberEarning = typeof uberEarnings.$inferInsert;

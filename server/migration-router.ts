@@ -29,6 +29,23 @@ export const migrationRouter = router({
     await runRawSql(
       `ALTER TABLE budgets ADD COLUMN IF NOT EXISTS "incomeOverride" numeric(10,2)`,
     );
+    await runRawSql(`
+      CREATE TABLE IF NOT EXISTS uber_earnings (
+        id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        "userId" integer NOT NULL,
+        description varchar(255) NOT NULL,
+        category varchar(50) NOT NULL,
+        "entryType" varchar(10) NOT NULL DEFAULT 'ganho',
+        value numeric(10,2) NOT NULL,
+        date varchar(30) NOT NULL,
+        month varchar(7) NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL,
+        "updatedAt" timestamp DEFAULT now() NOT NULL
+      )
+    `);
+    await runRawSql(
+      `ALTER TABLE uber_earnings ADD COLUMN IF NOT EXISTS "entryType" varchar(10) NOT NULL DEFAULT 'ganho'`,
+    );
     return { success: true };
   }),
 
