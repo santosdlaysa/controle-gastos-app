@@ -241,15 +241,20 @@ class SDKServer {
 
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = token || cookies.get(COOKIE_NAME);
+    console.log("[Auth] authenticateRequest: hasBearerToken=", !!token, "hasCookie=", !!cookies.get(COOKIE_NAME));
+
     const session = await this.verifySession(sessionCookie);
 
     if (!session) {
+      console.error("[Auth] authenticateRequest: verifySession returned null — JWT secret mismatch or invalid token");
       throw ForbiddenError("Invalid session cookie");
     }
 
+    console.log("[Auth] authenticateRequest: session verified, openId=", session.openId);
     const sessionUserId = session.openId;
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
+    console.log("[Auth] authenticateRequest: getUserByOpenId result=", user ? `found (id=${user.id})` : "NOT FOUND");
 
     // If user not in DB, sync from OAuth server automatically
     if (!user) {
@@ -270,6 +275,7 @@ class SDKServer {
     }
 
     if (!user) {
+      console.error("[Auth] authenticateRequest: user still not found after sync attempt");
       throw ForbiddenError("User not found");
     }
 
