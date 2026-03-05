@@ -1,0 +1,147 @@
+import postgres from "postgres";
+
+/**
+ * Cria todas as tabelas e tipos do schema se não existirem.
+ * Seguro rodar a cada startup — usa IF NOT EXISTS em tudo.
+ */
+export async function ensureSchema(databaseUrl: string): Promise<void> {
+  const sql = postgres(databaseUrl, { ssl: { rejectUnauthorized: false }, onnotice: () => {} });
+
+  try {
+    // Enums
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE role AS ENUM ('user', 'admin');
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$
+    `;
+
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE expense_category AS ENUM ('transporte', 'alimentacao', 'moradia', 'saude', 'educacao', 'lazer', 'outro');
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$
+    `;
+
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE expense_source AS ENUM ('manual', 'pluggy', 'nubank');
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$
+    `;
+
+    // users
+    await sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "openId" varchar(64) NOT NULL UNIQUE,
+        name text,
+        email varchar(320),
+        "loginMethod" varchar(64),
+        "passwordHash" varchar(255),
+        role role NOT NULL DEFAULT 'user',
+        "createdAt" timestamp NOT NULL DEFAULT now(),
+        "updatedAt" timestamp NOT NULL DEFAULT now(),
+        "lastSignedIn" timestamp NOT NULL DEFAULT now()
+      )
+    `;
+
+    // Garante coluna passwordHash em tabelas pré-existentes sem ela
+    await sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS "passwordHash" varchar(255)
+    `;
+
+    // expenses
+    await sql`
+      CREATE TABLE IF NOT EXISTS expenses (
+        id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "userId" integer NOT NULL,
+        "clientId" varchar(128),
+        name varchar(255) NOT NULL,
+        category expense_category NOT NULL,
+        value numeric(10,2) NOT NULL,
+        date varchar(30) NOT NULL,
+        month varchar(7) NOT NULL,
+        quantity varchar(20),
+        paid boolean DEFAULT false,
+        source expense_source DEFAULT 'manual',
+        "createdAt" timestamp NOT NULL DEFAULT now(),
+        "updatedAt" timestamp NOT NULL DEFAULT now()
+      )
+    `;
+
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS expenses_user_client_idx
+      ON expenses ("userId", "clientId")
+    `;
+
+    // incomes
+    await sql`
+      CREATE TABLE IF NOT EXISTS incomes (
+        id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "userId" integer NOT NULL UNIQUE,
+        salary numeric(10,2) DEFAULT '0',
+        vale numeric(10,2) DEFAULT '0',
+        other numeric(10,2) DEFAULT '0',
+        "updatedAt" timestamp NOT NULL DEFAULT now()
+      )
+    `;
+
+    // budgets
+    await sql`
+      CREATE TABLE IF NOT EXISTS budgets (
+        id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "userId" integer NOT NULL,
+        month varchar(7) NOT NULL,
+        "totalBudget" numeric(10,2) DEFAULT '0',
+        "incomeOverride" numeric(10,2),
+        "updatedAt" timestamp NOT NULL DEFAULT now()
+      )
+    `;
+
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS budgets_user_month_idx
+      ON budgets ("userId", month)
+    `;
+
+    // category_budgets
+    await sql`
+      CREATE TABLE IF NOT EXISTS category_budgets (
+        id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "userId" integer NOT NULL,
+        month varchar(7) NOT NULL,
+        category expense_category NOT NULL,
+        amount numeric(10,2) NOT NULL,
+        "updatedAt" timestamp NOT NULL DEFAULT now()
+      )
+    `;
+
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS cat_budgets_user_month_cat_idx
+      ON category_budgets ("userId", month, category)
+    `;
+
+    // uber_earnings
+    await sql`
+      CREATE TABLE IF NOT EXISTS uber_earnings (
+        id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "userId" integer NOT NULL,
+        description varchar(255) NOT NULL,
+        category varchar(50) NOT NULL,
+        "entryType" varchar(10) DEFAULT 'ganho',
+        value numeric(10,2) NOT NULL,
+        date varchar(30) NOT NULL,
+        month varchar(7) NOT NULL,
+        "createdAt" timestamp NOT NULL DEFAULT now(),
+        "updatedAt" timestamp NOT NULL DEFAULT now()
+      )
+    `;
+
+    console.log("[db-migrate] Schema OK");
+  } catch (err) {
+    console.error("[db-migrate] Falha ao aplicar schema:", err);
+    throw err;
+  } finally {
+    await sql.end();
+  }
+}

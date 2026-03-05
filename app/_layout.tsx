@@ -69,7 +69,7 @@ function NavLayout() {
     if (!isAuthenticated && !onLoginScreen) {
       router.replace("/login");
     } else if (isAuthenticated && onLoginScreen) {
-      router.replace("/(tabs)");
+      router.replace("/mode-select");
     }
   }, [isAuthenticated, loading, segments, router]);
 
@@ -87,6 +87,7 @@ function NavLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
           <Stack.Screen name="oauth/callback" />
+          <Stack.Screen name="mode-select" />
           <Stack.Screen name="(tabs)" />
         </Stack>
         <StatusBar style="auto" />
@@ -99,6 +100,7 @@ function NavLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
         <Stack.Screen name="oauth/callback" />
+        <Stack.Screen name="mode-select" />
         <Stack.Screen name="(tabs)" />
       </Stack>
       <StatusBar style="auto" />

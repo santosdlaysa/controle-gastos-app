@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerLocalAuthRoutes } from "./local-auth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { ensureSchema } from "../db-migrate";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -28,6 +29,11 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  // Cria tabelas automaticamente se não existirem
+  if (process.env.DATABASE_URL) {
+    await ensureSchema(process.env.DATABASE_URL);
+  }
+
   const app = express();
   const server = createServer(app);
 
