@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure } from "./_core/trpc";
 import {
   getExpensesByMonth,
+  getExpensesByYear,
   createExpense,
   updateExpense,
   deleteExpense,
@@ -17,6 +18,12 @@ export const expenseRouter = router({
     .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) }))
     .query(async ({ ctx, input }) => {
       return getExpensesByMonth(ctx.user.id, input.month);
+    }),
+
+  getByYear: protectedProcedure
+    .input(z.object({ year: z.string().regex(/^\d{4}$/) }))
+    .query(async ({ ctx, input }) => {
+      return getExpensesByYear(ctx.user.id, input.year);
     }),
 
   create: protectedProcedure

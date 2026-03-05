@@ -2,6 +2,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
+import { setAppMode } from "@/lib/mode";
 import { Image, Pressable, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
@@ -70,7 +71,7 @@ export default function ModeSelectScreen() {
 
         {/* Opção 1: Despesas Pessoais */}
         <Pressable
-          onPress={() => router.replace("/(tabs)")}
+          onPress={() => { setAppMode('personal'); router.replace("/(tabs)"); }}
           style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
         >
           <View
@@ -114,7 +115,7 @@ export default function ModeSelectScreen() {
 
         {/* Opção 2: Ganhos/Gastos Uber */}
         <Pressable
-          onPress={() => router.replace("/uber-earnings")}
+          onPress={() => { setAppMode('uber'); router.replace("/(tabs)/uber-earnings"); }}
           style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
         >
           <View

@@ -1,4 +1,4 @@
-import { and, count, eq, sql } from "drizzle-orm";
+import { and, count, eq, like, sql } from "drizzle-orm";
 import {
   expenses,
   incomes,
@@ -18,6 +18,15 @@ export async function getExpensesByMonth(userId: number, month: string) {
     .select()
     .from(expenses)
     .where(and(eq(expenses.userId, userId), eq(expenses.month, month)));
+}
+
+export async function getExpensesByYear(userId: number, year: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(expenses)
+    .where(and(eq(expenses.userId, userId), like(expenses.month, `${year}-%`)));
 }
 
 export async function createExpense(

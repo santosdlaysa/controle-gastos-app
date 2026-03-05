@@ -10,6 +10,8 @@ import {
   TextInput,
   Alert,
   Modal,
+  Share,
+  Platform,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
@@ -20,6 +22,137 @@ import { ExpenseItem } from '@/components/expense-item';
 import { ExpenseModal } from '@/components/expense-modal';
 import { useExpenses } from '@/hooks/use-expenses';
 import { Expense, ExpenseCategory, CATEGORY_LABELS, CATEGORY_COLORS } from '@/types/expense';
+import { trpc } from '@/lib/trpc';
+import { setAppMode } from '@/lib/mode';
+
+// ─── Helpers de exportação ────────────────────────────────────────────────────
+
+const EXPENSE_MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
+
+function expFormatDateBR(dateStr: string) {
+  try {
+    const d = new Date(dateStr);
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  } catch { return dateStr; }
+}
+
+type ExpRow = { name: string; category: string; value: string; date: string; month: string; quantity: string | null; paid: boolean };
+
+function generateExpensesCSV(rows: ExpRow[], year: string): string {
+  const today = new Date();
+  const gen = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+  const lines: string[] = [];
+  lines.push(`Relatório Anual de Despesas - ${year}`);
+  lines.push(`Gerado em: ${gen}`);
+  lines.push('');
+  lines.push('Mês,Data,Descrição,Categoria,Parcela,Valor (R$),Pago');
+
+  const sorted = [...rows].sort((a, b) =>
+    a.month !== b.month ? a.month.localeCompare(b.month) : a.date.localeCompare(b.date)
+  );
+
+  const byMonth: Record<string, number> = {};
+  let total = 0;
+  for (const r of sorted) {
+    const [, mn] = r.month.split('-');
+    const mName = EXPENSE_MONTH_NAMES[parseInt(mn, 10) - 1] ?? r.month;
+    const desc = `"${r.name.replace(/"/g, '""')}"`;
+    const cat = CATEGORY_LABELS[r.category as ExpenseCategory] ?? r.category;
+    const v = parseFloat(r.value);
+    byMonth[r.month] = (byMonth[r.month] ?? 0) + v;
+    total += v;
+    lines.push(`${mName}/${year},${expFormatDateBR(r.date)},${desc},${cat},${r.quantity ?? ''},${v.toFixed(2)},${r.paid ? 'Sim' : 'Não'}`);
+  }
+
+  lines.push('');
+  lines.push('--- RESUMO MENSAL ---');
+  lines.push('Mês,Total Despesas (R$)');
+  for (const month of Object.keys(byMonth).sort()) {
+    const [, mn] = month.split('-');
+    const name = EXPENSE_MONTH_NAMES[parseInt(mn, 10) - 1] ?? month;
+    lines.push(`${name}/${year},${byMonth[month].toFixed(2)}`);
+  }
+  lines.push('');
+  lines.push(`Total Anual,${total.toFixed(2)}`);
+  return lines.join('\n');
+}
+
+function generateExpensesHTML(rows: ExpRow[], year: string): string {
+  const today = new Date();
+  const gen = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+
+  const byMonth: Record<string, number> = {};
+  let total = 0;
+  for (const r of rows) {
+    const v = parseFloat(r.value);
+    byMonth[r.month] = (byMonth[r.month] ?? 0) + v;
+    total += v;
+  }
+
+  const sorted = [...rows].sort((a, b) =>
+    a.month !== b.month ? a.month.localeCompare(b.month) : a.date.localeCompare(b.date)
+  );
+
+  const monthRows = Object.keys(byMonth).sort().map(month => {
+    const [, mn] = month.split('-');
+    const name = EXPENSE_MONTH_NAMES[parseInt(mn, 10) - 1] ?? month;
+    return `<tr><td>${name}</td><td style="text-align:right;font-weight:600">R$ ${byMonth[month].toFixed(2)}</td></tr>`;
+  }).join('');
+
+  const entryRows = sorted.map(r => {
+    const [, mn] = r.month.split('-');
+    const mName = EXPENSE_MONTH_NAMES[parseInt(mn, 10) - 1] ?? r.month;
+    const cat = CATEGORY_LABELS[r.category as ExpenseCategory] ?? r.category;
+    const color = CATEGORY_COLORS[r.category as ExpenseCategory] ?? '#6B7280';
+    return `<tr><td>${mName}</td><td>${expFormatDateBR(r.date)}</td><td>${r.name.replace(/</g, '&lt;')}</td><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:4px"></span>${cat}</td><td>${r.quantity ?? '—'}</td><td style="text-align:right">R$ ${parseFloat(r.value).toFixed(2)}</td><td style="text-align:center">${r.paid ? '✓' : '—'}</td></tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Despesas ${year}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:24px}
+h1{font-size:20px;font-weight:700;margin-bottom:4px}.subtitle{color:#6B7280;font-size:11px;margin-bottom:20px}
+.cards{display:flex;gap:12px;margin-bottom:20px}.card{flex:1;border-radius:8px;padding:14px;border:1px solid #e5e7eb}
+.cw{background:#eff6ff;border-color:#bfdbfe}.clabel{font-size:10px;color:#6B7280;margin-bottom:4px}.cval{font-size:18px;font-weight:700}
+h2{font-size:13px;font-weight:700;margin:20px 0 8px;border-bottom:2px solid #f3f4f6;padding-bottom:4px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#f3f4f6;padding:7px 10px;text-align:left;font-weight:600;border-bottom:2px solid #e5e7eb}
+td{padding:6px 10px;border-bottom:1px solid #f3f4f6}
+.footer{margin-top:20px;font-size:10px;color:#9CA3AF;text-align:center}
+@media print{body{padding:0}@page{margin:1.5cm}}
+</style></head><body>
+<h1>💰 Relatório Anual de Despesas — ${year}</h1>
+<div class="subtitle">Gerado em ${gen} · ${rows.length} registro${rows.length !== 1 ? 's' : ''}</div>
+<div class="cards">
+  <div class="card cw"><div class="clabel">Total Anual</div><div class="cval" style="color:#0a7ea4">R$ ${total.toFixed(2)}</div></div>
+  <div class="card"><div class="clabel">Registros</div><div class="cval">${rows.length}</div></div>
+  <div class="card"><div class="clabel">Meses com dados</div><div class="cval">${Object.keys(byMonth).length}</div></div>
+</div>
+<h2>Resumo Mensal</h2>
+<table><thead><tr><th>Mês</th><th style="text-align:right">Total Despesas</th></tr></thead><tbody>${monthRows}</tbody><tfoot><tr style="background:#f3f4f6"><td style="font-weight:700">Total Anual</td><td style="text-align:right;font-weight:700">R$ ${total.toFixed(2)}</td></tr></tfoot></table>
+<h2>Registros Detalhados</h2>
+<table><thead><tr><th>Mês</th><th>Data</th><th>Descrição</th><th>Categoria</th><th>Parcela</th><th style="text-align:right">Valor</th><th style="text-align:center">Pago</th></tr></thead><tbody>${entryRows}</tbody></table>
+<div class="footer">Controle de Gastos — Relatório de Despesas ${year}</div>
+<script>window.onload=function(){window.print();}</script>
+</body></html>`;
+}
+
+function expDownloadCSVWeb(content: string, filename: string) {
+  const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = filename;
+  document.body.appendChild(link); link.click();
+  document.body.removeChild(link); URL.revokeObjectURL(url);
+}
+
+function expPrintPDFWeb(html: string) {
+  const win = window.open('', '_blank');
+  if (!win) { alert('Permita pop-ups para exportar PDF.'); return; }
+  win.document.write(html); win.document.close();
+}
 
 const getCurrentMonth = () => {
   const now = new Date();
@@ -68,6 +201,45 @@ export default function HomeScreen() {
   } = useExpenses(currentMonth);
 
   const colors = useColors();
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportYear, setExportYear] = useState(() => String(new Date().getFullYear()));
+  const [exporting, setExporting] = useState(false);
+  const expUtils = trpc.useUtils();
+
+  const fetchExpYear = useCallback(async () => {
+    const data = await expUtils.expense.getByYear.fetch({ year: exportYear });
+    if (!data || data.length === 0) { alert(`Nenhuma despesa encontrada para ${exportYear}.`); return null; }
+    return data as ExpRow[];
+  }, [exportYear, expUtils]);
+
+  const handleExportExpCSV = useCallback(async () => {
+    setExporting(true);
+    try {
+      const data = await fetchExpYear();
+      if (!data) return;
+      const csv = generateExpensesCSV(data, exportYear);
+      if (Platform.OS === 'web') { expDownloadCSVWeb(csv, `despesas-${exportYear}.csv`); }
+      else { await Share.share({ message: csv, title: `despesas-${exportYear}.csv` }); }
+      setShowExportModal(false);
+    } catch { alert('Erro ao exportar. Tente novamente.'); }
+    finally { setExporting(false); }
+  }, [exportYear, fetchExpYear]);
+
+  const handleExportExpPDF = useCallback(async () => {
+    if (Platform.OS !== 'web') {
+      alert('A exportação em PDF está disponível apenas na versão web.\n\nUse "Exportar CSV" para dispositivos móveis.');
+      return;
+    }
+    setExporting(true);
+    try {
+      const data = await fetchExpYear();
+      if (!data) return;
+      expPrintPDFWeb(generateExpensesHTML(data, exportYear));
+      setShowExportModal(false);
+    } catch { alert('Erro ao exportar. Tente novamente.'); }
+    finally { setExporting(false); }
+  }, [exportYear, fetchExpYear]);
+
   const [editingIncome, setEditingIncome] = useState(false);
   const [incomeInput, setIncomeInput] = useState('');
   const incomeInputRef = useRef<TextInput>(null);
@@ -227,375 +399,268 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer className="p-0">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Month Navigation */}
-        <View className="flex-row items-center justify-between px-6 py-4 bg-surface border-b border-border">
-          <Pressable
-            onPress={handlePreviousMonth}
-            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-          >
-            <Text className="text-2xl text-primary">←</Text>
-          </Pressable>
-          <Text className="text-lg font-semibold text-foreground capitalize">
-            {getMonthName(currentMonth)}
-          </Text>
-          <View className="flex-row items-center gap-3">
-            <Pressable
-              onPress={handleNextMonth}
-              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-            >
-              <Text className="text-2xl text-primary">→</Text>
+      <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background }}>
+
+        {/* ─── HERO ─────────────────────────────────────── */}
+        <View style={{ backgroundColor: '#0c3a5e' }}>
+          {/* Toolbar */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 }}>
+            <Pressable onPress={() => setMenuVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
+              <MaterialIcons name="menu" size={24} color="rgba(255,255,255,0.9)" />
             </Pressable>
-            <Pressable
-              onPress={() => setMenuVisible(true)}
-              hitSlop={8}
-              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-            >
-              <MaterialIcons name="menu" size={26} color={colors.foreground} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#0a7ea4', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="account-balance-wallet" size={16} color="#fff" />
+              </View>
+              <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700', letterSpacing: -0.3 }}>Despesas Pessoais</Text>
+            </View>
+            <Pressable onPress={() => setShowExportModal(true)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
+              <MaterialIcons name="file-download" size={22} color="rgba(255,255,255,0.9)" />
             </Pressable>
           </View>
-        </View>
 
-        {/* Menu sanduíche modal */}
-        <Modal
-          visible={menuVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setMenuVisible(false)}
-        >
-          <Pressable
-            className="flex-1"
-            onPress={() => setMenuVisible(false)}
-            style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
-          >
-            <View
-              style={{ position: 'absolute', top: 90, right: 16 }}
-              className="bg-background rounded-2xl shadow-lg border border-border overflow-hidden"
-            >
-              <Pressable
-                onPress={() => {
-                  setMenuVisible(false);
-                  router.push('/uber-earnings');
-                }}
-                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-              >
-                <View className="flex-row items-center gap-3 px-5 py-4">
-                  <MaterialIcons name="directions-car" size={22} color="#10B981" />
-                  <Text className="text-base font-semibold text-foreground">Ganhos de Uber</Text>
-                </View>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Modal>
-
-        {/* Summary Cards */}
-        <View className="px-6 py-4 gap-3">
-          {/* Total Income */}
-          <View className="bg-success/10 rounded-2xl p-4">
-            <View className="flex-row items-center justify-between mb-1">
-              <View className="flex-row items-center gap-2">
-                <Text className="text-sm text-muted">Renda Total</Text>
-                {incomeOverride !== null && (
-                  <View className="bg-success/30 rounded-full px-2 py-0.5">
-                    <Text className="text-success text-[10px] font-semibold">personalizada</Text>
-                  </View>
-                )}
-              </View>
-              {incomeOverride !== null && !editingIncome && (
-                <Pressable onPress={handleClearIncomeOverride} hitSlop={8} className="flex-row items-center gap-1">
-                  <MaterialIcons name="restart-alt" size={16} color={colors.muted} />
-                  <Text className="text-muted text-[11px]">Restaurar padrão</Text>
-                </Pressable>
-              )}
-            </View>
-
-            {editingIncome ? (
-              <View className="flex-row items-center gap-2">
-                <Text className="text-2xl font-bold text-success">R$</Text>
-                <TextInput
-                  ref={incomeInputRef}
-                  value={incomeInput}
-                  onChangeText={setIncomeInput}
-                  onSubmitEditing={handleSaveIncome}
-                  keyboardType="decimal-pad"
-                  style={{ fontSize: 24, fontWeight: 'bold', color: colors.success, flex: 1 }}
-                  placeholder="0.00"
-                  placeholderTextColor={colors.muted}
-                />
-                <Pressable onPress={handleSaveIncome} hitSlop={8}>
-                  <MaterialIcons name="check-circle" size={28} color={colors.success} />
-                </Pressable>
-              </View>
-            ) : (
-              <View className="flex-row items-center gap-2">
-                <Text className="text-2xl font-bold text-success">
-                  R$ {totalIncome.toFixed(2)}
-                </Text>
-                <Pressable onPress={handleStartEditIncome} hitSlop={8}>
-                  <MaterialIcons name="edit" size={18} color={colors.muted} />
-                </Pressable>
-              </View>
-            )}
-
-            <Text className="text-[11px] text-muted mt-1">
-              {incomeOverride !== null
-                ? `Padrão: R$ ${(income.salary + income.vale + income.other).toFixed(2)} · Toque em ✎ para editar`
-                : 'Toque em ✎ para ajustar a renda deste mês'}
+          {/* Month navigation */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 28, paddingVertical: 8 }}>
+            <Pressable onPress={handlePreviousMonth} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
+              <MaterialIcons name="chevron-left" size={30} color="rgba(255,255,255,0.6)" />
+            </Pressable>
+            <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 15, fontWeight: '600', textTransform: 'capitalize' }}>
+              {getMonthName(currentMonth)}
             </Text>
+            <Pressable onPress={handleNextMonth} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
+              <MaterialIcons name="chevron-right" size={30} color="rgba(255,255,255,0.6)" />
+            </Pressable>
           </View>
 
-          {/* Total Expenses */}
-          <View className="bg-warning/10 rounded-2xl p-4">
-            <Text className="text-sm text-muted mb-1">Total de Despesas</Text>
-            <Text className="text-2xl font-bold text-warning">
-              R$ {totalExpenses.toFixed(2)}
+          {/* Hero: Saldo Restante */}
+          <View style={{ alignItems: 'center', paddingVertical: 12, paddingHorizontal: 24 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
+              Saldo Restante
             </Text>
-          </View>
-
-          {/* Balance */}
-          <View
-            className={`rounded-2xl p-4 ${
-              balance >= 0 ? 'bg-success/10' : 'bg-error/10'
-            }`}
-          >
-            <Text className="text-sm text-muted mb-1">Saldo Restante</Text>
-            <Text
-              className={`text-2xl font-bold ${
-                balance >= 0 ? 'text-success' : 'text-error'
-              }`}
-            >
+            <Text style={{ color: balance >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54 }}>
               R$ {balance.toFixed(2)}
             </Text>
-          </View>
-
-          {/* Monthly budget usage */}
-          {budget > 0 && (
-            <View className="rounded-2xl p-4 bg-primary/5 border border-primary/30">
-              <Text className="text-sm text-muted mb-1">
-                Uso do orçamento mensal (R$ {budget.toFixed(2)})
-              </Text>
-              <Text className="text-xl font-bold text-primary">
-                {budgetUsagePercent.toFixed(0)}% usado
-              </Text>
-              <Text className="mt-1 text-xs text-muted">
-                Já gasto: R$ {totalExpenses.toFixed(2)} · Restante:{' '}
-                R$ {(Math.max(budget - totalExpenses, 0)).toFixed(2)}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: balance >= 0 ? '#93C5FD' : '#FCA5A5' }} />
+              <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>
+                {balance >= 0 ? 'Dentro do orçamento' : 'Acima da renda'}
               </Text>
             </View>
-          )}
-        </View>
-
-        {/* Expenses List + Resumos */}
-        <View className="px-6 py-4">
-          <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-lg font-bold text-foreground">
-              Despesas ({filteredExpenses.length}/{expenses.length})
-            </Text>
           </View>
 
-          {/* Indicadores rápidos */}
-          <View className="mb-4 gap-3">
-            <View className="flex-row gap-3">
-              <View className="flex-1 rounded-2xl bg-primary/10 p-3">
-                <Text className="text-xs text-muted mb-1">
-                  Uso da renda neste mês
+          {/* Cards: Renda + Despesas */}
+          <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 28, gap: 10 }}>
+            {/* Renda */}
+            <Pressable onPress={handleStartEditIncome} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1 }]}>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(147,197,253,0.25)' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#93C5FD', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase' }}>Renda</Text>
+                  <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(147,197,253,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="edit" size={14} color="#93C5FD" />
+                  </View>
+                </View>
+                <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>
+                  R$ {totalIncome.toFixed(2)}
                 </Text>
-                <Text className="text-xl font-bold text-primary">
-                  {totalIncome > 0 ? `${percentOfIncome.toFixed(0)}%` : '--'}
-                </Text>
-                <Text className="mt-1 text-[11px] text-muted">
-                  R$ {totalExpenses.toFixed(2)} de R$ {totalIncome.toFixed(2)}
+                <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>
+                  {incomeOverride !== null ? 'personalizada · toque p/ editar' : 'toque para editar'}
                 </Text>
               </View>
+            </Pressable>
+            {/* Despesas */}
+            <Pressable onPress={handleAddExpense} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1 }]}>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(252,165,165,0.25)' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#FCA5A5', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase' }}>Despesas</Text>
+                  <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(252,165,165,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="add" size={16} color="#FCA5A5" />
+                  </View>
+                </View>
+                <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>
+                  R$ {totalExpenses.toFixed(2)}
+                </Text>
+                <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>
+                  {expenses.length} registro{expenses.length !== 1 ? 's' : ''} · toque p/ adicionar
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        </View>
 
-              <View className="flex-1 rounded-2xl bg-warning/10 p-3">
-                <Text className="text-xs text-muted mb-1">
-                  Despesas não pagas
+        {/* ─── CONTENT ──────────────────────────────────── */}
+        <View className="bg-background" style={{ borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -20 }}>
+
+          {/* Edição de renda (quando ativa) */}
+          {editingIncome && (
+            <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+              <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+                <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 8 }}>Editar renda do mês</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.success }}>R$</Text>
+                  <TextInput
+                    ref={incomeInputRef}
+                    value={incomeInput}
+                    onChangeText={setIncomeInput}
+                    onSubmitEditing={handleSaveIncome}
+                    keyboardType="decimal-pad"
+                    style={{ fontSize: 20, fontWeight: 'bold', color: colors.success, flex: 1 }}
+                    placeholder="0.00"
+                    placeholderTextColor={colors.muted}
+                  />
+                  <Pressable onPress={handleSaveIncome} hitSlop={8}>
+                    <MaterialIcons name="check-circle" size={28} color={colors.success} />
+                  </Pressable>
+                  <Pressable onPress={() => setEditingIncome(false)} hitSlop={8}>
+                    <MaterialIcons name="cancel" size={28} color={colors.muted} />
+                  </Pressable>
+                </View>
+                {incomeOverride !== null && (
+                  <Pressable onPress={handleClearIncomeOverride} style={{ marginTop: 8 }}>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>
+                      Restaurar padrão (R$ {(income.salary + income.vale + income.other).toFixed(2)})
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Orçamento mensal */}
+          {budget > 0 && (
+            <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+              <View style={{ borderRadius: 16, padding: 14, backgroundColor: colors.primary + '10', borderWidth: 1, borderColor: colors.primary + '30' }}>
+                <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 2 }}>
+                  Uso do orçamento mensal (R$ {budget.toFixed(2)})
                 </Text>
-                <Text className="text-xl font-bold text-warning">
-                  {unpaidCount} itens
+                <Text style={{ color: colors.primary, fontSize: 18, fontWeight: '700' }}>
+                  {budgetUsagePercent.toFixed(0)}% usado
                 </Text>
-                <Text className="mt-1 text-[11px] text-muted">
-                  Total pendente: R$ {unpaidTotal.toFixed(2)}
+                <Text style={{ color: colors.muted, fontSize: 11, marginTop: 2 }}>
+                  Gasto: R$ {totalExpenses.toFixed(2)} · Restante: R$ {Math.max(budget - totalExpenses, 0).toFixed(2)}
                 </Text>
               </View>
+            </View>
+          )}
+
+          {/* Indicadores rápidos */}
+          <View style={{ paddingHorizontal: 16, paddingTop: 12, flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1, borderRadius: 16, backgroundColor: colors.primary + '10', padding: 12 }}>
+              <Text style={{ color: colors.muted, fontSize: 11, marginBottom: 2 }}>Uso da renda</Text>
+              <Text style={{ color: colors.primary, fontSize: 18, fontWeight: '700' }}>
+                {totalIncome > 0 ? `${percentOfIncome.toFixed(0)}%` : '--'}
+              </Text>
+              <Text style={{ color: colors.muted, fontSize: 10, marginTop: 2 }}>
+                R$ {totalExpenses.toFixed(2)} de R$ {totalIncome.toFixed(2)}
+              </Text>
+            </View>
+            <View style={{ flex: 1, borderRadius: 16, backgroundColor: colors.warning + '22', padding: 12 }}>
+              <Text style={{ color: colors.muted, fontSize: 11, marginBottom: 2 }}>Não pagas</Text>
+              <Text style={{ color: colors.warning, fontSize: 18, fontWeight: '700' }}>{unpaidCount} itens</Text>
+              <Text style={{ color: colors.muted, fontSize: 10, marginTop: 2 }}>Total: R$ {unpaidTotal.toFixed(2)}</Text>
             </View>
           </View>
 
           {/* Filtros rápidos */}
-          <View className="mb-4 gap-2">
-            <View className="flex-row flex-wrap gap-2">
-              <Pressable
-                onPress={() =>
-                  setShowOnlyUnpaid((prev) => !prev)
-                }
-                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-              >
-                <View
-                  className={`px-3 py-1.5 rounded-full border ${
-                    showOnlyUnpaid
-                      ? 'bg-success/20 border-success'
-                      : 'bg-surface border-border'
-                  }`}
-                >
-                  <Text className={`text-xs ${showOnlyUnpaid ? 'text-success' : 'text-foreground'}`}>
-                    Somente não pagas
-                  </Text>
-                </View>
-              </Pressable>
-
-              <Pressable
-                onPress={() =>
-                  setShowOnlyInstallments((prev) => !prev)
-                }
-                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-              >
-                <View
-                  className={`px-3 py-1.5 rounded-full border ${
-                    showOnlyInstallments
-                      ? 'bg-primary/20 border-primary'
-                      : 'bg-surface border-border'
-                  }`}
-                >
-                  <Text className={`text-xs ${showOnlyInstallments ? 'text-primary' : 'text-foreground'}`}>
-                    Somente parcelas
-                  </Text>
-                </View>
-              </Pressable>
-            </View>
+          <View style={{ paddingHorizontal: 16, paddingTop: 10, flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+            <Pressable onPress={() => setShowOnlyUnpaid((prev) => !prev)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+              <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, backgroundColor: showOnlyUnpaid ? colors.success + '20' : 'transparent', borderColor: showOnlyUnpaid ? colors.success : colors.border }}>
+                <Text style={{ fontSize: 12, color: showOnlyUnpaid ? colors.success : colors.foreground }}>Somente não pagas</Text>
+              </View>
+            </Pressable>
+            <Pressable onPress={() => setShowOnlyInstallments((prev) => !prev)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+              <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, backgroundColor: showOnlyInstallments ? colors.primary + '20' : 'transparent', borderColor: showOnlyInstallments ? colors.primary : colors.border }}>
+                <Text style={{ fontSize: 12, color: showOnlyInstallments ? colors.primary : colors.foreground }}>Somente parcelas</Text>
+              </View>
+            </Pressable>
           </View>
 
-          {/* Resumo por categoria */}
-          <View className="mb-4">
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8 }}
-            >
-              <Pressable
-                onPress={() => setSelectedCategory('all')}
-                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-              >
-                <View
-                  className={`flex-row items-center gap-2 rounded-full border px-4 py-2 ${
-                    selectedCategory === 'all'
-                      ? 'bg-primary border-primary'
-                      : 'bg-surface border-border'
-                  }`}
-                >
-                  <View
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: selectedCategory === 'all' ? '#fff' : '#888' }}
-                  />
-                  <View>
-                    <Text
-                      className="text-[11px] font-semibold text-foreground"
-                      style={{ color: selectedCategory === 'all' ? '#ffffff' : undefined }}
-                    >
-                      Todas
-                    </Text>
-                    <Text
-                      className="text-[10px] text-muted"
-                      style={{ color: selectedCategory === 'all' ? 'rgba(255,255,255,0.7)' : undefined }}
-                    >
-                      {expenses.length} despesa{expenses.length !== 1 ? 's' : ''}
-                    </Text>
+          {/* Chips de categoria */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginBottom: -4 }}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingTop: 8, paddingBottom: 0 }}
+          >
+            <Pressable onPress={() => setSelectedCategory('all')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: selectedCategory === 'all' ? colors.primary : 'transparent', borderWidth: 1.5, borderColor: selectedCategory === 'all' ? colors.primary : colors.border }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: selectedCategory === 'all' ? '#fff' : '#888' }} />
+                <View>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: selectedCategory === 'all' ? '#fff' : colors.foreground }}>Todas</Text>
+                  <Text style={{ fontSize: 10, color: selectedCategory === 'all' ? 'rgba(255,255,255,0.7)' : colors.muted }}>
+                    {expenses.length} despesa{expenses.length !== 1 ? 's' : ''}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
+            {(Object.keys(CATEGORY_LABELS) as ExpenseCategory[]).map((cat) => {
+              const total = categoryTotals[cat] || 0;
+              const catBudget = categoryBudgets?.[cat];
+              const catPercent = catBudget && catBudget > 0 ? Math.min(999, (total / catBudget) * 100) : null;
+              const isSelected = selectedCategory === cat;
+              const color = CATEGORY_COLORS[cat];
+              return (
+                <Pressable key={cat} onPress={() => setSelectedCategory((prev) => prev === cat ? 'all' : cat)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: isSelected ? 2 : 1.5, borderColor: isSelected ? color : colors.border, backgroundColor: isSelected ? color + '15' : 'transparent' }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
+                    <View>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: isSelected ? color : colors.foreground }}>{CATEGORY_LABELS[cat]}</Text>
+                      {catBudget && catBudget > 0 ? (
+                        <Text style={{ fontSize: 10, color: colors.muted }}>R$ {total.toFixed(2)} de R$ {catBudget.toFixed(2)}{catPercent !== null ? ` (${catPercent.toFixed(0)}%)` : ''}</Text>
+                      ) : (
+                        <Text style={{ fontSize: 10, color: colors.muted }}>R$ {total.toFixed(2)}</Text>
+                      )}
+                    </View>
                   </View>
-                </View>
-              </Pressable>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
 
-              {(Object.keys(CATEGORY_LABELS) as ExpenseCategory[]).map(
-                (cat) => {
-                  const total = categoryTotals[cat] || 0;
-                  const catBudget = categoryBudgets?.[cat];
-                  const catPercent =
-                    catBudget && catBudget > 0
-                      ? Math.min(999, (total / catBudget) * 100)
-                      : null;
-                  const isSelected = selectedCategory === cat;
-                  const color = CATEGORY_COLORS[cat];
-
-                  return (
-                    <Pressable
-                      key={cat}
-                      onPress={() =>
-                        setSelectedCategory((prev) =>
-                          prev === cat ? 'all' : cat
-                        )
-                      }
-                      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-                    >
-                      <View
-                        className={`flex-row items-center gap-2 rounded-full border px-4 py-2 ${
-                          isSelected
-                            ? 'bg-surface border-transparent'
-                            : 'bg-surface border-border'
-                        }`}
-                      >
-                        <View
-                          className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: color }}
-                        />
-                        <View>
-                          <Text className="text-[11px] font-semibold text-foreground">
-                            {CATEGORY_LABELS[cat]}
-                          </Text>
-                          {catBudget && catBudget > 0 ? (
-                            <Text className="text-[10px] text-muted">
-                              R$ {total.toFixed(2)} de R$ {catBudget.toFixed(2)}{' '}
-                              {catPercent !== null && `(${catPercent.toFixed(0)}%)`}
-                            </Text>
-                          ) : (
-                            <Text className="text-[10px] text-muted">
-                              R$ {total.toFixed(2)}
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                    </Pressable>
-                  );
-                }
-              )}
-            </ScrollView>
+          {/* Cabeçalho da lista */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>
+              Despesas
+            </Text>
+            <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, backgroundColor: colors.border }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted }}>
+                {filteredExpenses.length}/{expenses.length}
+              </Text>
+            </View>
           </View>
 
-          {loading ? (
-            <View className="items-center justify-center py-8">
-              <ActivityIndicator size="large" color="#0a7ea4" />
-            </View>
-          ) : expenses.length === 0 ? (
-            <View className="bg-surface rounded-lg p-6 items-center">
-              <Text className="text-muted text-center">
-                Nenhuma despesa registrada neste mês.
-              </Text>
-            </View>
-          ) : filteredExpenses.length === 0 ? (
-            <View className="bg-surface rounded-lg p-6 items-center">
-              <Text className="text-muted text-center">
-                Nenhuma despesa encontrada com os filtros atuais.
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filteredExpenses}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <ExpenseItem
-                  expense={item}
-                  onPress={handleEditExpense}
-                  onTogglePaid={handleTogglePaid}
-                />
-              )}
-              scrollEnabled={false}
-            />
-          )}
+          {/* Lista */}
+          <View style={{ paddingHorizontal: 16, paddingBottom: 80 }}>
+            {loading ? (
+              <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40 }}>
+                <ActivityIndicator size="large" color="#0a7ea4" />
+              </View>
+            ) : expenses.length === 0 ? (
+              <View style={{ borderRadius: 20, padding: 32, alignItems: 'center', backgroundColor: colors.surface }}>
+                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#0a7ea415', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                  <MaterialIcons name="account-balance-wallet" size={32} color="#0a7ea4" />
+                </View>
+                <Text style={{ fontSize: 15, fontWeight: '600', marginBottom: 4, color: colors.foreground }}>Nenhuma despesa este mês</Text>
+                <Text style={{ fontSize: 13, textAlign: 'center', color: colors.muted }}>Toque no card de Despesas acima para adicionar</Text>
+              </View>
+            ) : filteredExpenses.length === 0 ? (
+              <View style={{ borderRadius: 16, padding: 24, alignItems: 'center', backgroundColor: colors.surface }}>
+                <Text style={{ fontSize: 13, textAlign: 'center', color: colors.muted }}>Nenhuma despesa com os filtros atuais.</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredExpenses}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <ExpenseItem expense={item} onPress={handleEditExpense} onTogglePaid={handleTogglePaid} />
+                )}
+                scrollEnabled={false}
+              />
+            )}
+          </View>
         </View>
-
-        {/* Spacing for FAB */}
-        <View className="h-16" />
       </ScrollView>
 
-      {/* FAB - Add Expense */}
+      {/* FAB */}
       <TouchableOpacity
         onPress={handleAddExpense}
         activeOpacity={0.8}
@@ -616,8 +681,65 @@ export default function HomeScreen() {
           elevation: 5,
         }}
       >
-        <Text className="text-2xl text-background font-bold">+</Text>
+        <Text style={{ fontSize: 24, color: '#fff', fontWeight: 'bold' }}>+</Text>
       </TouchableOpacity>
+
+      {/* Menu sanduíche */}
+      <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setMenuVisible(false)}>
+          <View style={{ position: 'absolute', top: 90, left: 16, backgroundColor: colors.background, borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', elevation: 8 }}>
+            <Pressable onPress={() => { setMenuVisible(false); setAppMode('uber'); router.replace('/(tabs)/uber-earnings'); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 16 }}>
+                <MaterialIcons name="directions-car" size={22} color="#0a7ea4" />
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Ganhos de Uber</Text>
+              </View>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Modal de exportação anual */}
+      <Modal visible={showExportModal} transparent animationType="fade" onRequestClose={() => setShowExportModal(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }} onPress={() => setShowExportModal(false)}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <View style={{ backgroundColor: colors.surface, borderRadius: 24, padding: 24, marginHorizontal: 16, minWidth: 300 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <MaterialIcons name="file-download" size={22} color="#0a7ea4" />
+                <Text style={{ fontSize: 17, fontWeight: '700', color: colors.foreground }}>Exportar Relatório Anual</Text>
+              </View>
+              <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>Selecione o ano para gerar o relatório de despesas pessoais.</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.background, borderRadius: 12, padding: 12, marginBottom: 20 }}>
+                <Pressable onPress={() => setExportYear((y) => String(parseInt(y, 10) - 1))} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 8 }]}>
+                  <MaterialIcons name="chevron-left" size={28} color={colors.primary} />
+                </Pressable>
+                <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground }}>{exportYear}</Text>
+                <Pressable onPress={() => setExportYear((y) => String(parseInt(y, 10) + 1))} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 8 }]}>
+                  <MaterialIcons name="chevron-right" size={28} color={colors.primary} />
+                </Pressable>
+              </View>
+              <View style={{ gap: 8, marginBottom: 12 }}>
+                <Pressable onPress={handleExportExpCSV} disabled={exporting} style={({ pressed }) => [{ opacity: pressed || exporting ? 0.7 : 1 }]}>
+                  <View style={{ backgroundColor: colors.primary, borderRadius: 12, padding: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
+                    {exporting ? <ActivityIndicator size="small" color="#fff" /> : <MaterialIcons name="table-chart" size={16} color="#fff" />}
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>{exporting ? 'Exportando...' : 'Exportar CSV'}</Text>
+                  </View>
+                </Pressable>
+                <Pressable onPress={handleExportExpPDF} disabled={exporting} style={({ pressed }) => [{ opacity: pressed || exporting ? 0.7 : 1 }]}>
+                  <View style={{ borderRadius: 12, padding: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: colors.error, backgroundColor: colors.error + '10' }}>
+                    <MaterialIcons name="picture-as-pdf" size={16} color={colors.error} />
+                    <Text style={{ fontWeight: '600', fontSize: 14, color: colors.error }}>Exportar PDF</Text>
+                  </View>
+                </Pressable>
+              </View>
+              <Pressable onPress={() => setShowExportModal(false)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, alignItems: 'center' }}>
+                  <Text style={{ color: colors.muted, fontWeight: '600', fontSize: 14 }}>Cancelar</Text>
+                </View>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Expense Modal */}
       <ExpenseModal
