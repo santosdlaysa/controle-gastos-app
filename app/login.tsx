@@ -105,15 +105,29 @@ export default function LoginScreen() {
             />
           </View>
 
-          <View className="items-center gap-1">
+          <View className="items-center" style={{ gap: 8 }}>
             <Text
               className="text-foreground font-bold"
-              style={{ fontSize: 28, letterSpacing: -0.6 }}
+              style={{ fontSize: 32, letterSpacing: -0.8 }}
             >
-              Controle de Gastos
+              Orgenyx
             </Text>
-            <Text className="text-muted text-sm text-center">
-              {mode === "login" ? "Acesse sua conta" : "Crie sua conta"}
+            <View
+              style={{
+                backgroundColor: "rgba(10,126,164,0.12)",
+                borderRadius: 20,
+                paddingHorizontal: 14,
+                paddingVertical: 4,
+                borderWidth: 1,
+                borderColor: "rgba(10,126,164,0.2)",
+              }}
+            >
+              <Text style={{ color: "#0a7ea4", fontSize: 12, fontWeight: "600", letterSpacing: 0.6 }}>
+                CONTROLE DE GASTOS
+              </Text>
+            </View>
+            <Text className="text-muted text-sm text-center" style={{ marginTop: 4 }}>
+              {mode === "login" ? "Acesse sua conta para continuar" : "Crie sua conta gratuitamente"}
             </Text>
           </View>
         </View>

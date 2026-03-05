@@ -11,6 +11,7 @@ import { migrationRouter } from "./migration-router";
 import { adminRouter } from "./admin-router";
 import { uberEarningsRouter } from "./uber-earnings-router";
 import { assistantRouter } from "./assistant-router";
+import { profileRouter } from "./profile-router";
 
 export const appRouter = router({
   system: systemRouter,
@@ -34,6 +35,7 @@ export const appRouter = router({
   admin: adminRouter,
   uberEarnings: uberEarningsRouter,
   assistant: assistantRouter,
+  profile: profileRouter,
 });
 
 export type AppRouter = typeof appRouter;
