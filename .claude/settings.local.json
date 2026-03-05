@@ -16,7 +16,9 @@
       "Bash(git rm:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(./gradlew assembleRelease:*)",
+      "Bash(./gradlew:*)"
     ]
   }
 }
