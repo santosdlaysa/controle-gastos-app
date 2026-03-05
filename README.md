@@ -1,6 +1,6 @@
 # Controle de Gastos
 
-Aplicativo mobile/web para controle financeiro pessoal, com rastreamento de despesas, configuração de receitas e integração com bancos via Pluggy.
+Aplicativo mobile/web full-stack para controle financeiro pessoal — rastreamento de despesas por categoria, gerenciamento de receitas e orçamentos, integração bancária via Pluggy, e acompanhamento de ganhos Uber.
 
 ---
 
@@ -14,18 +14,29 @@ Aplicativo mobile/web para controle financeiro pessoal, com rastreamento de desp
 - [Scripts Disponíveis](#scripts-disponíveis)
 - [Variáveis de Ambiente](#variáveis-de-ambiente)
 - [Telas e Navegação](#telas-e-navegação)
-- [API (tRPC)](#api-trpc)
-- [Integração com o Pluggy](#integração-com-o-pluggy)
-- [Banco de Dados](#banco-de-dados)
 - [Autenticação](#autenticação)
-- [Armazenamento Local](#armazenamento-local)
+- [API (tRPC)](#api-trpc)
+- [Banco de Dados](#banco-de-dados)
+- [Integração com o Pluggy](#integração-com-o-pluggy)
+- [Rastreamento Uber](#rastreamento-uber)
+- [Hooks Customizados](#hooks-customizados)
 - [Tipos e Modelos de Dados](#tipos-e-modelos-de-dados)
+- [Suporte a Plataformas](#suporte-a-plataformas)
 
 ---
 
 ## Visão Geral
 
-O **Controle de Gastos** é um aplicativo full-stack construído com React Native + Expo, voltado para controle financeiro pessoal. Ele permite ao usuário registrar despesas mensais por categoria, configurar fontes de receita (salário, vale, outros), acompanhar o saldo e, opcionalmente, conectar contas bancárias para importar transações automaticamente via [Pluggy](https://pluggy.ai).
+O **Controle de Gastos** é um aplicativo full-stack construído com React Native + Expo, voltado para controle financeiro pessoal. Ele permite:
+
+- Registrar e categorizar despesas mensais (manual ou via importação bancária)
+- Configurar receitas (salário, vale, outros) e orçamentos por categoria
+- Acompanhar histórico mensal com resumos analíticos
+- Conectar contas bancárias para importar transações automaticamente via [Pluggy](https://pluggy.ai)
+- Rastrear ganhos e gastos como motorista Uber
+- Autenticar via e-mail/senha ou OAuth
+
+Todos os dados são persistidos em PostgreSQL, com acesso via tRPC type-safe.
 
 ---
 
@@ -40,11 +51,11 @@ O **Controle de Gastos** é um aplicativo full-stack construído com React Nativ
 | Estado / cache | TanStack React Query 5 |
 | API type-safe | tRPC 11 |
 | Backend HTTP | Express.js |
-| Banco de dados | MySQL + Drizzle ORM |
-| Autenticação | Manus OAuth |
-| Armazenamento nativo | AsyncStorage + expo-secure-store |
+| Banco de dados | PostgreSQL + Drizzle ORM 0.44 |
+| Autenticação | E-mail/senha local + Manus OAuth |
+| Armazenamento nativo | expo-secure-store |
 | Integração bancária | Pluggy API + react-native-pluggy-connect |
-| Validação de schema | Zod |
+| Validação de schema | Zod 4 |
 | Testes | Vitest |
 | Gerenciador de pacotes | pnpm 9 |
 
@@ -54,62 +65,109 @@ O **Controle de Gastos** é um aplicativo full-stack construído com React Nativ
 
 ```
 controle-gastos-app/
-├── app/                        # Telas (Expo Router)
+├── app/                          # Telas (Expo Router — file-based routing)
 │   ├── (tabs)/
-│   │   ├── index.tsx           # Tela principal — lista de despesas
-│   │   └── settings.tsx        # Configuração de receitas
-│   ├── _layout.tsx             # Layout raiz (providers, auth)
+│   │   ├── index.tsx             # Home — dashboard de despesas
+│   │   ├── history.tsx           # Histórico mensal analítico
+│   │   ├── settings.tsx          # Receitas, orçamentos, integrações
+│   │   └── _layout.tsx           # Layout de abas (3 tabs)
+│   ├── _layout.tsx               # Layout raiz (providers, auth gate)
+│   ├── login.tsx                 # Login / cadastro (e-mail ou OAuth)
+│   ├── uber-earnings.tsx         # Ganhos e gastos Uber
 │   ├── oauth/
-│   │   └── callback.tsx        # Handler de redirect OAuth
+│   │   └── callback.tsx          # Handler de redirect OAuth
 │   └── dev/
-│       └── theme-lab.tsx       # Showcase de componentes (dev only)
+│       └── theme-lab.tsx         # Showcase de componentes (dev only)
 │
-├── components/                 # Componentes reutilizáveis
-│   ├── ExpenseItem.tsx         # Item de despesa na lista
-│   ├── ExpenseModal.tsx        # Modal de criação/edição de despesa
-│   ├── ScreenContainer.tsx     # Wrapper com safe area
-│   └── ThemedView.tsx          # Container com suporte a tema
+├── components/                   # Componentes React Native reutilizáveis
+│   ├── expense-item.tsx          # Item de despesa na lista
+│   ├── expense-modal.tsx         # Modal criar/editar despesa
+│   ├── uber-earning-item.tsx     # Item de ganho/gasto Uber
+│   ├── uber-earning-modal.tsx    # Modal criar/editar entrada Uber
+│   ├── screen-container.tsx      # Wrapper com safe area e background
+│   ├── themed-view.tsx           # Container com suporte a tema
+│   ├── haptic-tab.tsx            # Tab bar com feedback háptico
+│   ├── parallax-scroll-view.tsx  # Scroll com efeito parallax
+│   ├── external-link.tsx         # Link que abre no browser externo
+│   └── ui/                       # Componentes primitivos
+│       ├── collapsible.tsx
+│       ├── icon-symbol.tsx
+│       └── icon-symbol.ios.tsx
 │
-├── hooks/                      # Hooks customizados
-│   ├── use-auth.ts             # Estado de autenticação
-│   ├── use-expenses.ts         # CRUD de despesas e cálculos
-│   └── use-pluggy.ts           # Integração com bancos (Pluggy)
+├── hooks/                        # Hooks customizados
+│   ├── use-auth.ts               # Estado e operações de autenticação
+│   ├── use-expenses.ts           # CRUD de despesas + cálculos financeiros
+│   ├── use-pluggy.ts             # Integração bancária (Pluggy)
+│   ├── use-uber-earnings.ts      # CRUD de ganhos/gastos Uber
+│   ├── use-migration.ts          # Migração AsyncStorage → servidor
+│   ├── use-colors.ts             # Cores do tema atual
+│   ├── use-color-scheme.ts       # Detecção dark/light mode
+│   └── use-nubank-listener.ts    # Ouvinte de notificações Nubank
 │
-├── lib/                        # Utilitários e storage
-│   ├── pluggy-category-map.ts  # Mapeamento de categorias bancárias
-│   ├── pluggy-expense-storage.ts # Merge de transações importadas
-│   ├── pluggy-storage.ts       # Persistência de conexões Pluggy
-│   └── trpc.ts                 # Cliente tRPC
+├── lib/                          # Utilitários e clientes
+│   ├── trpc.ts                   # Setup do cliente tRPC
+│   ├── auth-context.tsx          # Context provider de autenticação
+│   ├── theme-provider.tsx        # Context de tema (dark/light)
+│   ├── pluggy-storage.ts         # AsyncStorage para conexões Pluggy
+│   ├── pluggy-category-map.ts    # Mapeamento categorias Pluggy → app
+│   ├── pluggy-expense-storage.ts # Merge/dedup de transações importadas
+│   ├── notification-settings.ts
+│   ├── nubank-notification-parser.ts
+│   └── _core/
+│       ├── api.ts                # Wrapper de fetch com autenticação
+│       ├── auth.ts               # Armazenamento seguro de tokens
+│       └── manus-runtime.ts      # Integração OAuth Manus
 │
-├── server/                     # Backend Node.js
-│   ├── routers.ts              # Rotas tRPC (auth, pluggy)
-│   ├── pluggy-router.ts        # Roteador de integração bancária
-│   ├── pluggy.ts               # Wrapper da API Pluggy
-│   ├── db.ts                   # Helpers de banco de dados
-│   ├── storage.ts              # Helpers de armazenamento S3
-│   └── _core/                  # Infraestrutura (não editar)
-│       ├── index.ts            # Servidor Express
-│       ├── trpc.ts             # Setup tRPC
-│       ├── oauth.ts            # Fluxo OAuth
-│       ├── env.ts              # Variáveis de ambiente tipadas
-│       └── ...
+├── types/                        # Tipos TypeScript globais
+│   ├── expense.ts                # Expense, Income, Budget
+│   ├── pluggy.ts                 # PluggyConnection, PluggySyncedExpense
+│   └── uber-earnings.ts          # UberEntry, UberEarningCategory
 │
-├── drizzle/                    # ORM e migrações
-│   ├── schema.ts               # Definição das tabelas
-│   ├── relations.ts            # Relacionamentos
-│   └── migrations/             # Migrações geradas automaticamente
+├── server/                       # Backend Node.js / Express
+│   ├── routers.ts                # Montagem do appRouter principal
+│   ├── expense-router.ts         # tRPC — CRUD de despesas
+│   ├── expense-db.ts             # Acesso ao banco: despesas, receitas, orçamentos
+│   ├── income-router.ts          # tRPC — receitas
+│   ├── budget-router.ts          # tRPC — orçamentos e categorias
+│   ├── history-router.ts         # tRPC — resumos mensais
+│   ├── pluggy-router.ts          # tRPC — integração bancária
+│   ├── pluggy.ts                 # Wrapper da API REST do Pluggy
+│   ├── uber-earnings-router.ts   # tRPC — ganhos/gastos Uber
+│   ├── uber-earnings-db.ts       # Acesso ao banco: tabela uber_earnings
+│   ├── migration-router.ts       # tRPC — exportação/importação de dados legados
+│   ├── admin-router.ts           # tRPC — operações administrativas
+│   ├── export-expenses.ts        # Funcionalidade de exportação
+│   ├── db.ts                     # Conexão com banco + upsert de usuário
+│   ├── storage.ts                # Helpers de armazenamento S3
+│   └── _core/
+│       ├── index.ts              # Entry point do servidor Express
+│       ├── context.ts            # Criação do contexto tRPC
+│       ├── trpc.ts               # Setup tRPC (middlewares, procedures)
+│       ├── oauth.ts              # Rotas de callback OAuth
+│       ├── local-auth.ts         # Rotas de registro/login por e-mail
+│       ├── env.ts                # Variáveis de ambiente tipadas
+│       ├── cookies.ts            # Gerenciamento de cookies de sessão
+│       └── llm.ts                # Integração com LLM (OpenAI)
 │
-├── types/                      # Tipos TypeScript globais
-│   └── pluggy.ts               # Tipos da API Pluggy
+├── drizzle/                      # ORM e migrações
+│   ├── schema.ts                 # Schema do banco de dados (PostgreSQL)
+│   └── migrations/               # Migrações geradas automaticamente
 │
-├── shared/                     # Código compartilhado (client/server)
-│   ├── types.ts                # Tipos compartilhados
-│   └── const.ts                # Constantes compartilhadas
+├── shared/                       # Código compartilhado (client + server)
+│   ├── types.ts                  # Re-exporta tipos do schema
+│   ├── expense-utils.ts          # parseQuantity, detectSource, getNextMonth
+│   └── const.ts                  # COOKIE_NAME, ONE_YEAR_MS, mensagens de erro
 │
-├── app.config.ts               # Configuração do Expo
-├── drizzle.config.ts           # Configuração do Drizzle
-├── tailwind.config.js          # Configuração do Tailwind
-├── metro.config.js             # Configuração do Metro bundler
+├── constants/
+│   ├── oauth.ts                  # URLs OAuth, deep link scheme
+│   ├── const.ts                  # Constantes do app
+│   └── theme.ts                  # Definições de tema
+│
+├── app.config.ts                 # Configuração Expo
+├── drizzle.config.ts             # Configuração Drizzle ORM
+├── tailwind.config.js            # Configuração Tailwind CSS
+├── metro.config.js               # Configuração Metro bundler
+├── tsconfig.json                 # Configuração TypeScript
 └── package.json
 ```
 
@@ -119,27 +177,43 @@ controle-gastos-app/
 
 ### Controle de Despesas
 - Adicionar, editar e remover despesas mensais
-- Categorias disponíveis: Transporte, Alimentação, Moradia, Saúde, Educação, Lazer e Outro
-- Campo de parcelamento (ex: "3/12" para a 3ª parcela de 12)
+- 7 categorias: Transporte, Alimentação, Moradia, Saúde, Educação, Lazer e Outro
+- Campo de parcelamento (ex: "3/12" para a 3ª parcela de 12 — com geração automática das próximas)
 - Navegação por mês (anterior/próximo)
-- Persistência local com AsyncStorage
+- Mover despesa para o próximo mês
+- Filtros: por categoria, apenas não pagas, apenas parceladas
+- Marcação de despesa como paga/não paga
 
 ### Dashboard Financeiro
-- Exibição de receita total (Salário + Vale + Outros)
+- Receita total do mês (Salário + Vale + Outros, com suporte a override mensal)
 - Soma de todas as despesas do mês
 - Saldo = Receita − Despesas (verde se positivo, vermelho se negativo)
+- Indicador visual de uso do orçamento por categoria
 
-### Configuração de Receitas
-- Definir salário, vale-alimentação e outras entradas mensais
-- Configuração independente por mês
+### Receitas e Orçamentos
+- Configurar salário, vale-alimentação e outras entradas
+- Definir orçamento total mensal
+- Definir orçamento individual por categoria
+- Override de receita por mês específico
+
+### Histórico
+- Resumos analíticos por mês
+- Tendências e comparações entre períodos
 
 ### Integração Bancária (Pluggy)
-- Conectar contas de bancos brasileiros via widget oficial do Pluggy
-- Importar transações automaticamente ao retornar ao app
-- Mapeamento automático de categorias bancárias para as categorias do app
-- Detecção de duplicatas para evitar importações repetidas
-- Suporte a múltiplas contas bancárias
-- Sincronização manual e automática (ao colocar o app em foreground)
+- Conectar contas de bancos brasileiros via widget oficial
+- Importar transações automaticamente
+- Mapeamento automático de categorias bancárias → categorias do app
+- Deduplicação por `clientId` (sem importações repetidas)
+- Suporte a múltiplas contas
+
+### Rastreamento Uber
+- Registrar corridas, entregas e outros ganhos
+- Registrar gastos: combustível, manutenção, pedágio, lavagem, seguro, outros
+- Visão mensal de ganhos vs. gastos
+
+### Notificações (Nubank)
+- Listener de notificações do Nubank para captura automática de transações
 
 ---
 
@@ -147,10 +221,9 @@ controle-gastos-app/
 
 ### Pré-requisitos
 
-- Node.js 18+
+- Node.js 20+
 - pnpm 9+
-- Expo CLI (`npm install -g expo-cli`)
-- MySQL (opcional — o app funciona sem banco para uso local)
+- PostgreSQL (ou banco hospedado no Render.com)
 
 ### Passos
 
@@ -166,14 +239,16 @@ pnpm install
 cp .env.example .env
 # Edite o .env com suas credenciais
 
-# 4. (Opcional) Configure o banco de dados
+# 4. Aplique o schema no banco de dados
 pnpm db:push
 
 # 5. Inicie o app em modo desenvolvimento
 pnpm dev
 ```
 
-O comando `pnpm dev` inicia o servidor Express e o Metro bundler em paralelo.
+O comando `pnpm dev` inicia o servidor Express (porta 3000+) e o Metro bundler (porta 8081) em paralelo.
+
+> **Nota sobre o banco de dados:** Se o banco estiver hospedado no Render.com, a conexão requer acesso TCP na porta 5432. Em redes com firewall restrito, execute `pnpm db:push` diretamente no servidor ou via VPN/tunel.
 
 ---
 
@@ -192,7 +267,7 @@ O comando `pnpm dev` inicia o servidor Express e o Metro bundler em paralelo.
 | `pnpm lint` | Executa ESLint |
 | `pnpm format` | Formata o código com Prettier |
 | `pnpm test` | Executa testes com Vitest |
-| `pnpm db:push` | Gera e aplica migrações do banco de dados |
+| `pnpm db:push` | Aplica o schema no banco de dados |
 | `pnpm qr` | Gera QR Code para acesso mobile |
 
 ---
@@ -203,24 +278,25 @@ Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
 ### Servidor
 
-| Variável | Descrição |
-|----------|-----------|
-| `DATABASE_URL` | String de conexão MySQL (ex: `mysql://user:pass@host/db`) |
-| `JWT_SECRET` | Segredo para assinar tokens de sessão |
-| `VITE_APP_ID` | ID do app no Manus OAuth |
-| `OAUTH_SERVER_URL` | URL do backend Manus OAuth |
-| `VITE_OAUTH_PORTAL_URL` | URL do portal de login Manus |
-| `OWNER_OPEN_ID` | OpenID do dono do app (recebe role `admin`) |
-| `PLUGGY_CLIENT_ID` | Client ID da conta Pluggy |
-| `PLUGGY_CLIENT_SECRET` | Client Secret da conta Pluggy |
+| Variável | Obrigatória | Descrição |
+|----------|:-----------:|-----------|
+| `DATABASE_URL` | Sim | String de conexão PostgreSQL (ex: `postgresql://user:pass@host/db`) |
+| `JWT_SECRET` | Sim | Segredo para assinar tokens de sessão JWT |
+| `VITE_APP_ID` | Sim | ID do app no Manus OAuth |
+| `OAUTH_SERVER_URL` | Sim | URL do backend Manus OAuth |
+| `OWNER_OPEN_ID` | Não | OpenID do dono do app (recebe role `admin`) |
+| `PLUGGY_CLIENT_ID` | Não | Client ID da conta Pluggy |
+| `PLUGGY_CLIENT_SECRET` | Não | Client Secret da conta Pluggy |
 
 ### Expo (cliente)
 
-| Variável | Descrição |
-|----------|-----------|
-| `EXPO_PUBLIC_APP_ID` | ID do app para OAuth no cliente |
-| `EXPO_PUBLIC_API_BASE_URL` | URL base da API (ex: `http://localhost:3000`) |
-| `EXPO_PUBLIC_OAUTH_PORTAL_URL` | URL do portal de login |
+| Variável | Obrigatória | Descrição |
+|----------|:-----------:|-----------|
+| `EXPO_PUBLIC_API_BASE_URL` | Sim | URL base da API (ex: `http://localhost:3000`) |
+| `EXPO_PUBLIC_APP_ID` | Sim | ID do app para OAuth no cliente |
+| `EXPO_PUBLIC_OAUTH_PORTAL_URL` | Sim | URL do portal de login OAuth |
+| `EXPO_PUBLIC_OAUTH_SERVER_URL` | Sim | URL do servidor OAuth |
+| `EXPO_PUBLIC_OWNER_OPEN_ID` | Não | OpenID do dono (detecta role admin no cliente) |
 
 ---
 
@@ -228,146 +304,87 @@ Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
 O app usa navegação por abas (bottom tabs) com Expo Router.
 
-### Aba: Despesas (`/`)
+### Aba: Home (`/`)
 
 Tela principal com:
 - Seletor de mês (navegação anterior/próximo)
 - Painel de resumo: Receita Total, Total de Despesas, Saldo
-- Lista de despesas do mês
-- Botão para adicionar nova despesa
-- Botão para sincronizar com banco (Pluggy)
+- Lista de despesas do mês com categoria e parcelamento
+- Filtros por categoria, status de pagamento e tipo
+- Botão flutuante para adicionar nova despesa
+- Menu de ações em lote (gerar parcelas, mover mês, etc.)
+
+### Aba: Histórico (`/history`)
+
+- Resumos mensais agregados
+- Tendências de gastos ao longo do tempo
+- Comparação entre meses
 
 ### Aba: Configurações (`/settings`)
 
-- Campos para definir Salário, Vale e Outros rendimentos do mês
-- Totais calculados em tempo real
+- Definir Salário, Vale e Outros rendimentos
+- Configurar orçamento total e por categoria
+- Gerenciar conexões bancárias (Pluggy)
+- Alternar entre tema claro e escuro
+- Botão de logout
+
+### Tela: Login (`/login`)
+
+- Formulário de e-mail e senha (cadastro ou login)
+- Botão de login via OAuth (Manus)
+- Redirecionamento automático ao home se já autenticado
+
+### Tela: Ganhos Uber (`/uber-earnings`)
+
+- Lista de entradas do mês (ganhos e gastos)
+- Navegação por mês
+- Botão para adicionar nova entrada
+- Resumo: total ganho vs. total gasto no mês
 
 ### Modal de Despesa
 
-Formulário de criação/edição com campos:
+Formulário de criação/edição com:
 - Nome da despesa
 - Categoria (7 opções)
 - Valor (R$)
 - Parcelas (ex: "2/6")
 - Data
-
----
-
-## API (tRPC)
-
-A API usa tRPC sobre HTTP com serialização via SuperJSON.
-
-**URL base:** `/api/trpc`
-
-### Rotas disponíveis
-
-| Rota | Tipo | Acesso | Descrição |
-|------|------|--------|-----------|
-| `auth.me` | Query | Público | Retorna o usuário autenticado ou `null` |
-| `auth.logout` | Mutation | Público | Limpa o cookie de sessão |
-| `system.*` | Vários | Público | Health checks e utilitários |
-| `pluggy.createConnectToken` | Mutation | Protegido | Gera token JWT para o widget Pluggy |
-| `pluggy.syncTransactions` | Mutation | Protegido | Importa transações do banco conectado |
-
-### Exemplo de uso no cliente
-
-```tsx
-import { trpc } from "@/lib/trpc";
-
-// Query
-const { data: user } = trpc.auth.me.useQuery();
-
-// Mutation
-const syncMutation = trpc.pluggy.syncTransactions.useMutation({
-  onSuccess: (transactions) => {
-    // merge transactions into local storage
-  },
-});
-```
-
----
-
-## Integração com o Pluggy
-
-O [Pluggy](https://pluggy.ai) é uma plataforma de open banking que permite conectar contas bancárias brasileiras.
-
-### Fluxo de integração
-
-1. O usuário abre o widget Pluggy (`react-native-pluggy-connect`)
-2. O app solicita um Connect Token via `trpc.pluggy.createConnectToken`
-3. O usuário autentica no banco de sua escolha dentro do widget
-4. Ao fechar o widget, o `itemId` da conta conectada é salvo localmente
-5. O app sincroniza transações via `trpc.pluggy.syncTransactions`
-6. As transações são mapeadas para categorias do app e mescladas ao storage local
-
-### Mapeamento de categorias
-
-```
-Pluggy Category → App Category
-─────────────────────────────
-FOOD → alimentacao
-TRANSPORT → transporte
-HOUSING → moradia
-HEALTH → saude
-EDUCATION → educacao
-ENTERTAINMENT → lazer
-(outros) → outro
-```
-
-### Arquivos relacionados
-
-| Arquivo | Descrição |
-|---------|-----------|
-| `hooks/use-pluggy.ts` | Hook de estado (connect, sync, disconnect) |
-| `lib/pluggy-storage.ts` | Persistência das conexões em AsyncStorage |
-| `lib/pluggy-expense-storage.ts` | Merge de transações importadas com despesas locais |
-| `lib/pluggy-category-map.ts` | Mapeamento de categorias |
-| `server/pluggy.ts` | Wrapper da API REST do Pluggy |
-| `server/pluggy-router.ts` | Roteador tRPC para operações bancárias |
-| `types/pluggy.ts` | Tipos TypeScript da API Pluggy |
-
----
-
-## Banco de Dados
-
-O banco de dados é opcional. Sem ele, o app funciona inteiramente com AsyncStorage.
-
-### Schema (`drizzle/schema.ts`)
-
-```typescript
-// Tabela de usuários (criada automaticamente pelo OAuth)
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
-  name: text("name"),
-  email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-});
-```
-
-### Comandos
-
-```bash
-# Gerar migração e aplicar no banco
-pnpm db:push
-```
+- Status de pagamento (pago/não pago)
 
 ---
 
 ## Autenticação
 
-O app usa **Manus OAuth** para autenticação de usuários.
+O app suporta dois métodos de autenticação.
 
-| Plataforma | Método | Armazenamento do token |
-|-----------|--------|----------------------|
-| iOS / Android | Bearer token | `expo-secure-store` |
-| Web | Cookie HTTP-only | Navegador |
+### E-mail e Senha (Local Auth)
 
-### Hook de autenticação
+```
+POST /api/auth/register   → Cadastro com e-mail + senha
+POST /api/auth/login      → Login com e-mail + senha
+```
+
+- Senha armazenada com hash scrypt (salt + 64 bytes)
+- Retorna `{ token, user }` — token armazenado em SecureStore (mobile) ou localStorage (web)
+
+### OAuth (Manus)
+
+1. Cliente chama `startOAuthLogin()`
+2. Browser é aberto com URL do portal OAuth
+3. Após autenticação, redirect para:
+   - **Web**: `GET /api/oauth/callback?code=X&state=Y`
+   - **Mobile**: deep link `manus{id}://oauth/callback?code=X&state=Y`
+4. Backend troca o código pelo token, sincroniza usuário no banco e define cookie de sessão
+5. Cliente armazena token e navega para o home
+
+### Persistência de Sessão
+
+| Plataforma | Armazenamento do Token |
+|-----------|----------------------|
+| iOS / Android | `expo-secure-store` (criptografado) |
+| Web | `localStorage` + cookie `app_session_id` (HttpOnly) |
+
+### Hook de Autenticação
 
 ```tsx
 import { useAuth } from "@/hooks/use-auth";
@@ -376,7 +393,7 @@ function MyScreen() {
   const { user, isAuthenticated, loading, logout } = useAuth();
 
   if (loading) return <ActivityIndicator />;
-  if (!isAuthenticated) return <LoginButton />;
+  if (!isAuthenticated) return <Redirect href="/login" />;
 
   return <Text>Olá, {user.name}</Text>;
 }
@@ -398,32 +415,368 @@ interface User {
 
 ---
 
-## Armazenamento Local
+## API (tRPC)
 
-O app usa AsyncStorage para persistir dados sem necessidade de backend.
+A API usa tRPC 11 sobre HTTP com batching e autenticação via JWT.
 
-| Chave | Conteúdo |
-|-------|---------|
-| `expenses_data` | JSON com todas as despesas |
-| `income_data` | JSON com configuração de receitas por mês |
-| `pluggy_connections` | JSON com conexões bancárias ativas |
-| `pluggy_last_sync` | ISO string com timestamp da última sincronização |
+**URL base:** `POST /api/trpc`
+
+Todas as rotas marcadas como **Protegido** exigem `Authorization: Bearer <token>` ou cookie `app_session_id`.
+
+### Rotas disponíveis
+
+#### Sistema
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `system.health` | Query | Público | Verificação de saúde da API |
+| `auth.me` | Query | Público | Retorna o usuário autenticado ou `null` |
+| `auth.logout` | Mutation | Público | Limpa o cookie de sessão |
+
+#### Despesas
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `expense.getByMonth` | Query | Protegido | Lista despesas do mês (`YYYY-MM`) |
+| `expense.create` | Mutation | Protegido | Cria uma despesa |
+| `expense.update` | Mutation | Protegido | Atualiza campos de uma despesa |
+| `expense.delete` | Mutation | Protegido | Remove uma despesa |
+| `expense.bulkCreate` | Mutation | Protegido | Cria múltiplas despesas (dedup automático) |
+
+#### Receitas
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `income.get` | Query | Protegido | Retorna a receita global do usuário |
+| `income.update` | Mutation | Protegido | Atualiza salário, vale e outros |
+
+#### Orçamentos
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `budget.get` | Query | Protegido | Retorna orçamento total e por categoria do mês |
+| `budget.updateTotal` | Mutation | Protegido | Define orçamento total do mês |
+| `budget.updateIncomeOverride` | Mutation | Protegido | Define/limpa override de receita do mês |
+| `budget.updateCategories` | Mutation | Protegido | Atualiza orçamentos por categoria |
+
+#### Histórico
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `history.getSummaries` | Query | Protegido | Resumos mensais agregados |
+
+#### Pluggy (Integração Bancária)
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `pluggy.createConnectToken` | Mutation | Protegido | Gera token para o widget Pluggy |
+| `pluggy.syncTransactions` | Mutation | Protegido | Sincroniza transações de uma conta |
+| `pluggy.syncAndSave` | Mutation | Protegido | Sincroniza e salva no banco |
+
+#### Ganhos Uber
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `uberEarnings.getByMonth` | Query | Protegido | Lista entradas do mês |
+| `uberEarnings.create` | Mutation | Protegido | Cria uma entrada |
+| `uberEarnings.update` | Mutation | Protegido | Atualiza uma entrada |
+| `uberEarnings.delete` | Mutation | Protegido | Remove uma entrada |
+
+#### Migração
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `migration.importData` | Mutation | Protegido | Importa dados do AsyncStorage legado |
+
+### Exemplo de uso no cliente
+
+```tsx
+import { trpc } from "@/lib/trpc";
+
+// Query com parâmetro
+const { data: expenses } = trpc.expense.getByMonth.useQuery("2026-03");
+
+// Mutation
+const createMutation = trpc.expense.create.useMutation({
+  onSuccess: () => utils.expense.getByMonth.invalidate(),
+});
+
+createMutation.mutate({
+  name: "Mercado",
+  category: "alimentacao",
+  value: 250.0,
+  date: "2026-03-05",
+  month: "2026-03",
+});
+```
+
+---
+
+## Banco de Dados
+
+O banco de dados é PostgreSQL, hospedado no Render.com. O schema é gerenciado via Drizzle ORM.
+
+### Tabelas
+
+#### `users`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | int PK | ID auto-incrementado |
+| `openId` | varchar(64) unique | `email:{email}` ou ID do provedor OAuth |
+| `name` | text | Nome do usuário |
+| `email` | varchar(320) | E-mail |
+| `loginMethod` | varchar(64) | `"email"`, `"google"`, etc. |
+| `passwordHash` | varchar(255) | Hash scrypt (apenas login local) |
+| `role` | enum | `"user"` ou `"admin"` |
+| `createdAt` | timestamp | |
+| `updatedAt` | timestamp | |
+| `lastSignedIn` | timestamp | |
+
+#### `expenses`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | int PK | |
+| `userId` | int FK | Referência a `users.id` |
+| `clientId` | varchar(128) | ID externo (`pluggy_*`, `nubank_*`) ou `NULL` (manual) |
+| `name` | varchar(255) | Nome da despesa |
+| `category` | enum | transporte \| alimentacao \| moradia \| saude \| educacao \| lazer \| outro |
+| `value` | numeric(10,2) | Valor em reais |
+| `date` | varchar(30) | Data ISO (ex: `"2026-03-05"`) |
+| `month` | varchar(7) | Formato `"YYYY-MM"` |
+| `quantity` | varchar(20) | Parcelamento (ex: `"3/12"`) |
+| `paid` | boolean | Status de pagamento |
+| `source` | enum | `manual` \| `pluggy` \| `nubank` |
+
+> **Índice único:** `(userId, clientId)` — impede duplicatas de importações bancárias. `clientId = NULL` não participa do índice, permitindo múltiplas despesas manuais.
+
+#### `incomes`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | int PK | |
+| `userId` | int unique | Uma linha por usuário |
+| `salary` | numeric(10,2) | Salário |
+| `vale` | numeric(10,2) | Vale-alimentação / refeição |
+| `other` | numeric(10,2) | Outras entradas |
+| `updatedAt` | timestamp | |
+
+#### `budgets`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | int PK | |
+| `userId` | int | |
+| `month` | varchar(7) | Formato `"YYYY-MM"` |
+| `totalBudget` | numeric(10,2) | Orçamento total do mês |
+| `incomeOverride` | numeric(10,2) | Override de receita para o mês (opcional) |
+
+> **Índice único:** `(userId, month)`
+
+#### `category_budgets`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | int PK | |
+| `userId` | int | |
+| `month` | varchar(7) | |
+| `category` | enum | Mesmas 7 categorias de despesas |
+| `amount` | numeric(10,2) | Orçamento da categoria |
+
+> **Índice único:** `(userId, month, category)`
+
+#### `uber_earnings`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | int PK | |
+| `userId` | int | |
+| `description` | varchar(255) | Descrição da entrada |
+| `category` | varchar(50) | Categoria (corrida, uber_eats, combustivel, etc.) |
+| `entryType` | varchar(10) | `"ganho"` (receita) ou `"gasto"` (despesa) |
+| `value` | numeric(10,2) | Valor |
+| `date` | varchar(30) | Data ISO |
+| `month` | varchar(7) | Formato `"YYYY-MM"` |
+
+### Comandos
+
+```bash
+# Aplicar schema no banco (criar/atualizar tabelas)
+pnpm db:push
+```
+
+### Notas sobre o banco
+
+- Valores numéricos retornados pelo Drizzle como `string` — use `parseFloat()` no cliente
+- IDs retornados como `number` — converta com `.toString()` para compatibilidade com a UI
+- SSL obrigatório para conexão com Render.com (`rejectUnauthorized: false` no config)
+
+---
+
+## Integração com o Pluggy
+
+O [Pluggy](https://pluggy.ai) é uma plataforma de open banking que permite conectar contas bancárias brasileiras.
+
+### Fluxo de integração
+
+1. O usuário abre o widget Pluggy via `pluggy.openConnect()`
+2. O app solicita um Connect Token via `trpc.pluggy.createConnectToken`
+3. O usuário autentica no banco de sua escolha dentro do widget
+4. Ao fechar o widget, o `itemId` é passado para `pluggy.syncAndSave(itemId, from, to)`
+5. O servidor busca todas as contas do item, itera pelas transações DÉBITO no período
+6. Mapeia categorias Pluggy → categorias do app
+7. Insere em massa com `ON CONFLICT DO NOTHING` (deduplicação automática)
+
+### Mapeamento de categorias
+
+```
+Pluggy (EN/PT)         → Categoria do App
+─────────────────────────────────────────
+food / restaurants     → alimentacao
+transportation / travel → transporte
+housing / rent         → moradia
+health / pharmacy      → saude
+education              → educacao
+entertainment / leisure → lazer
+(outros / não mapeado) → outro
+```
+
+### Arquivos relacionados
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `hooks/use-pluggy.ts` | Hook: `enabled`, `connections`, `syncing`, `syncAll`, `openConnect`, `disconnect` |
+| `lib/pluggy-storage.ts` | Persistência de conexões em AsyncStorage |
+| `lib/pluggy-category-map.ts` | Mapa de categorias (30+ entradas) |
+| `server/pluggy.ts` | Wrapper da API REST do Pluggy |
+| `server/pluggy-router.ts` | Roteador tRPC com `createConnectToken`, `syncTransactions`, `syncAndSave` |
+| `types/pluggy.ts` | Tipos TypeScript: `PluggyConnection`, `PluggySyncedExpense` |
+
+---
+
+## Rastreamento Uber
+
+A tela `/uber-earnings` permite registrar entradas mensais como motorista Uber.
+
+### Categorias de ganho (`entryType: "ganho"`)
+
+| Categoria | Descrição |
+|-----------|-----------|
+| `corrida` | Corridas de passageiros |
+| `uber_eats` | Entregas Uber Eats |
+| `bonus` | Bônus e incentivos |
+| `outro_ganho` | Outros ganhos |
+
+### Categorias de gasto (`entryType: "gasto"`)
+
+| Categoria | Descrição |
+|-----------|-----------|
+| `combustivel` | Combustível |
+| `manutencao` | Manutenção do veículo |
+| `pedagio` | Pedágios |
+| `lavagem` | Lavagem do carro |
+| `seguro` | Seguro |
+| `outro_gasto` | Outros gastos |
+
+### Hook
+
+```tsx
+import { useUberEarnings } from "@/hooks/use-uber-earnings";
+
+const { entries, totalEarnings, totalExpenses, create, update, remove } =
+  useUberEarnings(currentMonth);
+```
+
+---
+
+## Hooks Customizados
+
+### `useAuth`
+
+```tsx
+const { user, isAuthenticated, loading, error, applyLogin, logout } = useAuth();
+```
+
+| Retorno | Tipo | Descrição |
+|---------|------|-----------|
+| `user` | `User \| null` | Usuário autenticado |
+| `isAuthenticated` | `boolean` | Se há sessão ativa |
+| `loading` | `boolean` | Aguardando validação do token |
+| `applyLogin` | `(token, user) => void` | Aplica login no contexto |
+| `logout` | `() => void` | Limpa sessão e redireciona |
+
+---
+
+### `useExpenses(month?)`
+
+```tsx
+const {
+  expenses,
+  income,
+  totalExpenses,
+  balance,
+  budget,
+  categoryBudgets,
+  isLoading,
+  addExpense,
+  updateExpense,
+  deleteExpense,
+  moveToNextMonth,
+} = useExpenses("2026-03");
+```
+
+| Retorno | Descrição |
+|---------|-----------|
+| `expenses` | Lista de despesas do mês |
+| `income` | Objeto com `salary`, `vale`, `other` |
+| `totalExpenses` | Soma de todas as despesas |
+| `balance` | Receita − Despesas |
+| `budget` | Orçamento total do mês |
+| `categoryBudgets` | Orçamento por categoria |
+| `addExpense` | Cria nova despesa |
+| `updateExpense` | Atualiza despesa existente |
+| `deleteExpense` | Remove despesa |
+| `moveToNextMonth` | Move despesa para o mês seguinte |
+
+---
+
+### `usePluggy`
+
+```tsx
+const { enabled, connections, syncing, syncAll, openConnect, disconnect } =
+  usePluggy();
+```
+
+---
+
+### `useMigration`
+
+Executa automaticamente na inicialização do app se houver dados no AsyncStorage legado.
+
+```tsx
+const { state, isNeeded, isDone, runMigration } = useMigration();
+// state: "idle" | "checking" | "running" | "done" | "error"
+```
 
 ---
 
 ## Tipos e Modelos de Dados
 
-### Despesa (`Expense`)
+### `Expense`
 
 ```typescript
 interface Expense {
-  id: string;           // UUID gerado localmente
-  name: string;         // Nome da despesa
-  category: Category;   // Categoria (ver abaixo)
-  quantity?: string;    // Parcelamento, ex: "3/10"
-  value: number;        // Valor em reais
-  date: string;         // ISO 8601, ex: "2024-02-15"
-  month: string;        // Formato "YYYY-MM", ex: "2024-02"
+  id: string;           // ID do banco (convertido para string)
+  name: string;
+  category: Category;
+  value: number;
+  date: string;         // ISO 8601: "2026-03-05"
+  month: string;        // "YYYY-MM": "2026-03"
+  quantity?: string;    // Parcelamento: "3/12"
+  paid?: boolean;
+  source: "manual" | "pluggy" | "nubank";
+  clientId?: string;    // ID externo (Pluggy ou Nubank)
 }
 
 type Category =
@@ -436,22 +789,70 @@ type Category =
   | "outro";
 ```
 
-### Receita mensal (`MonthlyIncome`)
+### `Income`
 
 ```typescript
-interface MonthlyIncome {
-  salary: number;   // Salário
-  vale: number;     // Vale-alimentação / vale-refeição
-  other: number;    // Outras entradas
+interface Income {
+  salary: number;
+  vale: number;
+  other: number;
 }
+```
+
+### `Budget`
+
+```typescript
+interface Budget {
+  month: string;          // "YYYY-MM"
+  totalBudget: number;
+  incomeOverride?: number; // Substitui salary+vale+other se definido
+}
+
+interface CategoryBudget {
+  category: Category;
+  amount: number;
+}
+```
+
+### `UberEntry`
+
+```typescript
+interface UberEntry {
+  id: string;
+  description: string;
+  category: string;
+  entryType: "ganho" | "gasto";
+  value: number;
+  date: string;
+  month: string;
+}
+```
+
+---
+
+## Utilitários Compartilhados (`shared/expense-utils.ts`)
+
+```typescript
+// Parseia string de parcelamento
+parseQuantity("3/12")
+// → { current: 3, total: 12 }
+
+// Detecta a origem da despesa pelo clientId
+detectSource("pluggy_abc123") // → "pluggy"
+detectSource("nubank_xyz")    // → "nubank"
+detectSource(null)            // → "manual"
+
+// Calcula o próximo mês
+getNextMonth("2026-02") // → "2026-03"
+getNextMonth("2026-12") // → "2027-01"
 ```
 
 ---
 
 ## Suporte a Plataformas
 
-| Plataforma | Status |
-|-----------|--------|
-| Android | Suportado (SDK mínimo 24) |
-| iOS | Suportado |
-| Web | Suportado (via Expo Web + Metro) |
+| Plataforma | Status | Notas |
+|-----------|--------|-------|
+| Android | Suportado | SDK mínimo 24 |
+| iOS | Suportado | Sem criptografia de exportação (flag `iTSAppUsesNonExemptEncryption: false`) |
+| Web | Suportado | Via Expo Web + Metro, autenticação via cookie |

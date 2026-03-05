@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import { uberEarnings, InsertUberEarning } from "../drizzle/schema";
 import { getDb } from "./db";
 
@@ -9,6 +9,15 @@ export async function getUberEarningsByMonth(userId: number, month: string) {
     .select()
     .from(uberEarnings)
     .where(and(eq(uberEarnings.userId, userId), eq(uberEarnings.month, month)));
+}
+
+export async function getUberEarningsByYear(userId: number, year: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(uberEarnings)
+    .where(and(eq(uberEarnings.userId, userId), like(uberEarnings.month, `${year}-%`)));
 }
 
 export async function createUberEarning(

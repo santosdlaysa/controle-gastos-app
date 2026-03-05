@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure } from "./_core/trpc";
 import {
   getUberEarningsByMonth,
+  getUberEarningsByYear,
   createUberEarning,
   updateUberEarning,
   deleteUberEarning,
@@ -14,6 +15,12 @@ export const uberEarningsRouter = router({
     .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) }))
     .query(async ({ ctx, input }) => {
       return getUberEarningsByMonth(ctx.user.id, input.month);
+    }),
+
+  getByYear: protectedProcedure
+    .input(z.object({ year: z.string().regex(/^\d{4}$/) }))
+    .query(async ({ ctx, input }) => {
+      return getUberEarningsByYear(ctx.user.id, input.year);
     }),
 
   create: protectedProcedure
