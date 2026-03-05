@@ -32,7 +32,7 @@ export function useAuth(options?: UseAuthOptions) {
         return;
       }
 
-      // Validate token against the API and get fresh user data
+      // Try to get fresh user data from the API
       const apiUser = await Api.getMe();
       if (apiUser) {
         const userInfo: Auth.User = {
@@ -46,17 +46,51 @@ export function useAuth(options?: UseAuthOptions) {
         setUser(userInfo);
         await Auth.setUserInfo(userInfo);
       } else {
-        setUser(null);
-        await Auth.clearUserInfo();
+        // getMe failed — fall back to stored user info instead of logging out
+        const storedUser = await Auth.getUserInfo();
+        if (storedUser) {
+          console.log("[useAuth] getMe failed, using stored user info as fallback");
+          setUser(storedUser);
+        } else {
+          setUser(null);
+          await Auth.clearUserInfo();
+        }
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to fetch user");
       console.error("[useAuth] fetchUser error:", error);
-      setError(error);
-      setUser(null);
+      // On error, fall back to stored user info
+      const storedUser = await Auth.getUserInfo();
+      if (storedUser) {
+        setUser(storedUser);
+      } else {
+        setError(error);
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Set user directly after login/register without calling getMe
+  const applyLogin = useCallback(async (userData: {
+    id: number;
+    openId: string;
+    name: string | null;
+    email: string | null;
+    loginMethod: string | null;
+    lastSignedIn: string | Date;
+  }) => {
+    const userInfo: Auth.User = {
+      id: userData.id,
+      openId: userData.openId,
+      name: userData.name,
+      email: userData.email,
+      loginMethod: userData.loginMethod,
+      lastSignedIn: new Date(userData.lastSignedIn),
+    };
+    setUser(userInfo);
+    await Auth.setUserInfo(userInfo);
   }, []);
 
   const logout = useCallback(async () => {
@@ -89,6 +123,7 @@ export function useAuth(options?: UseAuthOptions) {
     error,
     isAuthenticated,
     refresh: fetchUser,
+    applyLogin,
     logout,
   };
 }

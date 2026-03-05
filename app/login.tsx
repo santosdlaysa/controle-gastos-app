@@ -1,6 +1,5 @@
 import { ScreenContainer } from "@/components/screen-container";
 import * as Api from "@/lib/_core/api";
-import * as Auth from "@/lib/_core/auth";
 import { useAuthContext } from "@/lib/auth-context";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -20,7 +19,7 @@ type Mode = "login" | "register";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { refresh } = useAuthContext();
+  const { applyLogin } = useAuthContext();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,17 +42,10 @@ export default function LoginScreen() {
           : await Api.register(email.trim(), password);
 
       await Auth.setSessionToken(result.token);
-      await Auth.setUserInfo({
-        id: result.user.id ?? 0,
-        openId: result.user.openId,
-        name: result.user.name,
-        email: result.user.email,
-        loginMethod: result.user.loginMethod,
-        lastSignedIn: new Date(result.user.lastSignedIn),
-      });
 
-      // Atualiza o estado compartilhado — NavLayout cuida do redirect
-      await refresh();
+      // Seta o usuário diretamente a partir da resposta do login,
+      // sem chamar getMe() para evitar falhas de autenticação no servidor
+      await applyLogin(result.user);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar.");
     } finally {
