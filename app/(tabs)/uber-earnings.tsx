@@ -357,7 +357,7 @@ export default function UberEarningsScreen() {
         style={{ backgroundColor: colors.background }}
       >
         {/* ─── HERO ─────────────────────────────────────── */}
-        <View style={{ backgroundColor: '#0c3a5e' }}>
+        <View style={{ backgroundColor: '#064E3B' }}>
 
           {/* Toolbar */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 }}>
@@ -368,7 +368,7 @@ export default function UberEarningsScreen() {
               <MaterialIcons name="menu" size={24} color="rgba(255,255,255,0.9)" />
             </Pressable>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#0a7ea4', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' }}>
                 <MaterialIcons name="directions-car" size={16} color="#fff" />
               </View>
               <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700', letterSpacing: -0.3 }}>
@@ -407,11 +407,11 @@ export default function UberEarningsScreen() {
             <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
               Lucro Líquido
             </Text>
-            <Text style={{ color: netBalance >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54 }}>
+            <Text style={{ color: netBalance >= 0 ? '#6EE7B7' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54 }}>
               R$ {netBalance.toFixed(2)}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: netBalance >= 0 ? '#93C5FD' : '#FCA5A5' }} />
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: netBalance >= 0 ? '#6EE7B7' : '#FCA5A5' }} />
               <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>
                 {netBalance >= 0 ? 'No lucro este mês' : 'Gastos maiores que ganhos'}
               </Text>
@@ -424,11 +424,11 @@ export default function UberEarningsScreen() {
               onPress={() => handleOpenAdd('ganho')}
               style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1 }]}
             >
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(147,197,253,0.25)' }}>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(110,231,183,0.25)' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#93C5FD', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase' }}>Ganhos</Text>
-                  <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(147,197,253,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <MaterialIcons name="add" size={16} color="#93C5FD" />
+                  <Text style={{ color: '#6EE7B7', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase' }}>Ganhos</Text>
+                  <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(110,231,183,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="add" size={16} color="#6EE7B7" />
                   </View>
                 </View>
                 <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>
@@ -474,7 +474,7 @@ export default function UberEarningsScreen() {
               { key: 'gastos' as ActiveTab, label: 'Gastos', count: expenses.length },
             ]).map(({ key, label, count }) => {
               const isActive = activeTab === key;
-              const color = key === 'ganhos' ? '#0a7ea4' : key === 'gastos' ? colors.error : colors.primary;
+              const color = key === 'ganhos' ? '#10B981' : key === 'gastos' ? colors.error : '#10B981';
               return (
                 <Pressable key={key} onPress={() => handleTabChange(key)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                   <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, backgroundColor: isActive ? color + '20' : 'transparent', borderColor: isActive ? color : colors.border }}>
@@ -497,7 +497,7 @@ export default function UberEarningsScreen() {
               onPress={() => setSelectedCategory('all')}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
-              <View style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: selectedCategory === 'all' ? colors.primary : 'transparent', borderWidth: 1.5, borderColor: selectedCategory === 'all' ? colors.primary : colors.border }}>
+              <View style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: selectedCategory === 'all' ? '#10B981' : 'transparent', borderWidth: 1.5, borderColor: selectedCategory === 'all' ? '#10B981' : colors.border }}>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: selectedCategory === 'all' ? '#fff' : colors.muted }}>
                   Todos
                 </Text>
@@ -546,12 +546,12 @@ export default function UberEarningsScreen() {
           <View style={{ paddingHorizontal: 16, paddingBottom: 40 }}>
             {loading ? (
               <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40 }}>
-                <ActivityIndicator size="large" color="#0a7ea4" />
+                <ActivityIndicator size="large" color="#10B981" />
               </View>
             ) : listForTab.length === 0 ? (
               <View className="bg-surface" style={{ borderRadius: 20, padding: 32, alignItems: 'center' }}>
-                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#0a7ea415', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                  <MaterialIcons name="directions-car" size={32} color="#0a7ea4" />
+                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#10B98115', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                  <MaterialIcons name="directions-car" size={32} color="#10B981" />
                 </View>
                 <Text className="text-foreground" style={{ fontSize: 15, fontWeight: '600', marginBottom: 4 }}>
                   {activeTab === 'ganhos' ? 'Sem ganhos este mês' : activeTab === 'gastos' ? 'Sem gastos este mês' : 'Nenhum registro este mês'}

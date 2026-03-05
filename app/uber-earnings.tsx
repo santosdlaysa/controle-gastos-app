@@ -481,7 +481,7 @@ export default function UberEarningsScreen() {
                 ]
               ).map(({ key, label, count }) => {
                 const isActive = activeTab === key;
-                const activeColor = key === 'ganhos' ? '#10B981' : key === 'gastos' ? '#EF4444' : colors.primary;
+                const activeColor = key === 'ganhos' ? '#10B981' : key === 'gastos' ? '#EF4444' : '#10B981';
                 return (
                   <Pressable
                     key={key}
@@ -512,7 +512,7 @@ export default function UberEarningsScreen() {
               onPress={() => setSelectedCategory('all')}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
-              <View style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: selectedCategory === 'all' ? colors.primary : 'transparent', borderWidth: 1.5, borderColor: selectedCategory === 'all' ? colors.primary : colors.border }}>
+              <View style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: selectedCategory === 'all' ? '#10B981' : 'transparent', borderWidth: 1.5, borderColor: selectedCategory === 'all' ? '#10B981' : colors.border }}>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: selectedCategory === 'all' ? '#fff' : colors.muted }}>
                   Todos
                 </Text>
@@ -631,7 +631,7 @@ export default function UberEarningsScreen() {
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 16 }}>
-                <MaterialIcons name="account-balance-wallet" size={22} color="#0a7ea4" />
+                <MaterialIcons name="account-balance-wallet" size={22} color="#10B981" />
                 <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Despesas Pessoais</Text>
               </View>
             </Pressable>
