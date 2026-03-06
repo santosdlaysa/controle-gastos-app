@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Excluir Conta – Controle de Gastos</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      line-height: 1.6;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e5e5ea;
+      padding: 20px 24px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1d1d1f;
+    }
+
+    header p {
+      font-size: 13px;
+      color: #6e6e73;
+      margin-top: 2px;
+    }
+
+    main {
+      max-width: 680px;
+      margin: 40px auto;
+      padding: 0 24px 64px;
+    }
+
+    section {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 28px;
+      margin-bottom: 20px;
+      border: 1px solid #e5e5ea;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #1d1d1f;
+    }
+
+    h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #3a3a3c;
+      margin: 20px 0 8px;
+    }
+
+    p {
+      font-size: 15px;
+      color: #3a3a3c;
+      margin-bottom: 12px;
+    }
+
+    ol, ul {
+      padding-left: 22px;
+      margin-bottom: 12px;
+    }
+
+    li {
+      font-size: 15px;
+      color: #3a3a3c;
+      margin-bottom: 6px;
+    }
+
+    .badge-app {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #f2f2f7;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+    }
+
+    .badge-app span {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .step-list {
+      counter-reset: steps;
+      list-style: none;
+      padding: 0;
+    }
+
+    .step-list li {
+      counter-increment: steps;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .step-list li::before {
+      content: counter(steps);
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #ef4444;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 8px 12px;
+      background: #f2f2f7;
+      color: #6e6e73;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .data-table th:first-child { border-radius: 8px 0 0 8px; }
+    .data-table th:last-child  { border-radius: 0 8px 8px 0; }
+
+    .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f2f2f7;
+      color: #3a3a3c;
+    }
+
+    .deleted { color: #ef4444; font-weight: 600; }
+    .kept    { color: #22c55e; font-weight: 600; }
+
+    .alert {
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .alert-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .alert p {
+      font-size: 14px;
+      color: #9f1239;
+      margin: 0;
+    }
+
+    .contact-link {
+      color: #0a7ea4;
+      text-decoration: none;
+    }
+
+    .contact-link:hover { text-decoration: underline; }
+
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #aeaeb2;
+      padding: 24px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Controle de Gastos</h1>
+  <p>Política de exclusão de conta</p>
+</header>
+
+<main>
+
+  <!-- Identificação do app -->
+  <section>
+    <div class="badge-app">
+      <span>📊 Controle de Gastos</span>
+    </div>
+    <p>
+      Esta página descreve como os usuários do aplicativo <strong>Controle de Gastos</strong>
+      podem solicitar e confirmar a exclusão permanente de sua conta e de todos os dados associados.
+    </p>
+  </section>
+
+  <!-- Como solicitar a exclusão -->
+  <section>
+    <h2>Como excluir sua conta</h2>
+    <p>A exclusão é feita diretamente no aplicativo, sem necessidade de entrar em contato com o suporte:</p>
+
+    <ol class="step-list">
+      <li>
+        <span>Abra o aplicativo <strong>Controle de Gastos</strong> e faça login na sua conta.</span>
+      </li>
+      <li>
+        <span>Toque na aba <strong>Configurações</strong> (ícone de engrenagem, canto inferior direito).</span>
+      </li>
+      <li>
+        <span>Na seção <strong>Conta</strong>, role até o botão <strong>Excluir conta</strong> (ícone de lixeira vermelha).</span>
+      </li>
+      <li>
+        <span>Leia o aviso sobre o que será excluído e toque em <strong>Excluir conta</strong> para continuar.</span>
+      </li>
+      <li>
+        <span>Uma segunda confirmação será exibida. Toque em <strong>Sim, excluir tudo</strong> para confirmar a exclusão permanente.</span>
+      </li>
+    </ol>
+
+    <p>Após a confirmação, todos os seus dados são excluídos imediatamente e você é desconectado do aplicativo.</p>
+  </section>
+
+  <!-- Dados excluídos e mantidos -->
+  <section>
+    <h2>Dados excluídos e mantidos</h2>
+    <p>Ao excluir sua conta, os seguintes dados são tratados da forma abaixo:</p>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Dado</th>
+          <th>O que acontece</th>
+          <th>Retenção</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Informações da conta (nome, e-mail, senha)</td>
+          <td class="deleted">Excluído permanentemente</td>
+          <td>Nenhuma</td>
+        </tr>
+        <tr>
+          <td>Despesas registradas (todas as categorias)</td>
+          <td class="deleted">Excluído permanentemente</td>
+          <td>Nenhuma</td>
+        </tr>
+        <tr>
+          <td>Renda mensal (salário, vale, outros)</td>
+          <td class="deleted">Excluído permanentemente</td>
+          <td>Nenhuma</td>
+        </tr>
+        <tr>
+          <td>Orçamentos mensais e por categoria</td>
+          <td class="deleted">Excluído permanentemente</td>
+          <td>Nenhuma</td>
+        </tr>
+        <tr>
+          <td>Ganhos e gastos Uber</td>
+          <td class="deleted">Excluído permanentemente</td>
+          <td>Nenhuma</td>
+        </tr>
+        <tr>
+          <td>Sessão e tokens de autenticação</td>
+          <td class="deleted">Invalidados imediatamente</td>
+          <td>Nenhuma</td>
+        </tr>
+        <tr>
+          <td>Dados de terceiros (ex: banco via Pluggy)</td>
+          <td class="kept">Não coletamos — apenas lemos para importar</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Período de retenção</h3>
+    <p>
+      Não há período de retenção adicional. Todos os dados pessoais são excluídos de forma
+      permanente e imediata no momento da confirmação. Não mantemos backups individuais
+      identificáveis após a exclusão.
+    </p>
+  </section>
+
+  <!-- Aviso de irreversibilidade -->
+  <section>
+    <div class="alert">
+      <span class="alert-icon">⚠️</span>
+      <p>
+        <strong>Ação irreversível.</strong> Após a exclusão, não é possível recuperar seus dados.
+        Se desejar continuar usando o aplicativo no futuro, será necessário criar uma nova conta.
+      </p>
+    </div>
+  </section>
+
+  <!-- Contato -->
+  <section>
+    <h2>Precisa de ajuda?</h2>
+    <p>
+      Se tiver dificuldades para excluir sua conta pelo aplicativo ou quiser solicitar a exclusão
+      por outro meio, entre em contato:
+    </p>
+    <ul>
+      <li>Abra uma issue em nosso repositório no GitHub</li>
+      <li>Ou envie um e-mail para o desenvolvedor responsável</li>
+    </ul>
+    <p>Responderemos em até <strong>5 dias úteis</strong> e processaremos a exclusão manualmente se necessário.</p>
+  </section>
+
+</main>
+
+<footer>
+  &copy; Controle de Gastos — Última atualização: março de 2026
+</footer>
+
+</body>
+</html>

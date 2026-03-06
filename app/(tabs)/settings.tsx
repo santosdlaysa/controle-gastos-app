@@ -186,6 +186,47 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const deleteAccountMutation = trpc.profile.deleteAccount.useMutation();
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Excluir conta',
+      'Tem certeza? Todos os seus dados (despesas, renda, orçamentos e ganhos Uber) serão excluídos permanentemente. Essa ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir conta',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Confirmar exclusão',
+              'Digite "EXCLUIR" para confirmar a exclusão permanente da sua conta.',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                  text: 'Sim, excluir tudo',
+                  style: 'destructive',
+                  onPress: async () => {
+                    setDeletingAccount(true);
+                    try {
+                      await deleteAccountMutation.mutateAsync();
+                      await logout();
+                    } catch {
+                      Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
+                    } finally {
+                      setDeletingAccount(false);
+                    }
+                  },
+                },
+              ],
+            );
+          },
+        },
+      ],
+    );
+  };
+
   const nameChanged = nameInput.trim() !== (user?.name ?? '');
 
   // avatar initials derived from current input
@@ -286,6 +327,22 @@ export default function SettingsScreen() {
                 <MaterialIcons name="logout" size={17} color="#EF4444" />
               </View>
               <Text style={{ flex: 1, fontSize: 15, color: '#EF4444', fontWeight: '500' }}>Sair da conta</Text>
+              <MaterialIcons name="chevron-right" size={20} color="#EF4444" style={{ opacity: 0.5 }} />
+            </View>
+          </TouchableOpacity>
+
+          <RowSeparator />
+
+          {/* Delete account */}
+          <TouchableOpacity onPress={handleDeleteAccount} activeOpacity={0.7} disabled={deletingAccount}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, opacity: deletingAccount ? 0.5 : 1 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#EF444420', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                {deletingAccount
+                  ? <ActivityIndicator size="small" color="#EF4444" />
+                  : <MaterialIcons name="delete-forever" size={17} color="#EF4444" />
+                }
+              </View>
+              <Text style={{ flex: 1, fontSize: 15, color: '#EF4444', fontWeight: '500' }}>Excluir conta</Text>
               <MaterialIcons name="chevron-right" size={20} color="#EF4444" style={{ opacity: 0.5 }} />
             </View>
           </TouchableOpacity>

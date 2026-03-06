@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerLocalAuthRoutes } from "./local-auth";
@@ -60,6 +61,9 @@ async function startServer() {
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Serve static public pages (e.g. /delete-account.html)
+  app.use(express.static(path.join(process.cwd(), "public")));
 
   registerOAuthRoutes(app);
   registerLocalAuthRoutes(app);
