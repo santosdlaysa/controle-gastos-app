@@ -430,6 +430,8 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         {/* ── DB Panel ── */}
+        {user?.email === 'santosdlaysa@gmail.com' && (
+        <>
         <SectionLabel label="Administração" />
         <SettingCard>
           <TouchableOpacity onPress={() => setDbPanelOpen((v) => !v)} activeOpacity={0.8}>
@@ -565,6 +567,8 @@ export default function SettingsScreen() {
             </View>
           )}
         </SettingCard>
+        </>
+        )}
 
       </ScrollView>
     </ScreenContainer>
