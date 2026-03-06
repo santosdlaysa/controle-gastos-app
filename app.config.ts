@@ -8,7 +8,8 @@ import type { ExpoConfig } from "expo/config";
  * - Each segment must start with a letter (Android requirement)
  */
 
-const rawBundleId = "space.manus.controle.gastos.dev";
+
+const rawBundleId = "com.orgenyx";
 
 const bundleId =
   rawBundleId
@@ -64,7 +65,7 @@ const config: ExpoConfig = {
     package: bundleId,
 
     // 🔢 OBRIGATÓRIO PARA PLAY STORE
-    versionCode: 1,
+    versionCode: 2,
 
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
