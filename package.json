@@ -1,6 +1,6 @@
 {
   "name": "app-template",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -11,6 +11,7 @@
     "dev:metro:android": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 npx expo start --android --port 8081",
     "build": "esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.mjs",
     "start": "NODE_ENV=production node dist/index.mjs",
+    "web": "expo start --web",
     "check": "tsc --noEmit",
     "lint": "expo lint",
     "format": "prettier --write .",
