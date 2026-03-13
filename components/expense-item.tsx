@@ -96,6 +96,14 @@ export function ExpenseItem({ expense, onPress, onTogglePaid }: ExpenseItemProps
                 </Text>
               </>
             ) : null}
+            {expense.bank ? (
+              <>
+                <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#9CA3AF' }} />
+                <Text className="text-muted" style={{ fontSize: 11 }}>
+                  {expense.bank}
+                </Text>
+              </>
+            ) : null}
           </View>
         </View>
 

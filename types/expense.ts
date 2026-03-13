@@ -20,6 +20,8 @@ export interface Expense {
    * Opcional para manter compatibilidade com dados antigos.
    */
   paid?: boolean;
+  /** Banco ou cartão associado (ex: "Nubank", "Bradesco") */
+  bank?: string | null;
 }
 
 export interface Income {

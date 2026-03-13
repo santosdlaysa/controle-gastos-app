@@ -1,6 +1,6 @@
-# Controle de Gastos
+# Controle de Gastos v2.0
 
-Aplicativo mobile/web full-stack para controle financeiro pessoal — rastreamento de despesas por categoria, gerenciamento de receitas e orçamentos, integração bancária via Pluggy, e acompanhamento de ganhos Uber.
+Aplicativo mobile/web full-stack para controle financeiro pessoal — rastreamento de despesas por categoria, gerenciamento de receitas e orçamentos, integração bancária via Pluggy, acompanhamento de ganhos Uber e assistente financeiro com IA.
 
 ---
 
@@ -19,6 +19,7 @@ Aplicativo mobile/web full-stack para controle financeiro pessoal — rastreamen
 - [Banco de Dados](#banco-de-dados)
 - [Integração com o Pluggy](#integração-com-o-pluggy)
 - [Rastreamento Uber](#rastreamento-uber)
+- [Assistente Financeiro (IA)](#assistente-financeiro-ia)
 - [Hooks Customizados](#hooks-customizados)
 - [Tipos e Modelos de Dados](#tipos-e-modelos-de-dados)
 - [Suporte a Plataformas](#suporte-a-plataformas)
@@ -33,7 +34,10 @@ O **Controle de Gastos** é um aplicativo full-stack construído com React Nativ
 - Configurar receitas (salário, vale, outros) e orçamentos por categoria
 - Acompanhar histórico mensal com resumos analíticos
 - Conectar contas bancárias para importar transações automaticamente via [Pluggy](https://pluggy.ai)
-- Rastrear ganhos e gastos como motorista Uber
+- Rastrear ganhos e gastos como motorista Uber (com exportação CSV e PDF)
+- Conversar com um assistente financeiro baseado em IA para insights sobre os gastos do mês
+- Gerenciar perfil (nome) e excluir conta com todos os dados
+- Selecionar modo de uso: finanças pessoais ou modo Uber
 - Autenticar via e-mail/senha ou OAuth
 
 Todos os dados são persistidos em PostgreSQL, com acesso via tRPC type-safe.
@@ -69,11 +73,14 @@ controle-gastos-app/
 │   ├── (tabs)/
 │   │   ├── index.tsx             # Home — dashboard de despesas
 │   │   ├── history.tsx           # Histórico mensal analítico
-│   │   ├── settings.tsx          # Receitas, orçamentos, integrações
-│   │   └── _layout.tsx           # Layout de abas (3 tabs)
+│   │   ├── assistant.tsx         # Assistente financeiro com IA
+│   │   ├── settings.tsx          # Receitas, orçamentos, integrações, perfil
+│   │   ├── uber-earnings.tsx     # Ganhos e gastos Uber (aba oculta)
+│   │   └── _layout.tsx           # Layout de abas (4 tabs)
 │   ├── _layout.tsx               # Layout raiz (providers, auth gate)
 │   ├── login.tsx                 # Login / cadastro (e-mail ou OAuth)
-│   ├── uber-earnings.tsx         # Ganhos e gastos Uber
+│   ├── mode-select.tsx           # Seleção de modo (pessoal ou Uber)
+│   ├── uber-earnings.tsx         # Ganhos e gastos Uber (rota legada)
 │   ├── oauth/
 │   │   └── callback.tsx          # Handler de redirect OAuth
 │   └── dev/
@@ -135,9 +142,13 @@ controle-gastos-app/
 │   ├── uber-earnings-router.ts   # tRPC — ganhos/gastos Uber
 │   ├── uber-earnings-db.ts       # Acesso ao banco: tabela uber_earnings
 │   ├── migration-router.ts       # tRPC — exportação/importação de dados legados
-│   ├── admin-router.ts           # tRPC — operações administrativas
-│   ├── export-expenses.ts        # Funcionalidade de exportação
+│   ├── admin-router.ts           # tRPC — painel DB admin (tabelas, SQL)
+│   ├── assistant-router.ts       # tRPC — assistente financeiro IA
+│   ├── bank-router.ts            # tRPC — bancos/cartões do usuário
+│   ├── profile-router.ts         # tRPC — perfil e exclusão de conta
+│   ├── export-expenses.ts        # Exportação de despesas (CSV/JSON)
 │   ├── db.ts                     # Conexão com banco + upsert de usuário
+│   ├── db-migrate.ts             # Migração automática do schema
 │   ├── storage.ts                # Helpers de armazenamento S3
 │   └── _core/
 │       ├── index.ts              # Entry point do servidor Express
@@ -215,6 +226,26 @@ controle-gastos-app/
 ### Notificações (Nubank)
 - Listener de notificações do Nubank para captura automática de transações
 
+### Assistente Financeiro (IA)
+- Chat com IA contextualizada nos dados do mês (despesas, receita, orçamento)
+- Respostas com insights, padrões de gastos e sugestões de economia
+- Acesso via aba dedicada "Assistente"
+
+### Perfil e Conta
+- Atualizar nome de usuário
+- Excluir conta com remoção completa de todos os dados associados
+
+### Modo de Uso
+- Seleção de modo na inicialização: **Pessoal** (controle de despesas) ou **Uber** (motorista)
+- No modo Uber, a aba inicial redireciona para a tela de ganhos
+
+### Exportação de Ganhos Uber
+- Exportar entradas do mês em CSV ou PDF para análise externa
+
+### Painel Admin (DB)
+- Disponível apenas para usuários com `role: "admin"`
+- Visualizar tabelas do banco de dados, dados por tabela e executar SQL direto
+
 ---
 
 ## Instalação e Configuração
@@ -258,7 +289,9 @@ O comando `pnpm dev` inicia o servidor Express (porta 3000+) e o Metro bundler (
 |--------|-----------|
 | `pnpm dev` | Inicia servidor + Metro (desenvolvimento) |
 | `pnpm dev:server` | Apenas o servidor Express com hot reload |
-| `pnpm dev:metro` | Apenas o Metro bundler (Expo) |
+| `pnpm dev:metro` | Apenas o Metro bundler (Expo) — web |
+| `pnpm dev:android` | Servidor + Metro com foco Android |
+| `pnpm web` | Inicia o Expo no modo web |
 | `pnpm android` | Inicia no emulador/dispositivo Android |
 | `pnpm ios` | Inicia no simulador iOS |
 | `pnpm build` | Compila o servidor para produção (`dist/`) |
@@ -302,7 +335,12 @@ Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
 ## Telas e Navegação
 
-O app usa navegação por abas (bottom tabs) com Expo Router.
+O app usa navegação por abas (bottom tabs) com Expo Router. Ao iniciar pela primeira vez, o usuário passa pela tela de seleção de modo.
+
+### Tela: Seleção de Modo (`/mode-select`)
+
+- Escolha entre modo **Pessoal** (controle de despesas) e modo **Uber** (motorista)
+- O modo selecionado persiste entre sessões
 
 ### Aba: Home (`/`)
 
@@ -313,6 +351,7 @@ Tela principal com:
 - Filtros por categoria, status de pagamento e tipo
 - Botão flutuante para adicionar nova despesa
 - Menu de ações em lote (gerar parcelas, mover mês, etc.)
+- No modo Uber, redireciona automaticamente para a aba de ganhos
 
 ### Aba: Histórico (`/history`)
 
@@ -320,13 +359,22 @@ Tela principal com:
 - Tendências de gastos ao longo do tempo
 - Comparação entre meses
 
+### Aba: Assistente (`/assistant`)
+
+- Chat com assistente financeiro alimentado por IA (OpenAI)
+- Contexto automático: despesas, receita e orçamento do mês atual
+- Respostas em português com análise de padrões de gastos
+
 ### Aba: Configurações (`/settings`)
 
 - Definir Salário, Vale e Outros rendimentos
 - Configurar orçamento total e por categoria
 - Gerenciar conexões bancárias (Pluggy)
+- Editar nome de perfil
+- Excluir conta permanentemente
 - Alternar entre tema claro e escuro
 - Botão de logout
+- Painel de banco de dados (admin only)
 
 ### Tela: Login (`/login`)
 
@@ -340,6 +388,7 @@ Tela principal com:
 - Navegação por mês
 - Botão para adicionar nova entrada
 - Resumo: total ganho vs. total gasto no mês
+- Exportação para CSV e PDF
 
 ### Modal de Despesa
 
@@ -488,6 +537,33 @@ Todas as rotas marcadas como **Protegido** exigem `Authorization: Bearer <token>
 |------|------|--------|-----------|
 | `migration.importData` | Mutation | Protegido | Importa dados do AsyncStorage legado |
 
+#### Assistente Financeiro
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `assistant.chat` | Mutation | Protegido | Envia mensagem ao assistente IA com contexto financeiro do mês |
+
+#### Perfil
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `profile.updateName` | Mutation | Protegido | Atualiza o nome de exibição do usuário |
+| `profile.deleteAccount` | Mutation | Protegido | Remove a conta e todos os dados do usuário |
+
+#### Bancos
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `bank.getAll` | Query | Protegido | Retorna a lista de bancos/cartões cadastrados pelo usuário |
+
+#### Admin
+
+| Rota | Tipo | Acesso | Descrição |
+|------|------|--------|-----------|
+| `admin.getTables` | Query | Protegido | Lista tabelas do banco de dados |
+| `admin.getTableData` | Query | Protegido | Retorna até 100 linhas de uma tabela |
+| `admin.executeSQL` | Mutation | Protegido | Executa SQL arbitrário (admin only) |
+
 ### Exemplo de uso no cliente
 
 ```tsx
@@ -548,6 +624,7 @@ O banco de dados é PostgreSQL, hospedado no Render.com. O schema é gerenciado 
 | `quantity` | varchar(20) | Parcelamento (ex: `"3/12"`) |
 | `paid` | boolean | Status de pagamento |
 | `source` | enum | `manual` \| `pluggy` \| `nubank` |
+| `bank` | varchar(100) | Banco/cartão associado (opcional) |
 
 > **Índice único:** `(userId, clientId)` — impede duplicatas de importações bancárias. `clientId = NULL` não participa do índice, permitindo múltiplas despesas manuais.
 
@@ -585,6 +662,17 @@ O banco de dados é PostgreSQL, hospedado no Render.com. O schema é gerenciado 
 | `amount` | numeric(10,2) | Orçamento da categoria |
 
 > **Índice único:** `(userId, month, category)`
+
+#### `banks`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | int PK | |
+| `userId` | int | |
+| `name` | varchar(100) | Nome do banco/cartão (ex: "Nubank") |
+| `createdAt` | timestamp | |
+
+> **Índice único:** `(userId, name)` — cada banco aparece uma única vez por usuário.
 
 #### `uber_earnings`
 
@@ -690,6 +778,35 @@ const { entries, totalEarnings, totalExpenses, create, update, remove } =
 
 ---
 
+## Assistente Financeiro (IA)
+
+A aba `/assistant` oferece um chat com IA contextualizado nos dados financeiros do mês.
+
+### Contexto injetado automaticamente
+
+- Renda total (salário + vale + outros)
+- Total de despesas e saldo
+- Orçamento do mês e percentual utilizado
+- Resumo por categoria (ordenado por valor)
+
+### Fluxo
+
+1. Usuário abre a aba "Assistente"
+2. O cliente envia as mensagens + mês atual via `assistant.chat`
+3. O servidor busca dados do banco em paralelo e monta um `systemPrompt`
+4. O prompt é enviado ao LLM (OpenAI) via `invokeLLM`
+5. A resposta em texto é retornada ao cliente
+
+### Arquivo relacionado
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `app/(tabs)/assistant.tsx` | Tela de chat |
+| `server/assistant-router.ts` | Roteador tRPC + montagem do contexto |
+| `server/_core/llm.ts` | Wrapper do cliente OpenAI |
+
+---
+
 ## Hooks Customizados
 
 ### `useAuth`
@@ -777,6 +894,7 @@ interface Expense {
   paid?: boolean;
   source: "manual" | "pluggy" | "nubank";
   clientId?: string;    // ID externo (Pluggy ou Nubank)
+  bank?: string | null; // Banco/cartão (ex: "Nubank", "Bradesco")
 }
 
 type Category =

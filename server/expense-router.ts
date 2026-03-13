@@ -8,7 +8,17 @@ import {
   deleteExpense,
   bulkCreateExpenses,
 } from "./expense-db";
-import { EXPENSE_CATEGORIES } from "../drizzle/schema";
+import { EXPENSE_CATEGORIES, banks } from "../drizzle/schema";
+import { getDb } from "./db";
+
+async function upsertBank(userId: number, name: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .insert(banks)
+    .values({ userId, name })
+    .onConflictDoNothing();
+}
 
 const categoryEnum = z.enum(EXPENSE_CATEGORIES);
 const sourceEnum = z.enum(["manual", "pluggy", "nubank"]);
@@ -38,9 +48,11 @@ export const expenseRouter = router({
         paid: z.boolean().optional(),
         source: sourceEnum.optional(),
         clientId: z.string().optional(),
+        bank: z.string().max(100).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.bank) await upsertBank(ctx.user.id, input.bank);
       const id = await createExpense({
         userId: ctx.user.id,
         name: input.name,
@@ -52,6 +64,7 @@ export const expenseRouter = router({
         paid: input.paid ?? false,
         source: input.source ?? "manual",
         clientId: input.clientId ?? null,
+        bank: input.bank ?? null,
       });
       return { id };
     }),
@@ -65,16 +78,19 @@ export const expenseRouter = router({
         value: z.number().positive().optional(),
         quantity: z.string().nullable().optional(),
         paid: z.boolean().optional(),
+        bank: z.string().max(100).nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updates } = input;
+      if (updates.bank) await upsertBank(ctx.user.id, updates.bank);
       const data: Parameters<typeof updateExpense>[2] = {};
       if (updates.name !== undefined) data.name = updates.name;
       if (updates.category !== undefined) data.category = updates.category;
       if (updates.value !== undefined) data.value = updates.value.toFixed(2);
       if (updates.quantity !== undefined) data.quantity = updates.quantity;
       if (updates.paid !== undefined) data.paid = updates.paid;
+      if (updates.bank !== undefined) data.bank = updates.bank;
       await updateExpense(ctx.user.id, id, data);
       return { success: true };
     }),

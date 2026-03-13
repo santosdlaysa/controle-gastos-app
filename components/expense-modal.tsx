@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { Expense, ExpenseCategory, CATEGORY_LABELS } from '@/types/expense';
+import { trpc } from '@/lib/trpc';
 
 interface ExpenseModalProps {
   visible: boolean;
@@ -44,6 +45,9 @@ export function ExpenseModal({
   const [category, setCategory] = useState<ExpenseCategory>('outro');
   const [quantity, setQuantity] = useState('');
   const [value, setValue] = useState('');
+  const [bank, setBank] = useState('');
+
+  const { data: bankSuggestions = [] } = trpc.bank.getAll.useQuery();
 
   useEffect(() => {
     if (expense) {
@@ -51,11 +55,13 @@ export function ExpenseModal({
       setCategory(expense.category);
       setQuantity(expense.quantity || '');
       setValue(expense.value.toString());
+      setBank(expense.bank || '');
     } else {
       setName('');
       setCategory('outro');
       setQuantity('');
       setValue('');
+      setBank('');
     }
   }, [expense, visible]);
 
@@ -76,6 +82,7 @@ export function ExpenseModal({
       category,
       quantity: quantity.trim() || undefined,
       value: numValue,
+      bank: bank.trim() || null,
     });
 
     onClose();
@@ -225,6 +232,49 @@ export function ExpenseModal({
                 value={quantity}
                 onChangeText={setQuantity}
               />
+            </View>
+
+            {/* Bank field */}
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-foreground mb-2">
+                Banco/Cartão (opcional)
+              </Text>
+              <TextInput
+                className="bg-surface border border-border rounded-lg p-3 text-foreground"
+                placeholder="Ex: Nubank, Bradesco"
+                placeholderTextColor="#9BA1A6"
+                value={bank}
+                onChangeText={setBank}
+              />
+              {bankSuggestions.length > 0 && (
+                <View className="flex-row flex-wrap gap-2 mt-2">
+                  {bankSuggestions.map((suggestion) => (
+                    <Pressable
+                      key={suggestion}
+                      onPress={() => setBank(suggestion)}
+                      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+                    >
+                      <View
+                        className={cn(
+                          'px-3 py-1 rounded-full border',
+                          bank === suggestion
+                            ? 'bg-primary border-primary'
+                            : 'bg-surface border-border'
+                        )}
+                      >
+                        <Text
+                          className={cn(
+                            'text-xs font-medium',
+                            bank === suggestion ? 'text-background' : 'text-foreground'
+                          )}
+                        >
+                          {suggestion}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
             </View>
 
             {/* Value field */}

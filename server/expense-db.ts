@@ -41,7 +41,7 @@ export async function createExpense(
 export async function updateExpense(
   userId: number,
   id: number,
-  data: Partial<Pick<InsertExpense, "name" | "category" | "value" | "quantity" | "paid">>,
+  data: Partial<Pick<InsertExpense, "name" | "category" | "value" | "quantity" | "paid" | "bank">>,
 ): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

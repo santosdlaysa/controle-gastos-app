@@ -15,6 +15,7 @@ function toExpense(row: {
   month: string;
   quantity: string | null;
   paid: boolean | null;
+  bank?: string | null;
 }): Expense {
   return {
     id: row.id.toString(),
@@ -25,6 +26,7 @@ function toExpense(row: {
     month: row.month,
     quantity: row.quantity ?? undefined,
     paid: row.paid ?? undefined,
+    bank: row.bank ?? null,
   };
 }
 
@@ -99,6 +101,7 @@ export function useExpenses(month: string) {
       quantity: expense.quantity,
       paid: expense.paid,
       source: "manual",
+      bank: expense.bank ?? undefined,
     });
   };
 
@@ -113,6 +116,7 @@ export function useExpenses(month: string) {
       value: updates.value,
       quantity: updates.quantity ?? null,
       paid: updates.paid,
+      bank: updates.bank ?? null,
     });
   };
 
@@ -143,6 +147,7 @@ export function useExpenses(month: string) {
       quantity: nextQuantity,
       paid: false,
       source: "manual",
+      bank: expenseToMove.bank ?? undefined,
     });
   };
 
@@ -168,6 +173,7 @@ export function useExpenses(month: string) {
         quantity: `${nextIndex}/${installmentTotal}`,
         paid: false,
         source: "manual",
+        bank: originalExpense.bank ?? undefined,
       });
     }
 

@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { pluggyRouter } from "./pluggy-router";
 import { expenseRouter } from "./expense-router";
+import { bankRouter } from "./bank-router";
 import { incomeRouter } from "./income-router";
 import { budgetRouter } from "./budget-router";
 import { historyRouter } from "./history-router";
@@ -28,6 +29,7 @@ export const appRouter = router({
 
   pluggy: pluggyRouter,
   expense: expenseRouter,
+  bank: bankRouter,
   income: incomeRouter,
   budget: budgetRouter,
   history: historyRouter,
