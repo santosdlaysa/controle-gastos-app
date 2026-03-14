@@ -101,6 +101,9 @@ function NavLayout() {
         <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
         <Stack.Screen name="oauth/callback" />
         <Stack.Screen name="mode-select" />
+        <Stack.Screen name="bank-select" />
+        <Stack.Screen name="bank/[id]" />
+        <Stack.Screen name="forgot-password" />
         <Stack.Screen name="(tabs)" />
       </Stack>
       <StatusBar style="auto" />

@@ -33,7 +33,7 @@ const config: ExpoConfig = {
   slug: "controle-gastos-app",
 
   // 🔢 Versão visível ao usuário
-  version: "1.0.0",
+  version: "2.0.0",
 
   // 🔥 IMPORTANTE PARA EAS UPDATE (boa prática)
   runtimeVersion: {
@@ -55,7 +55,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: bundleId,
-    buildNumber: "1",
+    buildNumber: "2",
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },

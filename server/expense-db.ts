@@ -7,6 +7,8 @@ import {
   InsertExpense,
   ExpenseCategory,
 } from "../drizzle/schema";
+
+type PaymentType = "debit" | "credit";
 import { getDb } from "./db";
 
 // ─── Expenses ─────────────────────────────────────────────────────────────────
@@ -14,19 +16,46 @@ import { getDb } from "./db";
 export async function getExpensesByMonth(userId: number, month: string) {
   const db = await getDb();
   if (!db) return [];
-  return db
-    .select()
-    .from(expenses)
-    .where(and(eq(expenses.userId, userId), eq(expenses.month, month)));
+  try {
+    return await db
+      .select()
+      .from(expenses)
+      .where(and(eq(expenses.userId, userId), eq(expenses.month, month)));
+  } catch {
+    // Fallback: select only core columns in case new columns don't exist yet in DB
+    const rows = await db.execute(
+      sql`SELECT id, "userId", "clientId", name, category, value, date, month, quantity, paid, source, "createdAt", "updatedAt" FROM expenses WHERE "userId" = ${userId} AND month = ${month}`,
+    );
+    return (rows as any[]).map((r) => ({ ...r, bank: null, paymentType: null }));
+  }
+}
+
+export async function getExpensesByBank(
+  userId: number,
+  bankName: string,
+  paymentType?: PaymentType,
+) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(expenses.userId, userId), eq(expenses.bank, bankName)];
+  if (paymentType) conditions.push(eq(expenses.paymentType, paymentType));
+  return db.select().from(expenses).where(and(...conditions)).orderBy(expenses.date);
 }
 
 export async function getExpensesByYear(userId: number, year: string) {
   const db = await getDb();
   if (!db) return [];
-  return db
-    .select()
-    .from(expenses)
-    .where(and(eq(expenses.userId, userId), like(expenses.month, `${year}-%`)));
+  try {
+    return await db
+      .select()
+      .from(expenses)
+      .where(and(eq(expenses.userId, userId), like(expenses.month, `${year}-%`)));
+  } catch {
+    const rows = await db.execute(
+      sql`SELECT id, "userId", "clientId", name, category, value, date, month, quantity, paid, source, "createdAt", "updatedAt" FROM expenses WHERE "userId" = ${userId} AND month LIKE ${year + '-%'}`,
+    );
+    return (rows as any[]).map((r) => ({ ...r, bank: null, paymentType: null }));
+  }
 }
 
 export async function createExpense(
@@ -41,14 +70,24 @@ export async function createExpense(
 export async function updateExpense(
   userId: number,
   id: number,
-  data: Partial<Pick<InsertExpense, "name" | "category" | "value" | "quantity" | "paid" | "bank">>,
+  data: Partial<Pick<InsertExpense, "name" | "category" | "value" | "quantity" | "paid" | "bank" | "paymentType">>,
 ): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db
-    .update(expenses)
-    .set({ ...data, updatedAt: new Date() })
-    .where(and(eq(expenses.id, id), eq(expenses.userId, userId)));
+  try {
+    await db
+      .update(expenses)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(expenses.id, id), eq(expenses.userId, userId)));
+  } catch {
+    // Fallback: update only core columns if new columns don't exist yet
+    const { bank: _b, paymentType: _pt, ...safeData } = data;
+    if (Object.keys(safeData).length === 0) return;
+    await db
+      .update(expenses)
+      .set({ ...safeData, updatedAt: new Date() })
+      .where(and(eq(expenses.id, id), eq(expenses.userId, userId)));
+  }
 }
 
 export async function deleteExpense(userId: number, id: number): Promise<void> {

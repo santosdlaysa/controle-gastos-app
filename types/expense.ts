@@ -22,6 +22,8 @@ export interface Expense {
   paid?: boolean;
   /** Banco ou cartão associado (ex: "Nubank", "Bradesco") */
   bank?: string | null;
+  /** Tipo de pagamento: débito ou crédito */
+  paymentType?: "debit" | "credit" | null;
 }
 
 export interface Income {

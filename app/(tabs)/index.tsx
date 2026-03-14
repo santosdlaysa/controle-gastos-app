@@ -180,6 +180,7 @@ export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'all'>('all');
   const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(false);
   const [showOnlyInstallments, setShowOnlyInstallments] = useState(false);
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState<'all' | 'debit' | 'credit'>('all');
 
   const {
     expenses,
@@ -279,6 +280,9 @@ export default function HomeScreen() {
     unpaidTotal,
     percentOfIncome,
     filteredExpenses,
+    filteredTotal,
+    filteredBalance,
+    isFiltered,
     budgetUsagePercent,
   } = useMemo(() => {
     const totals: Partial<Record<ExpenseCategory, number>> = {};
@@ -301,17 +305,16 @@ export default function HomeScreen() {
       budget && budget > 0 ? Math.min(999, (totalExpenses / budget) * 100) : 0;
 
     const filtered = expenses.filter((exp) => {
-      if (selectedCategory !== 'all' && exp.category !== selectedCategory) {
-        return false;
-      }
-      if (showOnlyUnpaid && exp.paid) {
-        return false;
-      }
-      if (showOnlyInstallments && !exp.quantity) {
-        return false;
-      }
+      if (selectedCategory !== 'all' && exp.category !== selectedCategory) return false;
+      if (showOnlyUnpaid && exp.paid) return false;
+      if (showOnlyInstallments && !exp.quantity) return false;
+      if (paymentTypeFilter !== 'all' && exp.paymentType != null && exp.paymentType !== paymentTypeFilter) return false;
       return true;
     });
+
+    const isFiltered = paymentTypeFilter !== 'all' || selectedCategory !== 'all' || showOnlyUnpaid || showOnlyInstallments;
+    const filteredTotal = isFiltered ? filtered.reduce((sum, e) => sum + e.value, 0) : totalExpenses;
+    const filteredBalance = totalIncome - filteredTotal;
 
     return {
       categoryTotals: totals,
@@ -319,6 +322,9 @@ export default function HomeScreen() {
       unpaidTotal: unpaidTotalAcc,
       percentOfIncome: percent,
       filteredExpenses: filtered,
+      filteredTotal,
+      filteredBalance,
+      isFiltered,
       budgetUsagePercent: budgetPercent,
     };
   }, [
@@ -328,6 +334,7 @@ export default function HomeScreen() {
     selectedCategory,
     showOnlyUnpaid,
     showOnlyInstallments,
+    paymentTypeFilter,
     budget,
   ]);
 
@@ -419,6 +426,30 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
+          {/* Toggle Débito / Crédito */}
+          <View style={{ marginHorizontal: 20, marginTop: 8, marginBottom: 4 }}>
+            <View style={{ flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 3 }}>
+              {(['all', 'debit', 'credit'] as const).map((type) => (
+                <Pressable key={type} onPress={() => setPaymentTypeFilter(type)} style={{ flex: 1 }}>
+                  <View style={{
+                    paddingVertical: 7,
+                    borderRadius: 10,
+                    alignItems: 'center',
+                    backgroundColor: paymentTypeFilter === type ? 'rgba(255,255,255,0.22)' : 'transparent',
+                  }}>
+                    <Text style={{
+                      fontSize: 12,
+                      fontWeight: '600',
+                      color: paymentTypeFilter === type ? '#fff' : 'rgba(255,255,255,0.5)',
+                    }}>
+                      {type === 'all' ? 'Todos' : type === 'debit' ? 'Débito' : 'Crédito'}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
           {/* Month navigation */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 28, paddingVertical: 8 }}>
             <Pressable onPress={handlePreviousMonth} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
@@ -435,15 +466,15 @@ export default function HomeScreen() {
           {/* Hero: Saldo Restante */}
           <View style={{ alignItems: 'center', paddingVertical: 12, paddingHorizontal: 24 }}>
             <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
-              Saldo Restante
+              {isFiltered ? 'Total Filtrado' : 'Saldo Restante'}
             </Text>
-            <Text style={{ color: balance >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54 }}>
-              R$ {balance.toFixed(2)}
+            <Text style={{ color: filteredBalance >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54 }}>
+              R$ {(isFiltered ? filteredTotal : filteredBalance).toFixed(2)}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: balance >= 0 ? '#93C5FD' : '#FCA5A5' }} />
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: filteredBalance >= 0 ? '#93C5FD' : '#FCA5A5' }} />
               <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>
-                {balance >= 0 ? 'Dentro do orçamento' : 'Acima da renda'}
+                {isFiltered ? `${filteredExpenses.length} transaç${filteredExpenses.length === 1 ? 'ão' : 'ões'}` : filteredBalance >= 0 ? 'Dentro do orçamento' : 'Acima da renda'}
               </Text>
             </View>
           </View>
@@ -477,10 +508,10 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>
-                  R$ {totalExpenses.toFixed(2)}
+                  R$ {filteredTotal.toFixed(2)}
                 </Text>
                 <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>
-                  {expenses.length} registro{expenses.length !== 1 ? 's' : ''} · toque p/ adicionar
+                  {filteredExpenses.length} registro{filteredExpenses.length !== 1 ? 's' : ''} · toque p/ adicionar
                 </Text>
               </View>
             </Pressable>

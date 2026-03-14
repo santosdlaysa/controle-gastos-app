@@ -19,7 +19,8 @@
       "Bash(xargs grep:*)",
       "Bash(./gradlew assembleRelease:*)",
       "Bash(./gradlew:*)",
-      "Bash(pnpm list:*)"
+      "Bash(pnpm list:*)",
+      "Bash(pnpm test:*)"
     ]
   }
 }
