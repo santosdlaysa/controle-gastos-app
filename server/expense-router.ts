@@ -3,6 +3,7 @@ import { router, protectedProcedure } from "./_core/trpc";
 import {
   getExpensesByMonth,
   getExpensesByYear,
+  getExpensesByBank,
   createExpense,
   updateExpense,
   deleteExpense,
@@ -22,6 +23,7 @@ async function upsertBank(userId: number, name: string) {
 
 const categoryEnum = z.enum(EXPENSE_CATEGORIES);
 const sourceEnum = z.enum(["manual", "pluggy", "nubank"]);
+const paymentTypeEnum = z.enum(["debit", "credit"]);
 
 export const expenseRouter = router({
   getByMonth: protectedProcedure
@@ -34,6 +36,15 @@ export const expenseRouter = router({
     .input(z.object({ year: z.string().regex(/^\d{4}$/) }))
     .query(async ({ ctx, input }) => {
       return getExpensesByYear(ctx.user.id, input.year);
+    }),
+
+  getByBank: protectedProcedure
+    .input(z.object({
+      bankName: z.string().min(1),
+      paymentType: paymentTypeEnum.optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      return getExpensesByBank(ctx.user.id, input.bankName, input.paymentType);
     }),
 
   create: protectedProcedure
@@ -49,6 +60,7 @@ export const expenseRouter = router({
         source: sourceEnum.optional(),
         clientId: z.string().optional(),
         bank: z.string().max(100).optional(),
+        paymentType: paymentTypeEnum.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -65,6 +77,7 @@ export const expenseRouter = router({
         source: input.source ?? "manual",
         clientId: input.clientId ?? null,
         bank: input.bank ?? null,
+        paymentType: input.paymentType ?? null,
       });
       return { id };
     }),
@@ -79,6 +92,7 @@ export const expenseRouter = router({
         quantity: z.string().nullable().optional(),
         paid: z.boolean().optional(),
         bank: z.string().max(100).nullable().optional(),
+        paymentType: paymentTypeEnum.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -91,6 +105,7 @@ export const expenseRouter = router({
       if (updates.quantity !== undefined) data.quantity = updates.quantity;
       if (updates.paid !== undefined) data.paid = updates.paid;
       if (updates.bank !== undefined) data.bank = updates.bank;
+      if (updates.paymentType !== undefined) data.paymentType = updates.paymentType;
       await updateExpense(ctx.user.id, id, data);
       return { success: true };
     }),

@@ -46,6 +46,7 @@ export function ExpenseModal({
   const [quantity, setQuantity] = useState('');
   const [value, setValue] = useState('');
   const [bank, setBank] = useState('');
+  const [paymentType, setPaymentType] = useState<'debit' | 'credit' | null>(null);
 
   const { data: bankSuggestions = [] } = trpc.bank.getAll.useQuery();
 
@@ -56,12 +57,14 @@ export function ExpenseModal({
       setQuantity(expense.quantity || '');
       setValue(expense.value.toString());
       setBank(expense.bank || '');
+      setPaymentType(expense.paymentType ?? null);
     } else {
       setName('');
       setCategory('outro');
       setQuantity('');
       setValue('');
       setBank('');
+      setPaymentType(null);
     }
   }, [expense, visible]);
 
@@ -83,6 +86,7 @@ export function ExpenseModal({
       quantity: quantity.trim() || undefined,
       value: numValue,
       bank: bank.trim() || null,
+      paymentType: paymentType ?? null,
     });
 
     onClose();
@@ -275,6 +279,38 @@ export function ExpenseModal({
                   ))}
                 </View>
               )}
+            </View>
+
+            {/* Payment type field */}
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-foreground mb-2">
+                Tipo de Pagamento (opcional)
+              </Text>
+              <View className="flex-row gap-2">
+                {(['debit', 'credit'] as const).map((type) => (
+                  <Pressable
+                    key={type}
+                    onPress={() => setPaymentType(paymentType === type ? null : type)}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}
+                  >
+                    <View
+                      className={cn(
+                        'py-3 rounded-lg border-2 items-center',
+                        paymentType === type
+                          ? 'bg-primary border-primary'
+                          : 'bg-surface border-border'
+                      )}
+                    >
+                      <Text className={cn(
+                        'text-sm font-semibold',
+                        paymentType === type ? 'text-background' : 'text-foreground'
+                      )}>
+                        {type === 'debit' ? 'Débito' : 'Crédito'}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
             </View>
 
             {/* Value field */}

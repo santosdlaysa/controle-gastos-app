@@ -7,6 +7,8 @@ import {
   InsertExpense,
   ExpenseCategory,
 } from "../drizzle/schema";
+
+type PaymentType = "debit" | "credit";
 import { getDb } from "./db";
 
 // ─── Expenses ─────────────────────────────────────────────────────────────────
@@ -18,6 +20,18 @@ export async function getExpensesByMonth(userId: number, month: string) {
     .select()
     .from(expenses)
     .where(and(eq(expenses.userId, userId), eq(expenses.month, month)));
+}
+
+export async function getExpensesByBank(
+  userId: number,
+  bankName: string,
+  paymentType?: PaymentType,
+) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(expenses.userId, userId), eq(expenses.bank, bankName)];
+  if (paymentType) conditions.push(eq(expenses.paymentType, paymentType));
+  return db.select().from(expenses).where(and(...conditions)).orderBy(expenses.date);
 }
 
 export async function getExpensesByYear(userId: number, year: string) {
@@ -41,7 +55,7 @@ export async function createExpense(
 export async function updateExpense(
   userId: number,
   id: number,
-  data: Partial<Pick<InsertExpense, "name" | "category" | "value" | "quantity" | "paid" | "bank">>,
+  data: Partial<Pick<InsertExpense, "name" | "category" | "value" | "quantity" | "paid" | "bank" | "paymentType">>,
 ): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

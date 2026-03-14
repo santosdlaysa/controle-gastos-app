@@ -215,6 +215,15 @@ export default function LoginScreen() {
               </Text>
             </Text>
           </Pressable>
+
+          {/* Forgot password */}
+          {mode === "login" && (
+            <Pressable onPress={() => router.push("/forgot-password")} disabled={loading}>
+              <Text className="text-muted text-sm text-center">
+                <Text style={{ color: "#0a7ea4", fontWeight: "500" }}>Esqueceu a senha?</Text>
+              </Text>
+            </Pressable>
+          )}
         </View>
       </KeyboardAvoidingView>
     </ScreenContainer>

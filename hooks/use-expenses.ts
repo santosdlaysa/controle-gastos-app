@@ -16,6 +16,7 @@ function toExpense(row: {
   quantity: string | null;
   paid: boolean | null;
   bank?: string | null;
+  paymentType?: "debit" | "credit" | null;
 }): Expense {
   return {
     id: row.id.toString(),
@@ -27,6 +28,7 @@ function toExpense(row: {
     quantity: row.quantity ?? undefined,
     paid: row.paid ?? undefined,
     bank: row.bank ?? null,
+    paymentType: row.paymentType ?? null,
   };
 }
 
@@ -102,6 +104,7 @@ export function useExpenses(month: string) {
       paid: expense.paid,
       source: "manual",
       bank: expense.bank ?? undefined,
+      paymentType: expense.paymentType ?? undefined,
     });
   };
 
@@ -117,6 +120,7 @@ export function useExpenses(month: string) {
       quantity: updates.quantity ?? null,
       paid: updates.paid,
       bank: updates.bank ?? null,
+      paymentType: updates.paymentType ?? null,
     });
   };
 

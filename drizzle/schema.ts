@@ -64,6 +64,7 @@ export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 
 export const expenseCategoryEnum = pgEnum("expense_category", EXPENSE_CATEGORIES);
 export const expenseSourceEnum = pgEnum("expense_source", ["manual", "pluggy", "nubank"]);
+export const expensePaymentTypeEnum = pgEnum("expense_payment_type", ["debit", "credit"]);
 
 // ─── expenses ─────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ export const expenses = pgTable(
     paid: boolean("paid").default(false),
     source: expenseSourceEnum("source").default("manual"),
     bank: varchar("bank", { length: 100 }),
+    paymentType: expensePaymentTypeEnum("paymentType"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
@@ -158,3 +160,14 @@ export const uberEarnings = pgTable("uber_earnings", {
 
 export type DbUberEarning = typeof uberEarnings.$inferSelect;
 export type InsertUberEarning = typeof uberEarnings.$inferInsert;
+
+// ─── password_reset_tokens ─────────────────────────────────────────────────────
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  code: varchar("code", { length: 6 }).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

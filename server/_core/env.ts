@@ -10,4 +10,6 @@ export const ENV = {
   forgeModel: process.env.BUILT_IN_FORGE_MODEL ?? "gpt-4o-mini",
   pluggyClientId: process.env.PLUGGY_CLIENT_ID ?? "",
   pluggyClientSecret: process.env.PLUGGY_CLIENT_SECRET ?? "",
+  resendApiKey: process.env.RESEND_API_KEY ?? "",
+  resendFrom: process.env.RESEND_FROM ?? "Orgenyx <onboarding@resend.dev>",
 };

@@ -24,6 +24,7 @@ import { useExpenses } from '@/hooks/use-expenses';
 import { Expense, ExpenseCategory, CATEGORY_LABELS, CATEGORY_COLORS } from '@/types/expense';
 import { trpc } from '@/lib/trpc';
 import { setAppMode } from '@/lib/mode';
+import { getSelectedBank } from '@/lib/selected-bank';
 
 // ─── Helpers de exportação ────────────────────────────────────────────────────
 
@@ -180,6 +181,8 @@ export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'all'>('all');
   const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(false);
   const [showOnlyInstallments, setShowOnlyInstallments] = useState(false);
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState<'all' | 'debit' | 'credit'>('all');
+  const [selectedBank, setSelectedBankState] = useState(() => getSelectedBank());
 
   const {
     expenses,
@@ -301,15 +304,11 @@ export default function HomeScreen() {
       budget && budget > 0 ? Math.min(999, (totalExpenses / budget) * 100) : 0;
 
     const filtered = expenses.filter((exp) => {
-      if (selectedCategory !== 'all' && exp.category !== selectedCategory) {
-        return false;
-      }
-      if (showOnlyUnpaid && exp.paid) {
-        return false;
-      }
-      if (showOnlyInstallments && !exp.quantity) {
-        return false;
-      }
+      if (selectedCategory !== 'all' && exp.category !== selectedCategory) return false;
+      if (showOnlyUnpaid && exp.paid) return false;
+      if (showOnlyInstallments && !exp.quantity) return false;
+      if (paymentTypeFilter !== 'all' && exp.paymentType !== paymentTypeFilter) return false;
+      if (selectedBank && exp.bank !== selectedBank.name) return false;
       return true;
     });
 
@@ -328,12 +327,15 @@ export default function HomeScreen() {
     selectedCategory,
     showOnlyUnpaid,
     showOnlyInstallments,
+    paymentTypeFilter,
+    selectedBank,
     budget,
   ]);
 
-  // Reload data when screen comes into focus
+  // Reload data and sync selected bank when screen comes into focus
   useFocusEffect(
     useCallback(() => {
+      setSelectedBankState(getSelectedBank());
       reload();
     }, [reload])
   );
@@ -408,15 +410,42 @@ export default function HomeScreen() {
             <Pressable onPress={() => setMenuVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
               <MaterialIcons name="menu" size={24} color="rgba(255,255,255,0.9)" />
             </Pressable>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable onPress={() => router.push('/bank-select')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
               <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#0a7ea4', alignItems: 'center', justifyContent: 'center' }}>
-                <MaterialIcons name="account-balance-wallet" size={16} color="#fff" />
+                <MaterialIcons name={selectedBank ? 'credit-card' : 'account-balance-wallet'} size={16} color="#fff" />
               </View>
-              <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700', letterSpacing: -0.3 }}>Despesas Pessoais</Text>
-            </View>
+              <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700', letterSpacing: -0.3 }}>
+                {selectedBank ? selectedBank.name : 'Todos os bancos'}
+              </Text>
+              <MaterialIcons name="expand-more" size={18} color="rgba(255,255,255,0.6)" />
+            </Pressable>
             <Pressable onPress={() => setShowExportModal(true)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
               <MaterialIcons name="file-download" size={22} color="rgba(255,255,255,0.9)" />
             </Pressable>
+          </View>
+
+          {/* Toggle Débito / Crédito */}
+          <View style={{ marginHorizontal: 20, marginTop: 8, marginBottom: 4 }}>
+            <View style={{ flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 3 }}>
+              {(['all', 'debit', 'credit'] as const).map((type) => (
+                <Pressable key={type} onPress={() => setPaymentTypeFilter(type)} style={{ flex: 1 }}>
+                  <View style={{
+                    paddingVertical: 7,
+                    borderRadius: 10,
+                    alignItems: 'center',
+                    backgroundColor: paymentTypeFilter === type ? 'rgba(255,255,255,0.22)' : 'transparent',
+                  }}>
+                    <Text style={{
+                      fontSize: 12,
+                      fontWeight: '600',
+                      color: paymentTypeFilter === type ? '#fff' : 'rgba(255,255,255,0.5)',
+                    }}>
+                      {type === 'all' ? 'Todos' : type === 'debit' ? 'Débito' : 'Crédito'}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
           </View>
 
           {/* Month navigation */}

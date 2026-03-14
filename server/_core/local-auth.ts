@@ -1,12 +1,13 @@
 import { randomBytes, scrypt, timingSafeEqual } from "crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import type { Express, Request, Response } from "express";
-import { users } from "../../drizzle/schema";
+import { users, passwordResetTokens } from "../../drizzle/schema";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const";
 import { getDb } from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { ENV } from "./env";
 import { sdk } from "./sdk";
+import { sendPasswordResetEmail } from "./mailer";
 
 // ─── Password utilities ───────────────────────────────────────────────────────
 
@@ -126,6 +127,93 @@ export function registerLocalAuthRoutes(app: Express) {
     } catch (error) {
       console.error("[LocalAuth] Register failed:", error);
       res.status(500).json({ error: "Erro ao criar conta." });
+    }
+  });
+
+  // POST /api/auth/forgot-password
+  app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
+    const { email } = req.body ?? {};
+    if (!email || typeof email !== "string") {
+      res.status(400).json({ error: "Email é obrigatório." });
+      return;
+    }
+
+    const db = await getDb();
+    if (!db) { res.status(500).json({ error: "Banco de dados não disponível." }); return; }
+
+    try {
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Verifica se usuário existe (mas não revela se não existe)
+      const [user] = await db.select({ id: users.id }).from(users)
+        .where(eq(users.email, normalizedEmail)).limit(1);
+
+      if (user) {
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+        await db.insert(passwordResetTokens).values({ email: normalizedEmail, code, expiresAt });
+        await sendPasswordResetEmail(normalizedEmail, code);
+      }
+
+      // Sempre retorna sucesso para evitar enumeração de emails
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[LocalAuth] Forgot password failed:", error);
+      res.status(500).json({ error: "Erro ao processar solicitação." });
+    }
+  });
+
+  // POST /api/auth/reset-password
+  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+    const { email, code, newPassword } = req.body ?? {};
+
+    if (!email || !code || !newPassword) {
+      res.status(400).json({ error: "Email, código e nova senha são obrigatórios." });
+      return;
+    }
+    if (typeof newPassword !== "string" || newPassword.length < 8) {
+      res.status(400).json({ error: "Senha deve ter no mínimo 8 caracteres." });
+      return;
+    }
+
+    const db = await getDb();
+    if (!db) { res.status(500).json({ error: "Banco de dados não disponível." }); return; }
+
+    try {
+      const normalizedEmail = email.toLowerCase().trim();
+      const now = new Date();
+
+      const [tokenRow] = await db.select().from(passwordResetTokens)
+        .where(and(
+          eq(passwordResetTokens.email, normalizedEmail),
+          eq(passwordResetTokens.code, String(code)),
+          gt(passwordResetTokens.expiresAt, now),
+          isNull(passwordResetTokens.usedAt),
+        ))
+        .orderBy(passwordResetTokens.createdAt)
+        .limit(1);
+
+      if (!tokenRow) {
+        res.status(400).json({ error: "Código inválido ou expirado." });
+        return;
+      }
+
+      // Marca token como usado
+      await db.update(passwordResetTokens)
+        .set({ usedAt: now })
+        .where(eq(passwordResetTokens.id, tokenRow.id));
+
+      // Atualiza a senha
+      const passwordHash = await hashPassword(newPassword);
+      await db.update(users)
+        .set({ passwordHash, updatedAt: now })
+        .where(eq(users.email, normalizedEmail));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[LocalAuth] Reset password failed:", error);
+      res.status(500).json({ error: "Erro ao redefinir senha." });
     }
   });
 
