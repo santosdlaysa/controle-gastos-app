@@ -42,6 +42,18 @@ export async function getExpensesByBank(
   return db.select().from(expenses).where(and(...conditions)).orderBy(expenses.date);
 }
 
+export async function getExpensesByBank(
+  userId: number,
+  bankName: string,
+  paymentType?: PaymentType,
+) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(expenses.userId, userId), eq(expenses.bank, bankName)];
+  if (paymentType) conditions.push(eq(expenses.paymentType, paymentType));
+  return db.select().from(expenses).where(and(...conditions)).orderBy(expenses.date);
+}
+
 export async function getExpensesByYear(userId: number, year: string) {
   const db = await getDb();
   if (!db) return [];
