@@ -114,13 +114,13 @@ export function useExpenses(month: string) {
   ) => {
     await updateMut.mutateAsync({
       id: parseInt(id, 10),
-      name: updates.name,
-      category: updates.category,
-      value: updates.value,
-      quantity: updates.quantity ?? null,
-      paid: updates.paid,
-      bank: updates.bank ?? null,
-      paymentType: updates.paymentType ?? null,
+      ...(updates.name !== undefined && { name: updates.name }),
+      ...(updates.category !== undefined && { category: updates.category }),
+      ...(updates.value !== undefined && { value: updates.value }),
+      ...(updates.quantity !== undefined && { quantity: updates.quantity ?? null }),
+      ...(updates.paid !== undefined && { paid: updates.paid }),
+      ...("bank" in updates && { bank: updates.bank ?? null }),
+      ...("paymentType" in updates && { paymentType: updates.paymentType ?? null }),
     });
   };
 

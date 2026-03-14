@@ -181,6 +181,9 @@ export default function HomeScreen() {
   const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(false);
   const [showOnlyInstallments, setShowOnlyInstallments] = useState(false);
   const [paymentTypeFilter, setPaymentTypeFilter] = useState<'all' | 'debit' | 'credit'>('all');
+  const [bankFilter, setBankFilter] = useState<string | null>(null);
+
+  const { data: allBanks = [] } = trpc.bank.getAll.useQuery();
 
   const {
     expenses,
@@ -309,10 +312,11 @@ export default function HomeScreen() {
       if (showOnlyUnpaid && exp.paid) return false;
       if (showOnlyInstallments && !exp.quantity) return false;
       if (paymentTypeFilter !== 'all' && exp.paymentType != null && exp.paymentType !== paymentTypeFilter) return false;
+      if (bankFilter && exp.bank !== bankFilter) return false;
       return true;
     });
 
-    const isFiltered = paymentTypeFilter !== 'all' || selectedCategory !== 'all' || showOnlyUnpaid || showOnlyInstallments;
+    const isFiltered = paymentTypeFilter !== 'all' || selectedCategory !== 'all' || showOnlyUnpaid || showOnlyInstallments || !!bankFilter;
     const filteredTotal = isFiltered ? filtered.reduce((sum, e) => sum + e.value, 0) : totalExpenses;
     const filteredBalance = totalIncome - filteredTotal;
 
@@ -335,6 +339,7 @@ export default function HomeScreen() {
     showOnlyUnpaid,
     showOnlyInstallments,
     paymentTypeFilter,
+    bankFilter,
     budget,
   ]);
 
@@ -646,6 +651,24 @@ export default function HomeScreen() {
               );
             })}
           </ScrollView>
+
+          {/* Filtro por banco */}
+          {allBanks.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingTop: 8, paddingBottom: 4 }}>
+              <Pressable onPress={() => setBankFilter(null)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter === null ? colors.tint : colors.border, backgroundColor: bankFilter === null ? colors.tint + '15' : 'transparent' }}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter === null ? colors.tint : colors.foreground }}>Todos os bancos</Text>
+                </View>
+              </Pressable>
+              {allBanks.filter(b => b.id != null).map((b) => (
+                <Pressable key={String(b.id)} onPress={() => setBankFilter(bankFilter === b.name ? null : b.name)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                  <View style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter === b.name ? colors.tint : colors.border, backgroundColor: bankFilter === b.name ? colors.tint + '15' : 'transparent' }}>
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter === b.name ? colors.tint : colors.foreground }}>{b.name}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
 
           {/* Cabeçalho da lista */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 }}>
