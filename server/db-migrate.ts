@@ -174,6 +174,18 @@ export async function ensureSchema(databaseUrl: string): Promise<void> {
       ALTER TABLE expenses ADD COLUMN IF NOT EXISTS "paymentType" payment_type
     `;
 
+    // password_reset_tokens
+    await sql`
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        email varchar(320) NOT NULL,
+        code varchar(6) NOT NULL,
+        "expiresAt" timestamp NOT NULL,
+        "usedAt" timestamp,
+        "createdAt" timestamp NOT NULL DEFAULT now()
+      )
+    `;
+
     console.log("[db-migrate] Schema OK");
   } catch (err) {
     console.error("[db-migrate] Falha ao aplicar schema:", err);
