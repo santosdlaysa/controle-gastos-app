@@ -431,6 +431,24 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
+          {/* Filtro por banco */}
+          {allBanks.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8, paddingTop: 8, paddingBottom: 4 }}>
+              <Pressable onPress={() => setBankFilter(null)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter === null ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)', backgroundColor: bankFilter === null ? 'rgba(255,255,255,0.2)' : 'transparent' }}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter === null ? '#fff' : 'rgba(255,255,255,0.55)' }}>Todos os bancos</Text>
+                </View>
+              </Pressable>
+              {allBanks.filter(b => b.id != null).map((b) => (
+                <Pressable key={String(b.id)} onPress={() => setBankFilter(bankFilter === b.name ? null : b.name)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                  <View style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter === b.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)', backgroundColor: bankFilter === b.name ? 'rgba(255,255,255,0.2)' : 'transparent' }}>
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter === b.name ? '#fff' : 'rgba(255,255,255,0.55)' }}>{b.name}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
+
           {/* Toggle Débito / Crédito */}
           <View style={{ marginHorizontal: 20, marginTop: 8, marginBottom: 4 }}>
             <View style={{ flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 3 }}>
@@ -651,24 +669,6 @@ export default function HomeScreen() {
               );
             })}
           </ScrollView>
-
-          {/* Filtro por banco */}
-          {allBanks.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingTop: 8, paddingBottom: 4 }}>
-              <Pressable onPress={() => setBankFilter(null)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-                <View style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter === null ? colors.tint : colors.border, backgroundColor: bankFilter === null ? colors.tint + '15' : 'transparent' }}>
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter === null ? colors.tint : colors.foreground }}>Todos os bancos</Text>
-                </View>
-              </Pressable>
-              {allBanks.filter(b => b.id != null).map((b) => (
-                <Pressable key={String(b.id)} onPress={() => setBankFilter(bankFilter === b.name ? null : b.name)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-                  <View style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter === b.name ? colors.tint : colors.border, backgroundColor: bankFilter === b.name ? colors.tint + '15' : 'transparent' }}>
-                    <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter === b.name ? colors.tint : colors.foreground }}>{b.name}</Text>
-                  </View>
-                </Pressable>
-              ))}
-            </ScrollView>
-          )}
 
           {/* Cabeçalho da lista */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 }}>

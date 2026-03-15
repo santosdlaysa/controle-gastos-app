@@ -137,6 +137,39 @@ export async function ensureSchema(databaseUrl: string): Promise<void> {
       )
     `;
 
+    // banks
+    await sql`
+      CREATE TABLE IF NOT EXISTS banks (
+        id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "userId" integer NOT NULL,
+        name varchar(100) NOT NULL,
+        "creditLimit" numeric(10,2),
+        "debitBalance" numeric(10,2),
+        "createdAt" timestamp NOT NULL DEFAULT now()
+      )
+    `;
+
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS banks_user_name_idx
+      ON banks ("userId", name)
+    `;
+
+    // Garante colunas bank e paymentType em expenses pré-existentes
+    await sql`
+      ALTER TABLE expenses ADD COLUMN IF NOT EXISTS bank varchar(100)
+    `;
+
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE payment_type AS ENUM ('debit', 'credit');
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$
+    `;
+
+    await sql`
+      ALTER TABLE expenses ADD COLUMN IF NOT EXISTS "paymentType" payment_type
+    `;
+
     console.log("[db-migrate] Schema OK");
   } catch (err) {
     console.error("[db-migrate] Falha ao aplicar schema:", err);

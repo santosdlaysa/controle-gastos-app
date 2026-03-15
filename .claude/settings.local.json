@@ -22,7 +22,8 @@
       "Bash(pnpm list:*)",
       "Bash(pnpm test:*)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(keytool:*)"
     ]
   }
 }
