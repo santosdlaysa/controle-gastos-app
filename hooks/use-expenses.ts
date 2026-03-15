@@ -83,7 +83,30 @@ export function useExpenses(month: string) {
   const invalidateIncome = () => utils.income.get.invalidate();
 
   const createMut = trpc.expense.create.useMutation({ onSuccess: invalidateExpenses });
-  const updateMut = trpc.expense.update.useMutation({ onSuccess: invalidateExpenses });
+  const updateMut = trpc.expense.update.useMutation({
+    onMutate: async (variables) => {
+      await utils.expense.getByMonth.cancel({ month });
+      const previous = utils.expense.getByMonth.getData({ month });
+      utils.expense.getByMonth.setData({ month }, (old) =>
+        old?.map((exp) =>
+          exp.id === variables.id
+            ? {
+                ...exp,
+                ...(variables.paid !== undefined && { paid: variables.paid }),
+                ...(variables.name !== undefined && { name: variables.name }),
+                ...(variables.value !== undefined && { value: String(variables.value) }),
+                ...(variables.category !== undefined && { category: variables.category }),
+              }
+            : exp
+        ) ?? old
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) utils.expense.getByMonth.setData({ month }, context.previous);
+    },
+    onSettled: invalidateExpenses,
+  });
   const deleteMut = trpc.expense.delete.useMutation({ onSuccess: invalidateExpenses });
   const bulkCreateMut = trpc.expense.bulkCreate.useMutation({ onSuccess: invalidateExpenses });
   const incomeUpdateMut = trpc.income.update.useMutation({ onSuccess: invalidateIncome });

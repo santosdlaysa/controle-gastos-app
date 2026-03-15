@@ -112,7 +112,7 @@ export function ExpenseItem({ expense, onPress, onTogglePaid }: ExpenseItemProps
           <Text style={{ fontSize: 15, fontWeight: '700', color: accentColor }}>
             R$ {expense.value.toFixed(2)}
           </Text>
-          {onTogglePaid && (
+          {onTogglePaid && expense.paymentType !== 'debit' && (
             <Pressable
               onPress={() => onTogglePaid(expense)}
               hitSlop={10}

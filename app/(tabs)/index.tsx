@@ -182,8 +182,18 @@ export default function HomeScreen() {
   const [showOnlyInstallments, setShowOnlyInstallments] = useState(false);
   const [paymentTypeFilter, setPaymentTypeFilter] = useState<'all' | 'debit' | 'credit'>('all');
   const [bankFilter, setBankFilter] = useState<string | null>(null);
+  const [bankPickerVisible, setBankPickerVisible] = useState(false);
+  const [bankBalanceEditVisible, setBankBalanceEditVisible] = useState(false);
+  const [bankBalanceInput, setBankBalanceInput] = useState('');
+  const [bankReceivedInput, setBankReceivedInput] = useState('');
+  const [fabMenuVisible, setFabMenuVisible] = useState(false);
+  const [receivedModalVisible, setReceivedModalVisible] = useState(false);
+  const [receivedAmount, setReceivedAmount] = useState('');
+  const [receivedDescription, setReceivedDescription] = useState('');
 
   const { data: allBanks = [] } = trpc.bank.getAll.useQuery();
+  const bankUtils = trpc.useUtils();
+  const updateBankLimits = trpc.bank.updateLimits.useMutation();
 
   const {
     expenses,
@@ -287,6 +297,7 @@ export default function HomeScreen() {
     filteredBalance,
     isFiltered,
     budgetUsagePercent,
+    bankIncome,
   } = useMemo(() => {
     const totals: Partial<Record<ExpenseCategory, number>> = {};
     let unpaidCountAcc = 0;
@@ -318,7 +329,26 @@ export default function HomeScreen() {
 
     const isFiltered = paymentTypeFilter !== 'all' || selectedCategory !== 'all' || showOnlyUnpaid || showOnlyInstallments || !!bankFilter;
     const filteredTotal = isFiltered ? filtered.reduce((sum, e) => sum + e.value, 0) : totalExpenses;
-    const filteredBalance = totalIncome - filteredTotal;
+
+    // Se banco selecionado, usa saldo/limite do banco como referência de renda
+    let bankIncome: number | null = null;
+    if (bankFilter) {
+      const selectedBank = allBanks.find(b => b.name === bankFilter);
+      if (selectedBank) {
+        if (paymentTypeFilter === 'credit' && selectedBank.creditLimit != null) {
+          bankIncome = parseFloat(String(selectedBank.creditLimit));
+        } else if (paymentTypeFilter === 'debit' && selectedBank.debitBalance != null) {
+          bankIncome = parseFloat(String(selectedBank.debitBalance));
+        } else if (paymentTypeFilter === 'all') {
+          const debit = selectedBank.debitBalance != null ? parseFloat(String(selectedBank.debitBalance)) : null;
+          const credit = selectedBank.creditLimit != null ? parseFloat(String(selectedBank.creditLimit)) : null;
+          if (debit != null || credit != null) bankIncome = (debit ?? 0) + (credit ?? 0);
+        }
+      }
+    }
+
+    const effectiveIncome = bankIncome !== null ? bankIncome : totalIncome;
+    const filteredBalance = effectiveIncome - filteredTotal;
 
     return {
       categoryTotals: totals,
@@ -330,6 +360,7 @@ export default function HomeScreen() {
       filteredBalance,
       isFiltered,
       budgetUsagePercent: budgetPercent,
+      bankIncome,
     };
   }, [
     expenses,
@@ -341,6 +372,7 @@ export default function HomeScreen() {
     paymentTypeFilter,
     bankFilter,
     budget,
+    allBanks,
   ]);
 
   // Reload data when screen comes into focus
@@ -431,22 +463,19 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {/* Filtro por banco */}
+          {/* Seletor de banco */}
           {allBanks.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8, paddingTop: 8, paddingBottom: 4 }}>
-              <Pressable onPress={() => setBankFilter(null)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-                <View style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter === null ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)', backgroundColor: bankFilter === null ? 'rgba(255,255,255,0.2)' : 'transparent' }}>
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter === null ? '#fff' : 'rgba(255,255,255,0.55)' }}>Todos os bancos</Text>
+            <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4, alignItems: 'center' }}>
+              <Pressable onPress={() => setBankPickerVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)', backgroundColor: bankFilter ? 'rgba(255,255,255,0.2)' : 'transparent' }}>
+                  <MaterialIcons name="account-balance" size={14} color={bankFilter ? '#fff' : 'rgba(255,255,255,0.55)'} />
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter ? '#fff' : 'rgba(255,255,255,0.55)' }}>
+                    {bankFilter ?? 'Todos os bancos'}
+                  </Text>
+                  <MaterialIcons name="arrow-drop-down" size={16} color={bankFilter ? '#fff' : 'rgba(255,255,255,0.55)'} />
                 </View>
               </Pressable>
-              {allBanks.filter(b => b.id != null).map((b) => (
-                <Pressable key={String(b.id)} onPress={() => setBankFilter(bankFilter === b.name ? null : b.name)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-                  <View style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter === b.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)', backgroundColor: bankFilter === b.name ? 'rgba(255,255,255,0.2)' : 'transparent' }}>
-                    <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter === b.name ? '#fff' : 'rgba(255,255,255,0.55)' }}>{b.name}</Text>
-                  </View>
-                </Pressable>
-              ))}
-            </ScrollView>
+            </View>
           )}
 
           {/* Toggle Débito / Crédito */}
@@ -487,20 +516,34 @@ export default function HomeScreen() {
           </View>
 
           {/* Hero: Saldo Restante */}
-          <View style={{ alignItems: 'center', paddingVertical: 12, paddingHorizontal: 24 }}>
+          <Pressable
+            onPress={bankFilter ? () => { setBankBalanceInput(bankIncome != null ? bankIncome.toFixed(2) : ''); setBankBalanceEditVisible(true); } : undefined}
+            style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 12, paddingHorizontal: 24, opacity: pressed && !!bankFilter ? 0.7 : 1 }]}
+          >
             <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
-              {isFiltered ? 'Total Filtrado' : 'Saldo Restante'}
+              {bankFilter ? 'Saldo Atual' : 'Saldo Restante'}
             </Text>
             <Text style={{ color: filteredBalance >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54 }}>
-              R$ {(isFiltered ? filteredTotal : filteredBalance).toFixed(2)}
+              R$ {filteredBalance.toFixed(2)}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: filteredBalance >= 0 ? '#93C5FD' : '#FCA5A5' }} />
-              <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>
-                {isFiltered ? `${filteredExpenses.length} transaç${filteredExpenses.length === 1 ? 'ão' : 'ões'}` : filteredBalance >= 0 ? 'Dentro do orçamento' : 'Acima da renda'}
-              </Text>
+              {bankFilter ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }}>
+                  <MaterialIcons name="edit" size={11} color="rgba(255,255,255,0.6)" />
+                  <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '600' }}>
+                    toque para definir saldo · R$ {filteredTotal.toFixed(2)} gastos
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: filteredBalance >= 0 ? '#93C5FD' : '#FCA5A5' }} />
+                  <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>
+                    {filteredExpenses.length} transaç{filteredExpenses.length === 1 ? 'ão' : 'ões'} · R$ {filteredTotal.toFixed(2)} gastos
+                  </Text>
+                </>
+              )}
             </View>
-          </View>
+          </Pressable>
 
           {/* Cards: Renda + Despesas */}
           <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 28, gap: 10 }}>
@@ -714,9 +757,32 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* FAB */}
+      {/* FAB menu */}
+      {fabMenuVisible && (
+        <Pressable style={{ position: 'absolute', inset: 0 }} onPress={() => setFabMenuVisible(false)} />
+      )}
+      {fabMenuVisible && (
+        <View style={{ position: 'absolute', bottom: 84, right: 20, gap: 10, alignItems: 'flex-end' }}>
+          <Pressable onPress={() => { setFabMenuVisible(false); setReceivedAmount(''); setReceivedDescription(''); setReceivedModalVisible(true); }} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
+            <View style={{ backgroundColor: colors.background, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 4 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>Valor recebido</Text>
+            </View>
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#22C55E', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 }}>
+              <MaterialIcons name="arrow-downward" size={22} color="#fff" />
+            </View>
+          </Pressable>
+          <Pressable onPress={() => { setFabMenuVisible(false); handleAddExpense(); }} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
+            <View style={{ backgroundColor: colors.background, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 4 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>Despesa</Text>
+            </View>
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 }}>
+              <MaterialIcons name="arrow-upward" size={22} color="#fff" />
+            </View>
+          </Pressable>
+        </View>
+      )}
       <TouchableOpacity
-        onPress={handleAddExpense}
+        onPress={() => setFabMenuVisible(v => !v)}
         activeOpacity={0.8}
         style={{
           position: 'absolute',
@@ -735,7 +801,7 @@ export default function HomeScreen() {
           elevation: 5,
         }}
       >
-        <Text style={{ fontSize: 24, color: '#fff', fontWeight: 'bold' }}>+</Text>
+        <MaterialIcons name={fabMenuVisible ? 'close' : 'add'} size={26} color="#fff" />
       </TouchableOpacity>
 
       {/* Menu sanduíche */}
@@ -789,6 +855,199 @@ export default function HomeScreen() {
                 <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, alignItems: 'center' }}>
                   <Text style={{ color: colors.muted, fontWeight: '600', fontSize: 14 }}>Cancelar</Text>
                 </View>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal editar saldo/limite do banco */}
+      <Modal visible={bankBalanceEditVisible} transparent animationType="fade" onRequestClose={() => { setBankBalanceEditVisible(false); setBankReceivedInput(''); }}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }} onPress={() => { setBankBalanceEditVisible(false); setBankReceivedInput(''); }}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderRadius: 20, padding: 24, gap: 14 }}>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Saldo atual — {bankFilter}</Text>
+
+            {/* Saldo base */}
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 6 }}>Saldo base</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 14, backgroundColor: colors.surface }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: colors.success }}>R$</Text>
+                <TextInput
+                  value={bankBalanceInput}
+                  onChangeText={setBankBalanceInput}
+                  keyboardType="decimal-pad"
+                  style={{ flex: 1, fontSize: 17, fontWeight: '700', color: colors.success, paddingVertical: 11 }}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.muted}
+                  autoFocus
+                />
+              </View>
+            </View>
+
+            {/* Valor recebido */}
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 6 }}>Adicionar valor recebido (opcional)</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 14, backgroundColor: colors.surface }}>
+                <MaterialIcons name="add-circle-outline" size={18} color={colors.tint} />
+                <TextInput
+                  value={bankReceivedInput}
+                  onChangeText={setBankReceivedInput}
+                  keyboardType="decimal-pad"
+                  style={{ flex: 1, fontSize: 17, fontWeight: '700', color: colors.tint, paddingVertical: 11 }}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.muted}
+                />
+              </View>
+            </View>
+
+            {/* Preview */}
+            {(bankBalanceInput || bankReceivedInput) && (() => {
+              const base = parseFloat(bankBalanceInput.replace(',', '.')) || 0;
+              const received = parseFloat(bankReceivedInput.replace(',', '.')) || 0;
+              const total = base + received;
+              return received > 0 ? (
+                <View style={{ backgroundColor: colors.tint + '15', borderRadius: 12, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, color: colors.muted }}>R$ {base.toFixed(2)} + R$ {received.toFixed(2)}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.tint }}>= R$ {total.toFixed(2)}</Text>
+                </View>
+              ) : null;
+            })()}
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Pressable onPress={() => { setBankBalanceEditVisible(false); setBankReceivedInput(''); }} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.7 : 1, backgroundColor: colors.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border }]}>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.muted }}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  const base = parseFloat(bankBalanceInput.replace(',', '.'));
+                  const received = parseFloat(bankReceivedInput.replace(',', '.')) || 0;
+                  if (isNaN(base) || base < 0) { Alert.alert('Valor inválido', 'Digite um saldo base válido.'); return; }
+                  const total = base + received;
+                  const bank = allBanks.find(b => b.name === bankFilter);
+                  if (!bank) return;
+                  await updateBankLimits.mutateAsync({
+                    id: bank.id!,
+                    creditLimit: paymentTypeFilter === 'credit' ? total : undefined,
+                    debitBalance: paymentTypeFilter !== 'credit' ? total : undefined,
+                  });
+                  await bankUtils.bank.getAll.invalidate();
+                  setBankReceivedInput('');
+                  setBankBalanceEditVisible(false);
+                }}
+                style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.6 : 1, backgroundColor: colors.tint, borderRadius: 12, padding: 14, alignItems: 'center' }]}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Salvar</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal seletor de banco */}
+      <Modal visible={bankPickerVisible} transparent animationType="slide" onRequestClose={() => setBankPickerVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }} onPress={() => setBankPickerVisible(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32 }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+            <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text, paddingHorizontal: 24, marginBottom: 12 }}>Selecionar banco</Text>
+            {/* Todos */}
+            <Pressable onPress={() => { setBankFilter(null); setBankPickerVisible(false); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingVertical: 14, backgroundColor: bankFilter === null ? colors.tint + '15' : 'transparent' }}>
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: colors.tint + '20', alignItems: 'center', justifyContent: 'center' }}>
+                  <MaterialIcons name="account-balance-wallet" size={18} color={colors.tint} />
+                </View>
+                <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: bankFilter === null ? colors.tint : colors.text }}>Todos os bancos</Text>
+                {bankFilter === null && <MaterialIcons name="check" size={20} color={colors.tint} />}
+              </View>
+            </Pressable>
+            {allBanks.filter(b => b.id != null).map((b) => (
+              <Pressable key={String(b.id)} onPress={() => { setBankFilter(b.name); setBankPickerVisible(false); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingVertical: 14, backgroundColor: bankFilter === b.name ? colors.tint + '15' : 'transparent' }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: colors.tint + '20', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="credit-card" size={18} color={colors.tint} />
+                  </View>
+                  <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: bankFilter === b.name ? colors.tint : colors.text }}>{b.name}</Text>
+                  {bankFilter === b.name && <MaterialIcons name="check" size={20} color={colors.tint} />}
+                </View>
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal valor recebido */}
+      <Modal visible={receivedModalVisible} transparent animationType="fade" onRequestClose={() => setReceivedModalVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }} onPress={() => setReceivedModalVisible(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderRadius: 20, padding: 24, gap: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#22C55E20', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="arrow-downward" size={20} color="#22C55E" />
+              </View>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Valor Recebido</Text>
+            </View>
+
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 6 }}>Valor (R$)</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 14, backgroundColor: colors.surface }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#22C55E' }}>R$</Text>
+                <TextInput
+                  value={receivedAmount}
+                  onChangeText={setReceivedAmount}
+                  keyboardType="decimal-pad"
+                  style={{ flex: 1, fontSize: 20, fontWeight: '700', color: '#22C55E', paddingVertical: 12 }}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.muted}
+                  autoFocus
+                />
+              </View>
+            </View>
+
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 6 }}>Descrição (opcional)</Text>
+              <TextInput
+                value={receivedDescription}
+                onChangeText={setReceivedDescription}
+                style={{ borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 15, color: colors.text, backgroundColor: colors.surface }}
+                placeholder="Ex: Salário, Pix recebido..."
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+
+            {bankFilter && (
+              <View style={{ backgroundColor: colors.tint + '12', borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <MaterialIcons name="account-balance" size={16} color={colors.tint} />
+                <Text style={{ fontSize: 13, color: colors.tint, fontWeight: '600' }}>
+                  Somará ao saldo de {bankFilter}
+                </Text>
+              </View>
+            )}
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Pressable onPress={() => setReceivedModalVisible(false)} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.7 : 1, backgroundColor: colors.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border }]}>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.muted }}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  const val = parseFloat(receivedAmount.replace(',', '.'));
+                  if (isNaN(val) || val <= 0) { Alert.alert('Valor inválido', 'Digite um valor maior que zero.'); return; }
+                  if (bankFilter) {
+                    const bank = allBanks.find(b => b.name === bankFilter);
+                    if (bank) {
+                      const current = paymentTypeFilter === 'credit'
+                        ? (bank.creditLimit ? parseFloat(String(bank.creditLimit)) : 0)
+                        : (bank.debitBalance ? parseFloat(String(bank.debitBalance)) : 0);
+                      await updateBankLimits.mutateAsync({
+                        id: bank.id!,
+                        creditLimit: paymentTypeFilter === 'credit' ? current + val : undefined,
+                        debitBalance: paymentTypeFilter !== 'credit' ? current + val : undefined,
+                      });
+                      await bankUtils.bank.getAll.invalidate();
+                    }
+                  }
+                  setReceivedModalVisible(false);
+                }}
+                style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.6 : 1, backgroundColor: '#22C55E', borderRadius: 12, padding: 14, alignItems: 'center' }]}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Adicionar</Text>
               </Pressable>
             </View>
           </Pressable>
