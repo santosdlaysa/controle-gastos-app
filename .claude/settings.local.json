@@ -20,7 +20,9 @@
       "Bash(./gradlew assembleRelease:*)",
       "Bash(./gradlew:*)",
       "Bash(pnpm list:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ]
   }
 }

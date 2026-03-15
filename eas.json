@@ -6,17 +6,26 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app.onrender.com"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app.onrender.com"
+      }
     },
-   "production": {
+    "production": {
       "android": {
         "buildType": "app-bundle"
       },
       "ios": {
         "distribution": "store"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app.onrender.com"
       }
     }
   },
