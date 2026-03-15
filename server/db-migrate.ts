@@ -149,6 +149,10 @@ export async function ensureSchema(databaseUrl: string): Promise<void> {
       )
     `;
 
+    await sql`ALTER TABLE banks ADD COLUMN IF NOT EXISTS "creditLimit" numeric(10,2)`;
+    await sql`ALTER TABLE banks ADD COLUMN IF NOT EXISTS "debitBalance" numeric(10,2)`;
+    await sql`ALTER TABLE banks ADD COLUMN IF NOT EXISTS "createdAt" timestamp NOT NULL DEFAULT now()`;
+
     await sql`
       CREATE UNIQUE INDEX IF NOT EXISTS banks_user_name_idx
       ON banks ("userId", name)

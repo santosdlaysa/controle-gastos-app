@@ -13,12 +13,16 @@ import { EXPENSE_CATEGORIES, banks } from "../drizzle/schema";
 import { getDb } from "./db";
 
 async function upsertBank(userId: number, name: string) {
-  const db = await getDb();
-  if (!db) return;
-  await db
-    .insert(banks)
-    .values({ userId, name })
-    .onConflictDoNothing();
+  try {
+    const db = await getDb();
+    if (!db) return;
+    await db
+      .insert(banks)
+      .values({ userId, name })
+      .onConflictDoNothing();
+  } catch (err) {
+    console.warn("[upsertBank] Failed to upsert bank:", err);
+  }
 }
 
 const categoryEnum = z.enum(EXPENSE_CATEGORIES);
