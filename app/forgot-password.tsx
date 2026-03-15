@@ -65,7 +65,7 @@ export default function ForgotPasswordScreen() {
         <View style={{ flex: 1, paddingHorizontal: 28, justifyContent: "center", gap: 32 }}>
 
           {/* Back */}
-          <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={{ alignSelf: "flex-start" }}>
+          <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/login')} hitSlop={12} style={{ alignSelf: "flex-start" }}>
             <MaterialIcons name="arrow-back" size={24} color="#0a7ea4" />
           </TouchableOpacity>
 

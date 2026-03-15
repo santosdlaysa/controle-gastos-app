@@ -65,8 +65,9 @@ function NavLayout() {
     if (loading) return;
 
     const onLoginScreen = segments[0] === "login";
+    const onForgotPassword = segments[0] === "forgot-password";
 
-    if (!isAuthenticated && !onLoginScreen) {
+    if (!isAuthenticated && !onLoginScreen && !onForgotPassword) {
       router.replace("/login");
     } else if (isAuthenticated && onLoginScreen) {
       router.replace("/mode-select");
@@ -86,6 +87,7 @@ function NavLayout() {
       <>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
+          <Stack.Screen name="forgot-password" />
           <Stack.Screen name="oauth/callback" />
           <Stack.Screen name="mode-select" />
           <Stack.Screen name="(tabs)" />
