@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   Text,
@@ -18,6 +18,8 @@ import { CATEGORY_LABELS, CATEGORY_COLORS, Income } from '@/types/expense';
 import { useCategories } from '@/hooks/use-categories';
 import { useAuthContext } from '@/lib/auth-context';
 import { useThemeContext } from '@/lib/theme-provider';
+import { getUberFeatureEnabled, setUberFeatureEnabled } from '@/lib/uber-feature';
+import { useFocusEffect } from '@react-navigation/native';
 import { useColors } from '@/hooks/use-colors';
 import { trpc } from '@/lib/trpc';
 
@@ -110,6 +112,11 @@ export default function SettingsScreen() {
   const { colorScheme, setColorScheme } = useThemeContext();
   const colors = useColors();
   const isDark = colorScheme === 'dark';
+  const [uberEnabled, setUberEnabledState] = useState(false);
+
+  useFocusEffect(useCallback(() => {
+    getUberFeatureEnabled().then(setUberEnabledState);
+  }, []));
   const { categories, createCategory, deleteCategory } = useCategories();
   const [catMgmtOpen, setCatMgmtOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -195,43 +202,19 @@ export default function SettingsScreen() {
 
   const deleteAccountMutation = trpc.profile.deleteAccount.useMutation();
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Excluir conta',
-      'Tem certeza? Todos os seus dados (despesas, renda, orçamentos e ganhos Uber) serão excluídos permanentemente. Essa ação não pode ser desfeita.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir conta',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Confirmar exclusão',
-              'Digite "EXCLUIR" para confirmar a exclusão permanente da sua conta.',
-              [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                  text: 'Sim, excluir tudo',
-                  style: 'destructive',
-                  onPress: async () => {
-                    setDeletingAccount(true);
-                    try {
-                      await deleteAccountMutation.mutateAsync();
-                      await logout();
-                    } catch {
-                      Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
-                    } finally {
-                      setDeletingAccount(false);
-                    }
-                  },
-                },
-              ],
-            );
-          },
-        },
-      ],
-    );
+  const handleDeleteAccount = async () => {
+    setDeleteModalVisible(false);
+    setDeletingAccount(true);
+    try {
+      await deleteAccountMutation.mutateAsync();
+      await logout();
+    } catch {
+      Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
+    } finally {
+      setDeletingAccount(false);
+    }
   };
 
   const nameChanged = nameInput.trim() !== (user?.name ?? '');
@@ -327,6 +310,28 @@ export default function SettingsScreen() {
 
           <RowSeparator />
 
+          {/* Uber feature toggle */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#0a7ea420', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+              <MaterialIcons name="directions-car" size={17} color="#0a7ea4" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, color: colors.foreground }}>Módulo Uber</Text>
+              <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>Ganhos e gastos como motorista</Text>
+            </View>
+            <Switch
+              value={uberEnabled}
+              onValueChange={async (val) => {
+                setUberEnabledState(val);
+                await setUberFeatureEnabled(val);
+              }}
+              trackColor={{ false: colors.border, true: '#0a7ea4' }}
+              thumbColor="#fff"
+            />
+          </View>
+
+          <RowSeparator />
+
           {/* Logout */}
           <TouchableOpacity onPress={handleLogout} activeOpacity={0.7}>
             <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16 }}>
@@ -338,21 +343,6 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
 
-          <RowSeparator />
-
-          {/* Delete account */}
-          <TouchableOpacity onPress={handleDeleteAccount} activeOpacity={0.7} disabled={deletingAccount}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, opacity: deletingAccount ? 0.5 : 1 }}>
-              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#EF444420', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                {deletingAccount
-                  ? <ActivityIndicator size="small" color="#EF4444" />
-                  : <MaterialIcons name="delete-forever" size={17} color="#EF4444" />
-                }
-              </View>
-              <Text style={{ flex: 1, fontSize: 15, color: '#EF4444', fontWeight: '500' }}>Excluir conta</Text>
-              <MaterialIcons name="chevron-right" size={20} color="#EF4444" style={{ opacity: 0.5 }} />
-            </View>
-          </TouchableOpacity>
         </SettingCard>
 
         {/* ── Renda ── */}
@@ -590,7 +580,67 @@ export default function SettingsScreen() {
         </>
         )}
 
+        {/* ── Excluir conta ── */}
+        <TouchableOpacity onPress={() => setDeleteModalVisible(true)} activeOpacity={0.7} disabled={deletingAccount}>
+          <View style={{
+            borderRadius: 14,
+            paddingVertical: 16,
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            gap: 8,
+            borderWidth: 1.5,
+            borderColor: '#EF444440',
+            opacity: deletingAccount ? 0.5 : 1,
+            marginTop: 8,
+            marginBottom: 8,
+          }}>
+            {deletingAccount
+              ? <ActivityIndicator size="small" color="#EF4444" />
+              : <MaterialIcons name="delete-forever" size={20} color="#EF4444" />
+            }
+            <Text style={{ color: '#EF4444', fontSize: 15, fontWeight: '600' }}>
+              {deletingAccount ? 'Excluindo...' : 'Excluir conta'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
       </ScrollView>
+
+      {/* Modal confirmação excluir conta */}
+      <Modal visible={deleteModalVisible} transparent animationType="fade" onRequestClose={() => setDeleteModalVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 28 }} onPress={() => setDeleteModalVisible(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderRadius: 24, padding: 24, gap: 16 }}>
+            <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: '#EF444420', alignItems: 'center', justifyContent: 'center' }}>
+              <MaterialIcons name="delete-forever" size={28} color="#EF4444" />
+            </View>
+            <Text style={{ fontSize: 19, fontWeight: '700', color: colors.foreground, letterSpacing: -0.3 }}>
+              Excluir conta?
+            </Text>
+            <Text style={{ fontSize: 14, color: colors.muted, lineHeight: 20 }}>
+              Todos os seus dados — despesas, renda, orçamentos e ganhos Uber — serão excluídos permanentemente. Essa ação não pode ser desfeita.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+              <Pressable
+                style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.8 : 1 })}
+                onPress={() => setDeleteModalVisible(false)}
+              >
+                <View style={{ paddingVertical: 14, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>Cancelar</Text>
+                </View>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.8 : 1 })}
+                onPress={handleDeleteAccount}
+              >
+                <View style={{ paddingVertical: 14, borderRadius: 14, backgroundColor: '#EF4444', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: '#fff' }}>Excluir tudo</Text>
+                </View>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Modal gerenciar categorias */}
       <Modal visible={catMgmtOpen} transparent animationType="slide" onRequestClose={() => setCatMgmtOpen(false)}>

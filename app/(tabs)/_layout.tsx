@@ -56,7 +56,7 @@ export default function TabLayout() {
         options={{
           title: "Categorias",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.pie.fill" color={color} />,
-          href: isUber ? null : undefined,
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -71,7 +71,7 @@ export default function TabLayout() {
         options={{
           title: "Bancos",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="creditcard.fill" color={color} />,
-          href: isUber ? null : undefined,
+          href: null,
         }}
       />
       <Tabs.Screen

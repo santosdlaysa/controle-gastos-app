@@ -3,15 +3,72 @@ import { useColors } from "@/hooks/use-colors";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { setAppMode } from "@/lib/mode";
-import { Image, Pressable, Text, View } from "react-native";
+import { getUberFeatureEnabled, isUberFeatureUnconfigured, setUberFeatureEnabled } from "@/lib/uber-feature";
+import { Image, Modal, Pressable, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import { useEffect, useState } from "react";
 
 export default function ModeSelectScreen() {
   const router = useRouter();
   const colors = useColors();
+  const [uberEnabled, setUberEnabled] = useState(false);
+  const [showUberPrompt, setShowUberPrompt] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const unconfigured = await isUberFeatureUnconfigured();
+      if (unconfigured) {
+        setShowUberPrompt(true);
+      } else {
+        setUberEnabled(await getUberFeatureEnabled());
+      }
+    })();
+  }, []);
 
   return (
     <ScreenContainer edges={["top", "bottom", "left", "right"]}>
+      {/* Uber onboarding prompt */}
+      <Modal visible={showUberPrompt} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 28 }}>
+          <View style={{ backgroundColor: colors.background, borderRadius: 24, padding: 24, gap: 16 }}>
+            <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: 'rgba(10,126,164,0.12)', alignItems: 'center', justifyContent: 'center' }}>
+              <MaterialIcons name="directions-car" size={28} color="#0a7ea4" />
+            </View>
+            <Text style={{ fontSize: 19, fontWeight: '700', color: colors.text, letterSpacing: -0.3 }}>
+              Você é motorista de aplicativo?
+            </Text>
+            <Text style={{ fontSize: 14, color: colors.muted, lineHeight: 20 }}>
+              Quer acompanhar seus ganhos e despesas como motorista Uber?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+              <Pressable
+                style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.8 : 1 })}
+                onPress={async () => {
+                  await setUberFeatureEnabled(false);
+                  setUberEnabled(false);
+                  setShowUberPrompt(false);
+                }}
+              >
+                <View style={{ paddingVertical: 14, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Não</Text>
+                </View>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.8 : 1 })}
+                onPress={async () => {
+                  await setUberFeatureEnabled(true);
+                  setUberEnabled(true);
+                  setShowUberPrompt(false);
+                }}
+              >
+                <View style={{ paddingVertical: 14, borderRadius: 14, backgroundColor: '#0a7ea4', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: '#fff' }}>Sim</Text>
+                </View>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
       {/* Decorative circles */}
       <View
         pointerEvents="none"
@@ -113,8 +170,8 @@ export default function ModeSelectScreen() {
           </View>
         </Pressable>
 
-        {/* Opção 2: Ganhos/Gastos Uber */}
-        <Pressable
+        {/* Opção 2: Ganhos/Gastos Uber — só aparece se habilitado */}
+        {uberEnabled && <Pressable
           onPress={() => { setAppMode('uber'); router.replace("/(tabs)/uber-earnings"); }}
           style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
         >
@@ -164,7 +221,7 @@ export default function ModeSelectScreen() {
               <MaterialIcons name="arrow-forward" size={20} color={colors.muted} />
             </View>
           </View>
-        </Pressable>
+        </Pressable>}
       </View>
     </ScreenContainer>
   );
