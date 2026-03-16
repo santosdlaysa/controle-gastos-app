@@ -21,9 +21,14 @@ import { ScreenContainer } from '@/components/screen-container';
 import { ExpenseItem } from '@/components/expense-item';
 import { ExpenseModal } from '@/components/expense-modal';
 import { useExpenses } from '@/hooks/use-expenses';
-import { Expense, ExpenseCategory, CATEGORY_LABELS, CATEGORY_COLORS } from '@/types/expense';
+import { Expense, CATEGORY_LABELS, CATEGORY_COLORS } from '@/types/expense';
+import { useCategories } from '@/hooks/use-categories';
 import { trpc } from '@/lib/trpc';
 import { setAppMode } from '@/lib/mode';
+import { getSelectedBank, setSelectedBank } from '@/lib/selected-bank';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const BANK_FILTER_KEY = 'home_bank_filter';
 
 // ─── Helpers de exportação ────────────────────────────────────────────────────
 
@@ -31,6 +36,10 @@ const EXPENSE_MONTH_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
+
+function fmt(value: number) {
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 function expFormatDateBR(dateStr: string) {
   try {
@@ -60,7 +69,7 @@ function generateExpensesCSV(rows: ExpRow[], year: string): string {
     const [, mn] = r.month.split('-');
     const mName = EXPENSE_MONTH_NAMES[parseInt(mn, 10) - 1] ?? r.month;
     const desc = `"${r.name.replace(/"/g, '""')}"`;
-    const cat = CATEGORY_LABELS[r.category as ExpenseCategory] ?? r.category;
+    const cat = CATEGORY_LABELS[r.category] ?? r.category;
     const v = parseFloat(r.value);
     byMonth[r.month] = (byMonth[r.month] ?? 0) + v;
     total += v;
@@ -105,8 +114,8 @@ function generateExpensesHTML(rows: ExpRow[], year: string): string {
   const entryRows = sorted.map(r => {
     const [, mn] = r.month.split('-');
     const mName = EXPENSE_MONTH_NAMES[parseInt(mn, 10) - 1] ?? r.month;
-    const cat = CATEGORY_LABELS[r.category as ExpenseCategory] ?? r.category;
-    const color = CATEGORY_COLORS[r.category as ExpenseCategory] ?? '#6B7280';
+    const cat = CATEGORY_LABELS[r.category] ?? r.category;
+    const color = CATEGORY_COLORS[r.category] ?? '#6B7280';
     return `<tr><td>${mName}</td><td>${expFormatDateBR(r.date)}</td><td>${r.name.replace(/</g, '&lt;')}</td><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:4px"></span>${cat}</td><td>${r.quantity ?? '—'}</td><td style="text-align:right">R$ ${parseFloat(r.value).toFixed(2)}</td><td style="text-align:center">${r.paid ? '✓' : '—'}</td></tr>`;
   }).join('');
 
@@ -177,19 +186,29 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>();
-  const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
   const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(false);
   const [showOnlyInstallments, setShowOnlyInstallments] = useState(false);
-  const [paymentTypeFilter, setPaymentTypeFilter] = useState<'all' | 'debit' | 'credit'>('all');
-  const [bankFilter, setBankFilter] = useState<string | null>(null);
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState<'debit' | 'credit'>('debit');
+  const [bankFilter, setBankFilterState] = useState<string | null>(null);
+  const setBankFilter = useCallback((value: string | null) => {
+    setBankFilterState(value);
+    if (value) AsyncStorage.setItem(BANK_FILTER_KEY, value);
+    else AsyncStorage.removeItem(BANK_FILTER_KEY);
+  }, []);
   const [bankPickerVisible, setBankPickerVisible] = useState(false);
   const [bankBalanceEditVisible, setBankBalanceEditVisible] = useState(false);
   const [bankBalanceInput, setBankBalanceInput] = useState('');
   const [bankReceivedInput, setBankReceivedInput] = useState('');
   const [fabMenuVisible, setFabMenuVisible] = useState(false);
+  const [uncategorizedSheetVisible, setUncategorizedSheetVisible] = useState(false);
   const [receivedModalVisible, setReceivedModalVisible] = useState(false);
   const [receivedAmount, setReceivedAmount] = useState('');
   const [receivedDescription, setReceivedDescription] = useState('');
+
+  useEffect(() => {
+    AsyncStorage.getItem(BANK_FILTER_KEY).then(v => { if (v) setBankFilterState(v); });
+  }, []);
 
   const { data: allBanks = [] } = trpc.bank.getAll.useQuery();
   const bankUtils = trpc.useUtils();
@@ -215,6 +234,7 @@ export default function HomeScreen() {
   } = useExpenses(currentMonth);
 
   const colors = useColors();
+  const { categories, colorMap, labelMap } = useCategories();
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportYear, setExportYear] = useState(() => String(new Date().getFullYear()));
   const [exporting, setExporting] = useState(false);
@@ -298,15 +318,16 @@ export default function HomeScreen() {
     isFiltered,
     budgetUsagePercent,
     bankIncome,
+    uncategorizedExpenses,
   } = useMemo(() => {
-    const totals: Partial<Record<ExpenseCategory, number>> = {};
+    const totals: Record<string, number> = {};
     let unpaidCountAcc = 0;
     let unpaidTotalAcc = 0;
 
     for (const exp of expenses) {
       totals[exp.category] = (totals[exp.category] || 0) + exp.value;
 
-      if (!exp.paid) {
+      if (!exp.paid && (exp.paymentType == null || exp.paymentType === paymentTypeFilter)) {
         unpaidCountAcc += 1;
         unpaidTotalAcc += exp.value;
       }
@@ -322,13 +343,15 @@ export default function HomeScreen() {
       if (selectedCategory !== 'all' && exp.category !== selectedCategory) return false;
       if (showOnlyUnpaid && exp.paid) return false;
       if (showOnlyInstallments && !exp.quantity) return false;
-      if (paymentTypeFilter !== 'all' && exp.paymentType != null && exp.paymentType !== paymentTypeFilter) return false;
+      if (exp.paymentType != null && exp.paymentType !== paymentTypeFilter) return false;
       if (bankFilter && exp.bank !== bankFilter) return false;
       return true;
     });
 
-    const isFiltered = paymentTypeFilter !== 'all' || selectedCategory !== 'all' || showOnlyUnpaid || showOnlyInstallments || !!bankFilter;
+    const isFiltered = selectedCategory !== 'all' || showOnlyUnpaid || showOnlyInstallments || !!bankFilter;
     const filteredTotal = isFiltered ? filtered.reduce((sum, e) => sum + e.value, 0) : totalExpenses;
+
+    const uncategorized = expenses.filter((exp) => exp.paymentType == null);
 
     // Se banco selecionado, usa saldo/limite do banco como referência de renda
     let bankIncome: number | null = null;
@@ -339,16 +362,12 @@ export default function HomeScreen() {
           bankIncome = parseFloat(String(selectedBank.creditLimit));
         } else if (paymentTypeFilter === 'debit' && selectedBank.debitBalance != null) {
           bankIncome = parseFloat(String(selectedBank.debitBalance));
-        } else if (paymentTypeFilter === 'all') {
-          const debit = selectedBank.debitBalance != null ? parseFloat(String(selectedBank.debitBalance)) : null;
-          const credit = selectedBank.creditLimit != null ? parseFloat(String(selectedBank.creditLimit)) : null;
-          if (debit != null || credit != null) bankIncome = (debit ?? 0) + (credit ?? 0);
         }
       }
     }
 
     const effectiveIncome = bankIncome !== null ? bankIncome : totalIncome;
-    const filteredBalance = effectiveIncome - filteredTotal;
+    const filteredBalance = bankIncome !== null ? bankIncome : effectiveIncome - filteredTotal;
 
     return {
       categoryTotals: totals,
@@ -361,6 +380,7 @@ export default function HomeScreen() {
       isFiltered,
       budgetUsagePercent: budgetPercent,
       bankIncome,
+      uncategorizedExpenses: uncategorized,
     };
   }, [
     expenses,
@@ -379,6 +399,11 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       reload();
+      const pending = getSelectedBank();
+      if (pending) {
+        setBankFilter(pending.name);
+        setSelectedBank(null);
+      }
     }, [reload])
   );
 
@@ -481,8 +506,8 @@ export default function HomeScreen() {
           {/* Toggle Débito / Crédito */}
           <View style={{ marginHorizontal: 20, marginTop: 8, marginBottom: 4 }}>
             <View style={{ flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 3 }}>
-              {(['all', 'debit', 'credit'] as const).map((type) => (
-                <Pressable key={type} onPress={() => setPaymentTypeFilter(type)} style={{ flex: 1 }}>
+              {(['debit', 'credit'] as const).map((type) => (
+                <Pressable key={type} onPress={() => { setPaymentTypeFilter(type); if (type === 'debit') setShowOnlyUnpaid(false); }} style={{ flex: 1 }}>
                   <View style={{
                     paddingVertical: 7,
                     borderRadius: 10,
@@ -494,7 +519,7 @@ export default function HomeScreen() {
                       fontWeight: '600',
                       color: paymentTypeFilter === type ? '#fff' : 'rgba(255,255,255,0.5)',
                     }}>
-                      {type === 'all' ? 'Todos' : type === 'debit' ? 'Débito' : 'Crédito'}
+                      {type === 'debit' ? 'Débito' : 'Crédito'}
                     </Text>
                   </View>
                 </Pressable>
@@ -524,21 +549,21 @@ export default function HomeScreen() {
               {bankFilter ? 'Saldo Atual' : 'Saldo Restante'}
             </Text>
             <Text style={{ color: filteredBalance >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54 }}>
-              R$ {filteredBalance.toFixed(2)}
+              R$ {fmt(filteredBalance)}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
               {bankFilter ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }}>
                   <MaterialIcons name="edit" size={11} color="rgba(255,255,255,0.6)" />
                   <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '600' }}>
-                    toque para definir saldo · R$ {filteredTotal.toFixed(2)} gastos
+                    toque para definir saldo · R$ {fmt(filteredTotal)} gastos
                   </Text>
                 </View>
               ) : (
                 <>
                   <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: filteredBalance >= 0 ? '#93C5FD' : '#FCA5A5' }} />
                   <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>
-                    {filteredExpenses.length} transaç{filteredExpenses.length === 1 ? 'ão' : 'ões'} · R$ {filteredTotal.toFixed(2)} gastos
+                    {filteredExpenses.length} transaç{filteredExpenses.length === 1 ? 'ão' : 'ões'} · R$ {fmt(filteredTotal)} gastos
                   </Text>
                 </>
               )}
@@ -557,7 +582,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>
-                  R$ {totalIncome.toFixed(2)}
+                  R$ {fmt(totalIncome)}
                 </Text>
                 <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>
                   {incomeOverride !== null ? 'personalizada · toque p/ editar' : 'toque para editar'}
@@ -574,7 +599,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>
-                  R$ {filteredTotal.toFixed(2)}
+                  R$ {fmt(filteredTotal)}
                 </Text>
                 <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>
                   {filteredExpenses.length} registro{filteredExpenses.length !== 1 ? 's' : ''} · toque p/ adicionar
@@ -614,7 +639,7 @@ export default function HomeScreen() {
                 {incomeOverride !== null && (
                   <Pressable onPress={handleClearIncomeOverride} style={{ marginTop: 8 }}>
                     <Text style={{ color: colors.muted, fontSize: 12 }}>
-                      Restaurar padrão (R$ {(income.salary + income.vale + income.other).toFixed(2)})
+                      Restaurar padrão (R$ {fmt(income.salary + income.vale + income.other)})
                     </Text>
                   </Pressable>
                 )}
@@ -627,13 +652,13 @@ export default function HomeScreen() {
             <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
               <View style={{ borderRadius: 16, padding: 14, backgroundColor: colors.primary + '10', borderWidth: 1, borderColor: colors.primary + '30' }}>
                 <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 2 }}>
-                  Uso do orçamento mensal (R$ {budget.toFixed(2)})
+                  Uso do orçamento mensal (R$ {fmt(budget)})
                 </Text>
                 <Text style={{ color: colors.primary, fontSize: 18, fontWeight: '700' }}>
                   {budgetUsagePercent.toFixed(0)}% usado
                 </Text>
                 <Text style={{ color: colors.muted, fontSize: 11, marginTop: 2 }}>
-                  Gasto: R$ {totalExpenses.toFixed(2)} · Restante: R$ {Math.max(budget - totalExpenses, 0).toFixed(2)}
+                  Gasto: R$ {fmt(totalExpenses)} · Restante: R$ {fmt(Math.max(budget - totalExpenses, 0))}
                 </Text>
               </View>
             </View>
@@ -647,23 +672,56 @@ export default function HomeScreen() {
                 {totalIncome > 0 ? `${percentOfIncome.toFixed(0)}%` : '--'}
               </Text>
               <Text style={{ color: colors.muted, fontSize: 10, marginTop: 2 }}>
-                R$ {totalExpenses.toFixed(2)} de R$ {totalIncome.toFixed(2)}
+                R$ {fmt(totalExpenses)} de R$ {fmt(totalIncome)}
               </Text>
             </View>
-            <View style={{ flex: 1, borderRadius: 16, backgroundColor: colors.warning + '22', padding: 12 }}>
-              <Text style={{ color: colors.muted, fontSize: 11, marginBottom: 2 }}>Não pagas</Text>
-              <Text style={{ color: colors.warning, fontSize: 18, fontWeight: '700' }}>{unpaidCount} itens</Text>
-              <Text style={{ color: colors.muted, fontSize: 10, marginTop: 2 }}>Total: R$ {unpaidTotal.toFixed(2)}</Text>
-            </View>
+            {paymentTypeFilter === 'credit' ? (
+              <View style={{ flex: 1, borderRadius: 16, backgroundColor: colors.warning + '22', padding: 12 }}>
+                <Text style={{ color: colors.muted, fontSize: 11, marginBottom: 2 }}>Não pagas</Text>
+                <Text style={{ color: colors.warning, fontSize: 18, fontWeight: '700' }}>{unpaidCount} itens</Text>
+                <Text style={{ color: colors.muted, fontSize: 10, marginTop: 2 }}>Total: R$ {fmt(unpaidTotal)}</Text>
+              </View>
+            ) : (
+              <View style={{ flex: 1, borderRadius: 16, backgroundColor: colors.primary + '10', padding: 12 }}>
+                <Text style={{ color: colors.muted, fontSize: 11, marginBottom: 2 }}>Lançamentos</Text>
+                <Text style={{ color: colors.primary, fontSize: 18, fontWeight: '700' }}>{filteredExpenses.length} itens</Text>
+                <Text style={{ color: colors.muted, fontSize: 10, marginTop: 2 }}>Total: R$ {fmt(filteredTotal)}</Text>
+              </View>
+            )}
           </View>
+
+          {/* Notificação: despesas sem débito/crédito */}
+          {uncategorizedExpenses.length > 0 && (
+            <Pressable
+              onPress={() => setUncategorizedSheetVisible(true)}
+              style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, marginHorizontal: 16, marginTop: 12 }]}
+            >
+              <View style={{ backgroundColor: '#F59E0B15', borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#F59E0B60', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F59E0B25', alignItems: 'center', justifyContent: 'center' }}>
+                  <MaterialIcons name="warning-amber" size={20} color="#F59E0B" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#F59E0B' }}>
+                    {uncategorizedExpenses.length} {uncategorizedExpenses.length === 1 ? 'despesa sem categoria' : 'despesas sem categoria'}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#92400E', marginTop: 2 }}>
+                    Toque para classificar como débito ou crédito
+                  </Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={20} color="#F59E0B" />
+              </View>
+            </Pressable>
+          )}
 
           {/* Filtros rápidos */}
           <View style={{ paddingHorizontal: 16, paddingTop: 10, flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-            <Pressable onPress={() => setShowOnlyUnpaid((prev) => !prev)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-              <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, backgroundColor: showOnlyUnpaid ? colors.success + '20' : 'transparent', borderColor: showOnlyUnpaid ? colors.success : colors.border }}>
-                <Text style={{ fontSize: 12, color: showOnlyUnpaid ? colors.success : colors.foreground }}>Somente não pagas</Text>
-              </View>
-            </Pressable>
+            {paymentTypeFilter === 'credit' && (
+              <Pressable onPress={() => setShowOnlyUnpaid((prev) => !prev)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, backgroundColor: showOnlyUnpaid ? colors.success + '20' : 'transparent', borderColor: showOnlyUnpaid ? colors.success : colors.border }}>
+                  <Text style={{ fontSize: 12, color: showOnlyUnpaid ? colors.success : colors.foreground }}>Somente não pagas</Text>
+                </View>
+              </Pressable>
+            )}
             <Pressable onPress={() => setShowOnlyInstallments((prev) => !prev)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
               <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, backgroundColor: showOnlyInstallments ? colors.primary + '20' : 'transparent', borderColor: showOnlyInstallments ? colors.primary : colors.border }}>
                 <Text style={{ fontSize: 12, color: showOnlyInstallments ? colors.primary : colors.foreground }}>Somente parcelas</Text>
@@ -689,22 +747,23 @@ export default function HomeScreen() {
                 </View>
               </View>
             </Pressable>
-            {(Object.keys(CATEGORY_LABELS) as ExpenseCategory[]).map((cat) => {
+            {categories.map((catObj) => {
+              const cat = catObj.name;
               const total = categoryTotals[cat] || 0;
               const catBudget = categoryBudgets?.[cat];
               const catPercent = catBudget && catBudget > 0 ? Math.min(999, (total / catBudget) * 100) : null;
               const isSelected = selectedCategory === cat;
-              const color = CATEGORY_COLORS[cat];
+              const color = colorMap[cat] ?? CATEGORY_COLORS[cat] ?? '#6B7280';
               return (
                 <Pressable key={cat} onPress={() => setSelectedCategory((prev) => prev === cat ? 'all' : cat)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: isSelected ? 2 : 1.5, borderColor: isSelected ? color : colors.border, backgroundColor: isSelected ? color + '15' : 'transparent' }}>
                     <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
                     <View>
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: isSelected ? color : colors.foreground }}>{CATEGORY_LABELS[cat]}</Text>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: isSelected ? color : colors.foreground }}>{labelMap[cat] ?? CATEGORY_LABELS[cat] ?? cat}</Text>
                       {catBudget && catBudget > 0 ? (
-                        <Text style={{ fontSize: 10, color: colors.muted }}>R$ {total.toFixed(2)} de R$ {catBudget.toFixed(2)}{catPercent !== null ? ` (${catPercent.toFixed(0)}%)` : ''}</Text>
+                        <Text style={{ fontSize: 10, color: colors.muted }}>R$ {fmt(total)} de R$ {fmt(catBudget)}{catPercent !== null ? ` (${catPercent.toFixed(0)}%)` : ''}</Text>
                       ) : (
-                        <Text style={{ fontSize: 10, color: colors.muted }}>R$ {total.toFixed(2)}</Text>
+                        <Text style={{ fontSize: 10, color: colors.muted }}>R$ {fmt(total)}</Text>
                       )}
                     </View>
                   </View>
@@ -907,8 +966,8 @@ export default function HomeScreen() {
               const total = base + received;
               return received > 0 ? (
                 <View style={{ backgroundColor: colors.tint + '15', borderRadius: 12, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, color: colors.muted }}>R$ {base.toFixed(2)} + R$ {received.toFixed(2)}</Text>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.tint }}>= R$ {total.toFixed(2)}</Text>
+                  <Text style={{ fontSize: 13, color: colors.muted }}>R$ {fmt(base)} + R$ {fmt(received)}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.tint }}>= R$ {fmt(total)}</Text>
                 </View>
               ) : null;
             })()}
@@ -1050,6 +1109,38 @@ export default function HomeScreen() {
                 <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Adicionar</Text>
               </Pressable>
             </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal: despesas sem débito/crédito */}
+      <Modal visible={uncategorizedSheetVisible} transparent animationType="slide" onRequestClose={() => setUncategorizedSheetVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }} onPress={() => setUncategorizedSheetVisible(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, maxHeight: '80%' }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 24, marginBottom: 4 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F59E0B25', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="warning-amber" size={18} color="#F59E0B" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>Sem categoria de pagamento</Text>
+                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Toque em um item para editar e definir débito ou crédito</Text>
+              </View>
+            </View>
+            <FlatList
+              data={uncategorizedExpenses}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12 }}
+              renderItem={({ item }) => (
+                <ExpenseItem
+                  expense={item}
+                  onPress={(exp) => {
+                    setUncategorizedSheetVisible(false);
+                    handleEditExpense(exp);
+                  }}
+                />
+              )}
+            />
           </Pressable>
         </Pressable>
       </Modal>

@@ -1,6 +1,6 @@
 import "@/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments, useRootNavigationState } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -60,9 +60,11 @@ function NavLayout() {
   const { isAuthenticated, loading } = useAuthContext();
   const segments = useSegments();
   const router = useRouter();
+  const navigationState = useRootNavigationState();
 
   useEffect(() => {
     if (loading) return;
+    if (!navigationState?.key) return;
 
     const onLoginScreen = segments[0] === "login";
     const onForgotPassword = segments[0] === "forgot-password";
@@ -72,7 +74,7 @@ function NavLayout() {
     } else if (isAuthenticated && onLoginScreen) {
       router.replace("/mode-select");
     }
-  }, [isAuthenticated, loading, segments, router]);
+  }, [isAuthenticated, loading, segments, router, navigationState?.key]);
 
   if (loading) {
     return (

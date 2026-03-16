@@ -5,7 +5,6 @@ import {
   budgets,
   categoryBudgets,
   InsertExpense,
-  ExpenseCategory,
 } from "../drizzle/schema";
 
 type PaymentType = "debit" | "credit";
@@ -70,7 +69,7 @@ export async function createExpense(
 export async function updateExpense(
   userId: number,
   id: number,
-  data: Partial<Pick<InsertExpense, "name" | "category" | "value" | "quantity" | "paid" | "bank" | "paymentType">>,
+  data: Partial<Pick<InsertExpense, "name" | "category" | "value" | "quantity" | "paid" | "bank" | "paymentType" | "expenseType">>,
 ): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -81,7 +80,7 @@ export async function updateExpense(
       .where(and(eq(expenses.id, id), eq(expenses.userId, userId)));
   } catch {
     // Fallback: update only core columns if new columns don't exist yet
-    const { bank: _b, paymentType: _pt, ...safeData } = data;
+    const { bank: _b, paymentType: _pt, expenseType: _et, ...safeData } = data;
     if (Object.keys(safeData).length === 0) return;
     await db
       .update(expenses)
@@ -102,8 +101,31 @@ export async function bulkCreateExpenses(
   if (items.length === 0) return;
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+
+  // Deduplicate: filter out items where (userId, name, quantity, month) already exist
+  const filtered: typeof items = [];
+  for (const item of items) {
+    if (item.quantity) {
+      const existing = await db
+        .select({ id: expenses.id })
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.userId, item.userId),
+            eq(expenses.name, item.name),
+            eq(expenses.quantity, item.quantity),
+            eq(expenses.month, item.month),
+          ),
+        )
+        .limit(1);
+      if (existing.length > 0) continue;
+    }
+    filtered.push(item);
+  }
+
+  if (filtered.length === 0) return;
   // ON CONFLICT DO NOTHING deduplicates by (userId, clientId) unique index
-  await db.insert(expenses).values(items).onConflictDoNothing();
+  await db.insert(expenses).values(filtered).onConflictDoNothing();
 }
 
 // ─── Incomes ──────────────────────────────────────────────────────────────────
@@ -191,7 +213,7 @@ export async function getCategoryBudgets(userId: number, month: string) {
 export async function upsertCategoryBudgets(
   userId: number,
   month: string,
-  items: Array<{ category: ExpenseCategory; amount: string }>,
+  items: Array<{ category: string; amount: string }>,
 ): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

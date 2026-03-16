@@ -7,9 +7,7 @@ import {
   getCategoryBudgets,
   upsertCategoryBudgets,
 } from "./expense-db";
-import { EXPENSE_CATEGORIES } from "../drizzle/schema";
-
-const categoryEnum = z.enum(EXPENSE_CATEGORIES);
+const categoryEnum = z.string().min(1).max(100);
 
 export const budgetRouter = router({
   get: protectedProcedure

@@ -1,11 +1,13 @@
-export type ExpenseCategory =
-  | 'transporte'
-  | 'alimentacao'
-  | 'moradia'
-  | 'saude'
-  | 'educacao'
-  | 'lazer'
-  | 'outro';
+export type ExpenseCategory = string;
+
+export interface UserCategory {
+  id: number;
+  name: string;
+  label: string;
+  color: string;
+  icon: string;
+  isDefault: boolean;
+}
 
 export interface Expense {
   id: string;
@@ -24,6 +26,8 @@ export interface Expense {
   bank?: string | null;
   /** Tipo de pagamento: débito ou crédito */
   paymentType?: "debit" | "credit" | null;
+  /** Despesa fixa ou variável */
+  expenseType?: 'fixed' | 'variable' | null;
 }
 
 export interface Income {
@@ -32,7 +36,7 @@ export interface Income {
   other: number;
 }
 
-export type CategoryBudgets = Partial<Record<ExpenseCategory, number>>;
+export type CategoryBudgets = Record<string, number>;
 
 export interface MonthlyData {
   month: string; // YYYY-MM format
@@ -48,7 +52,7 @@ export interface MonthlyData {
   categoryBudgets?: CategoryBudgets;
 }
 
-export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
+export const CATEGORY_COLORS: Record<string, string> = {
   transporte: '#3B82F6',
   alimentacao: '#10B981',
   moradia: '#F59E0B',
@@ -58,7 +62,7 @@ export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
   outro: '#6B7280',
 };
 
-export const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+export const CATEGORY_LABELS: Record<string, string> = {
   transporte: 'Transporte',
   alimentacao: 'Alimentação',
   moradia: 'Moradia',

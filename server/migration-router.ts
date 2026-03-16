@@ -2,9 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure } from "./_core/trpc";
 import { bulkCreateExpenses, upsertIncome, upsertBudget, upsertCategoryBudgets, countExpenses } from "./expense-db";
 import { runRawSql } from "./db";
-import { EXPENSE_CATEGORIES } from "../drizzle/schema";
-
-const categoryEnum = z.enum(EXPENSE_CATEGORIES);
+const categoryEnum = z.string().min(1).max(100);
 
 const expenseSchema = z.object({
   id: z.string(),
@@ -21,7 +19,7 @@ const monthlyDataSchema = z.object({
   month: z.string(),
   expenses: z.array(expenseSchema),
   budget: z.number().optional().nullable(),
-  categoryBudgets: z.record(categoryEnum, z.number()).optional().nullable(),
+  categoryBudgets: z.record(z.string(), z.number()).optional().nullable(),
 });
 
 export const migrationRouter = router({

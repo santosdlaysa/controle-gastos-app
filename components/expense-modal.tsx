@@ -9,7 +9,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
-import { Expense, ExpenseCategory, CATEGORY_LABELS } from '@/types/expense';
+import { Expense, ExpenseCategory } from '@/types/expense';
 import { trpc } from '@/lib/trpc';
 
 interface ExpenseModalProps {
@@ -22,16 +22,6 @@ interface ExpenseModalProps {
   onGenerateRemainingInstallments?: (id: string) => void;
 }
 
-const CATEGORIES: ExpenseCategory[] = [
-  'transporte',
-  'alimentacao',
-  'moradia',
-  'saude',
-  'educacao',
-  'lazer',
-  'outro',
-];
-
 export function ExpenseModal({
   visible,
   expense,
@@ -42,13 +32,15 @@ export function ExpenseModal({
   onGenerateRemainingInstallments,
 }: ExpenseModalProps) {
   const [name, setName] = useState('');
-  const [category, setCategory] = useState<ExpenseCategory>('outro');
+  const [category, setCategory] = useState<string>('');
   const [quantity, setQuantity] = useState('');
   const [value, setValue] = useState('');
   const [bank, setBank] = useState('');
   const [paymentType, setPaymentType] = useState<'debit' | 'credit' | null>(null);
+  const [expenseType, setExpenseType] = useState<'fixed' | 'variable' | null>(null);
 
   const { data: bankSuggestions = [] } = trpc.bank.getAll.useQuery();
+  const { data: categoryList = [] } = trpc.category.getAll.useQuery();
 
   useEffect(() => {
     if (expense) {
@@ -58,13 +50,15 @@ export function ExpenseModal({
       setValue(expense.value.toString());
       setBank(expense.bank || '');
       setPaymentType(expense.paymentType ?? null);
+      setExpenseType(expense.expenseType ?? null);
     } else {
       setName('');
-      setCategory('outro');
+      setCategory(categoryList[0]?.name ?? 'outro');
       setQuantity('');
       setValue('');
       setBank('');
       setPaymentType(null);
+      setExpenseType(null);
     }
   }, [expense, visible]);
 
@@ -87,6 +81,7 @@ export function ExpenseModal({
       value: numValue,
       bank: bank.trim() || null,
       paymentType: paymentType ?? null,
+      expenseType: expenseType ?? null,
     });
 
     onClose();
@@ -190,10 +185,10 @@ export function ExpenseModal({
                 Categoria
               </Text>
               <View className="flex-row flex-wrap gap-2">
-                {CATEGORIES.map((cat) => (
+                {categoryList.map((cat) => (
                   <Pressable
-                    key={cat}
-                    onPress={() => setCategory(cat)}
+                    key={cat.name}
+                    onPress={() => setCategory(cat.name)}
                     style={({ pressed }) => [
                       {
                         opacity: pressed ? 0.7 : 1,
@@ -201,22 +196,23 @@ export function ExpenseModal({
                     ]}
                   >
                     <View
-                      className={cn(
-                        'px-4 py-2 rounded-full border-2',
-                        category === cat
-                          ? 'bg-primary border-primary'
-                          : 'bg-surface border-border'
-                      )}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 999,
+                        borderWidth: 2,
+                        backgroundColor: category === cat.name ? cat.color : 'transparent',
+                        borderColor: cat.color,
+                      }}
                     >
                       <Text
-                        className={cn(
-                          'text-sm font-medium',
-                          category === cat
-                            ? 'text-background'
-                            : 'text-foreground'
-                        )}
+                        style={{
+                          fontSize: 14,
+                          fontWeight: '500',
+                          color: category === cat.name ? '#fff' : cat.color,
+                        }}
                       >
-                        {CATEGORY_LABELS[cat]}
+                        {cat.label}
                       </Text>
                     </View>
                   </Pressable>
@@ -306,6 +302,38 @@ export function ExpenseModal({
                         paymentType === type ? 'text-background' : 'text-foreground'
                       )}>
                         {type === 'debit' ? 'Débito' : 'Crédito'}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            {/* Expense type field */}
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-foreground mb-2">
+                Natureza
+              </Text>
+              <View className="flex-row gap-2">
+                {(['fixed', 'variable'] as const).map((type) => (
+                  <Pressable
+                    key={type}
+                    onPress={() => setExpenseType(expenseType === type ? null : type)}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}
+                  >
+                    <View
+                      className={cn(
+                        'py-3 rounded-lg border-2 items-center',
+                        expenseType === type
+                          ? 'bg-primary border-primary'
+                          : 'bg-surface border-border'
+                      )}
+                    >
+                      <Text className={cn(
+                        'text-sm font-semibold',
+                        expenseType === type ? 'text-background' : 'text-foreground'
+                      )}>
+                        {type === 'fixed' ? 'Fixo' : 'Variável'}
                       </Text>
                     </View>
                   </Pressable>

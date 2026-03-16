@@ -104,15 +104,23 @@ export function ExpenseItem({ expense, onPress, onTogglePaid }: ExpenseItemProps
                 </Text>
               </>
             ) : null}
+            {expense.expenseType ? (
+              <>
+                <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#9CA3AF' }} />
+                <Text style={{ fontSize: 10, fontWeight: '600', color: expense.expenseType === 'fixed' ? '#8B5CF6' : '#F59E0B' }}>
+                  {expense.expenseType === 'fixed' ? 'Fixo' : 'Variável'}
+                </Text>
+              </>
+            ) : null}
           </View>
         </View>
 
         {/* Value + checkbox */}
         <View style={{ alignItems: 'flex-end', paddingRight: 16, paddingVertical: 14, gap: 6 }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: accentColor }}>
-            R$ {expense.value.toFixed(2)}
+            R$ {expense.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </Text>
-          {onTogglePaid && expense.paymentType !== 'debit' && (
+          {onTogglePaid && (expense.quantity || expense.paymentType !== 'debit') && (
             <Pressable
               onPress={() => onTogglePaid(expense)}
               hitSlop={10}

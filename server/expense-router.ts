@@ -9,7 +9,7 @@ import {
   deleteExpense,
   bulkCreateExpenses,
 } from "./expense-db";
-import { EXPENSE_CATEGORIES, banks } from "../drizzle/schema";
+import { banks, expenseTypeEnum } from "../drizzle/schema";
 import { getDb } from "./db";
 
 async function upsertBank(userId: number, name: string) {
@@ -25,9 +25,10 @@ async function upsertBank(userId: number, name: string) {
   }
 }
 
-const categoryEnum = z.enum(EXPENSE_CATEGORIES);
+const categoryEnum = z.string().min(1).max(100);
 const sourceEnum = z.enum(["manual", "pluggy", "nubank"]);
 const paymentTypeEnum = z.enum(["debit", "credit"]);
+const expenseTypeZodEnum = z.enum(["fixed", "variable"]);
 
 export const expenseRouter = router({
   getByMonth: protectedProcedure
@@ -65,6 +66,7 @@ export const expenseRouter = router({
         clientId: z.string().optional(),
         bank: z.string().max(100).optional(),
         paymentType: paymentTypeEnum.optional(),
+        expenseType: expenseTypeZodEnum.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -82,6 +84,7 @@ export const expenseRouter = router({
         clientId: input.clientId ?? null,
         bank: input.bank ?? null,
         paymentType: input.paymentType ?? null,
+        expenseType: input.expenseType ?? null,
       });
       return { id };
     }),
@@ -97,6 +100,7 @@ export const expenseRouter = router({
         paid: z.boolean().optional(),
         bank: z.string().max(100).nullable().optional(),
         paymentType: paymentTypeEnum.nullable().optional(),
+        expenseType: expenseTypeZodEnum.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -110,6 +114,7 @@ export const expenseRouter = router({
       if (updates.paid !== undefined) data.paid = updates.paid;
       if (updates.bank !== undefined) data.bank = updates.bank;
       if (updates.paymentType !== undefined) data.paymentType = updates.paymentType;
+      if (updates.expenseType !== undefined) data.expenseType = updates.expenseType;
       await updateExpense(ctx.user.id, id, data);
       return { success: true };
     }),

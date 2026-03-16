@@ -174,6 +174,17 @@ export async function ensureSchema(databaseUrl: string): Promise<void> {
       ALTER TABLE expenses ADD COLUMN IF NOT EXISTS "paymentType" payment_type
     `;
 
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE expense_type AS ENUM ('fixed', 'variable');
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$
+    `;
+
+    await sql`
+      ALTER TABLE expenses ADD COLUMN IF NOT EXISTS "expenseType" expense_type
+    `;
+
     // password_reset_tokens
     await sql`
       CREATE TABLE IF NOT EXISTS password_reset_tokens (
@@ -185,6 +196,35 @@ export async function ensureSchema(databaseUrl: string): Promise<void> {
         "createdAt" timestamp NOT NULL DEFAULT now()
       )
     `;
+
+    // user_categories table
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_categories (
+        id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "userId" integer NOT NULL,
+        name varchar(100) NOT NULL,
+        label varchar(100) NOT NULL,
+        color varchar(7) NOT NULL DEFAULT '#6B7280',
+        icon varchar(50) NOT NULL DEFAULT 'category',
+        "isDefault" boolean DEFAULT false,
+        "createdAt" timestamp NOT NULL DEFAULT now()
+      )
+    `;
+
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS user_categories_user_name_idx
+      ON user_categories ("userId", name)
+    `;
+
+    // Migrate expenses.category from enum to varchar
+    await sql`
+      ALTER TABLE expenses ALTER COLUMN category TYPE varchar(100) USING category::text
+    `.catch(() => {});
+
+    // Migrate category_budgets.category from enum to varchar
+    await sql`
+      ALTER TABLE category_budgets ALTER COLUMN category TYPE varchar(100) USING category::text
+    `.catch(() => {});
 
     console.log("[db-migrate] Schema OK");
   } catch (err) {

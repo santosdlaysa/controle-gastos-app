@@ -8,11 +8,14 @@ import {
   Alert,
   Switch,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ScreenContainer } from '@/components/screen-container';
 import { useExpenses } from '@/hooks/use-expenses';
-import { CATEGORY_LABELS, CATEGORY_COLORS, ExpenseCategory, Income } from '@/types/expense';
+import { CATEGORY_LABELS, CATEGORY_COLORS, Income } from '@/types/expense';
+import { useCategories } from '@/hooks/use-categories';
 import { useAuthContext } from '@/lib/auth-context';
 import { useThemeContext } from '@/lib/theme-provider';
 import { useColors } from '@/hooks/use-colors';
@@ -23,7 +26,7 @@ const getCurrentMonth = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const CATEGORY_ICONS: Record<ExpenseCategory, React.ComponentProps<typeof MaterialIcons>['name']> = {
+const CATEGORY_ICONS: Record<string, React.ComponentProps<typeof MaterialIcons>['name']> = {
   transporte: 'directions-car',
   alimentacao: 'restaurant',
   moradia: 'home',
@@ -107,6 +110,12 @@ export default function SettingsScreen() {
   const { colorScheme, setColorScheme } = useThemeContext();
   const colors = useColors();
   const isDark = colorScheme === 'dark';
+  const { categories, createCategory, deleteCategory } = useCategories();
+  const [catMgmtOpen, setCatMgmtOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatLabel, setNewCatLabel] = useState('');
+  const [newCatColor, setNewCatColor] = useState('#6B7280');
+  const [creatingCat, setCreatingCat] = useState(false);
 
   const [nameInput, setNameInput] = useState(user?.name ?? '');
   const [savingName, setSavingName] = useState(false);
@@ -131,9 +140,7 @@ export default function SettingsScreen() {
   const [monthlyBudget, setMonthlyBudget] = useState('');
   const [catOpen, setCatOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [categoryBudgetInputs, setCategoryBudgetInputs] = useState<Record<ExpenseCategory, string>>({
-    transporte: '', alimentacao: '', moradia: '', saude: '', educacao: '', lazer: '', outro: '',
-  });
+  const [categoryBudgetInputs, setCategoryBudgetInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setSalary(income.salary > 0 ? income.salary.toString() : '');
@@ -142,13 +149,13 @@ export default function SettingsScreen() {
     setMonthlyBudget(budget > 0 ? budget.toString() : '');
     setCategoryBudgetInputs((prev) => {
       const updated = { ...prev };
-      (Object.keys(CATEGORY_LABELS) as ExpenseCategory[]).forEach((cat) => {
-        const value = categoryBudgets?.[cat];
-        updated[cat] = value != null && value > 0 ? value.toString() : '';
+      categories.forEach((cat) => {
+        const value = categoryBudgets?.[cat.name];
+        updated[cat.name] = value != null && value > 0 ? value.toString() : '';
       });
       return updated;
     });
-  }, [income, budget, categoryBudgets]);
+  }, [income, budget, categoryBudgets, categories]);
 
   const totalIncome = (parseFloat(salary) || 0) + (parseFloat(vale) || 0) + (parseFloat(other) || 0);
 
@@ -167,10 +174,10 @@ export default function SettingsScreen() {
     try {
       await updateIncome({ salary: salaryNum, vale: valeNum, other: otherNum } as Income);
       await updateBudget(budgetNum);
-      const catBudgets: Record<ExpenseCategory, number> = {} as Record<ExpenseCategory, number>;
-      (Object.keys(CATEGORY_LABELS) as ExpenseCategory[]).forEach((cat) => {
-        const num = parseFloat(categoryBudgetInputs[cat]);
-        if (!isNaN(num) && num > 0) catBudgets[cat] = num;
+      const catBudgets: Record<string, number> = {};
+      categories.forEach((cat) => {
+        const num = parseFloat(categoryBudgetInputs[cat.name] ?? '');
+        if (!isNaN(num) && num > 0) catBudgets[cat.name] = num;
       });
       await updateCategoryBudgets(catBudgets);
       Alert.alert('Salvo!', 'Configurações financeiras atualizadas.');
@@ -390,14 +397,14 @@ export default function SettingsScreen() {
 
           {catOpen && (
             <View style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
-              {(Object.keys(CATEGORY_LABELS) as ExpenseCategory[]).map((cat, i, arr) => (
-                <View key={cat}>
+              {categories.map((cat, i, arr) => (
+                <View key={cat.name}>
                   <InputRow
-                    icon={CATEGORY_ICONS[cat]}
-                    iconColor={CATEGORY_COLORS[cat]}
-                    label={CATEGORY_LABELS[cat]}
-                    value={categoryBudgetInputs[cat]}
-                    onChangeText={(text) => setCategoryBudgetInputs((prev) => ({ ...prev, [cat]: text }))}
+                    icon={(CATEGORY_ICONS[cat.name] ?? 'category') as React.ComponentProps<typeof MaterialIcons>['name']}
+                    iconColor={cat.color}
+                    label={cat.label}
+                    value={categoryBudgetInputs[cat.name] ?? ''}
+                    onChangeText={(text) => setCategoryBudgetInputs((prev) => ({ ...prev, [cat.name]: text }))}
                   />
                   {i < arr.length - 1 && <RowSeparator />}
                 </View>
@@ -428,6 +435,19 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </TouchableOpacity>
+
+        {/* ── Categorias ── */}
+        <SectionLabel label="Categorias" />
+        <SettingCard>
+          <Pressable onPress={() => setCatMgmtOpen(true)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 }]}>
+            <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#8B5CF620', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+              <MaterialIcons name="category" size={17} color="#8B5CF6" />
+            </View>
+            <Text style={{ flex: 1, fontSize: 15, color: colors.foreground }}>Gerenciar categorias</Text>
+            <Text style={{ fontSize: 13, color: colors.muted, marginRight: 4 }}>{categories.length}</Text>
+            <MaterialIcons name="chevron-right" size={20} color={colors.muted} />
+          </Pressable>
+        </SettingCard>
 
         {/* ── DB Panel ── */}
         {user?.email === 'santosdlaysa@gmail.com' && (
@@ -571,6 +591,86 @@ export default function SettingsScreen() {
         )}
 
       </ScrollView>
+
+      {/* Modal gerenciar categorias */}
+      <Modal visible={catMgmtOpen} transparent animationType="slide" onRequestClose={() => setCatMgmtOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }} onPress={() => setCatMgmtOpen(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, maxHeight: '85%' }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+            <Text style={{ fontSize: 17, fontWeight: '700', color: colors.foreground, paddingHorizontal: 24, marginBottom: 16 }}>Categorias</Text>
+
+            {/* New category form */}
+            <View style={{ paddingHorizontal: 16, marginBottom: 16, gap: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TextInput
+                  value={newCatLabel}
+                  onChangeText={setNewCatLabel}
+                  placeholder="Nome da categoria"
+                  placeholderTextColor={colors.muted}
+                  style={{ flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.foreground, backgroundColor: colors.surface }}
+                />
+                <TextInput
+                  value={newCatColor}
+                  onChangeText={setNewCatColor}
+                  placeholder="#6B7280"
+                  placeholderTextColor={colors.muted}
+                  style={{ width: 90, borderWidth: 1.5, borderColor: newCatColor.match(/^#[0-9A-Fa-f]{6}$/) ? newCatColor : colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.foreground, backgroundColor: colors.surface }}
+                />
+              </View>
+              <Pressable
+                onPress={async () => {
+                  const label = newCatLabel.trim();
+                  const color = newCatColor.trim();
+                  if (!label) return;
+                  const validColor = /^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#6B7280';
+                  const name = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                  if (!name) return;
+                  setCreatingCat(true);
+                  try {
+                    await createCategory({ name, label, color: validColor, icon: 'category' });
+                    setNewCatLabel('');
+                    setNewCatColor('#6B7280');
+                  } catch (e: any) {
+                    Alert.alert('Erro', e?.message ?? 'Não foi possível criar a categoria.');
+                  } finally {
+                    setCreatingCat(false);
+                  }
+                }}
+                disabled={creatingCat || !newCatLabel.trim()}
+                style={({ pressed }) => [{ opacity: (pressed || creatingCat || !newCatLabel.trim()) ? 0.6 : 1, backgroundColor: '#8B5CF6', borderRadius: 12, padding: 12, alignItems: 'center' }]}
+              >
+                {creatingCat ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Adicionar</Text>}
+              </Pressable>
+            </View>
+
+            {/* Category list */}
+            <ScrollView style={{ paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+              {categories.map((cat) => (
+                <View key={cat.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: cat.color + '25', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                    <MaterialIcons name={cat.icon as any} size={17} color={cat.color} />
+                  </View>
+                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: cat.color, marginRight: 10 }} />
+                  <Text style={{ flex: 1, fontSize: 15, color: colors.foreground }}>{cat.label}</Text>
+                  <Text style={{ fontSize: 11, color: colors.muted, marginRight: 8 }}>{cat.color}</Text>
+                  <Pressable
+                    onPress={() => {
+                      Alert.alert('Excluir categoria', `Excluir "${cat.label}"? As despesas existentes mantêm a categoria.`, [
+                        { text: 'Cancelar', style: 'cancel' },
+                        { text: 'Excluir', style: 'destructive', onPress: () => deleteCategory(cat.id) },
+                      ]);
+                    }}
+                    hitSlop={8}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+                  >
+                    <MaterialIcons name="delete-outline" size={20} color={colors.muted} />
+                  </Pressable>
+                </View>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenContainer>
   );
 }

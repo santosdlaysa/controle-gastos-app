@@ -17,6 +17,7 @@ function toExpense(row: {
   paid: boolean | null;
   bank?: string | null;
   paymentType?: "debit" | "credit" | null;
+  expenseType?: "fixed" | "variable" | null;
 }): Expense {
   return {
     id: row.id.toString(),
@@ -29,6 +30,7 @@ function toExpense(row: {
     paid: row.paid ?? undefined,
     bank: row.bank ?? null,
     paymentType: row.paymentType ?? null,
+    expenseType: row.expenseType ?? null,
   };
 }
 
@@ -44,7 +46,7 @@ export function useExpenses(month: string) {
     expensesQuery.isLoading || incomeQuery.isLoading || budgetQuery.isLoading;
 
   const expenses: Expense[] = useMemo(
-    () => (expensesQuery.data ?? []).map(toExpense),
+    () => (expensesQuery.data ?? []).map(toExpense).sort((a, b) => parseInt(b.id) - parseInt(a.id)),
     [expensesQuery.data],
   );
 
@@ -128,6 +130,7 @@ export function useExpenses(month: string) {
       source: "manual",
       bank: expense.bank ?? undefined,
       paymentType: expense.paymentType ?? undefined,
+      expenseType: expense.expenseType ?? undefined,
     });
   };
 
@@ -144,6 +147,7 @@ export function useExpenses(month: string) {
       ...(updates.paid !== undefined && { paid: updates.paid }),
       ...("bank" in updates && { bank: updates.bank ?? null }),
       ...("paymentType" in updates && { paymentType: updates.paymentType ?? null }),
+      ...("expenseType" in updates && { expenseType: updates.expenseType ?? null }),
     });
   };
 
@@ -175,6 +179,8 @@ export function useExpenses(month: string) {
       paid: false,
       source: "manual",
       bank: expenseToMove.bank ?? undefined,
+      paymentType: expenseToMove.paymentType ?? undefined,
+      expenseType: expenseToMove.expenseType ?? undefined,
     });
   };
 
@@ -201,6 +207,8 @@ export function useExpenses(month: string) {
         paid: false,
         source: "manual",
         bank: originalExpense.bank ?? undefined,
+        paymentType: originalExpense.paymentType ?? undefined,
+        expenseType: originalExpense.expenseType ?? undefined,
       });
     }
 

@@ -23,7 +23,14 @@
       "Bash(pnpm test:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(keytool:*)"
+      "Bash(keytool:*)",
+      "Bash(eas:*)",
+      "Bash(nvm use:*)",
+      "Bash(cmd /c \"nvm use 18.20.4 && node --version && eas --version\" 2>&1)",
+      "Bash(cmd /c \"nvm use 18.20.4\" 2>&1)",
+      "Bash(node:*)",
+      "Read(//c/dev/app/$LOCALAPPDATA/Android/Sdk/ndk/**)",
+      "Bash(echo \"Exit: $?\")"
     ]
   }
 }

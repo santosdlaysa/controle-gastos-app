@@ -62,11 +62,32 @@ export const EXPENSE_CATEGORIES = [
   "outro",
 ] as const;
 
-export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+export type ExpenseCategory = string;
 
 export const expenseCategoryEnum = pgEnum("expense_category", EXPENSE_CATEGORIES);
 export const expenseSourceEnum = pgEnum("expense_source", ["manual", "pluggy", "nubank"]);
 export const expensePaymentTypeEnum = pgEnum("expense_payment_type", ["debit", "credit"]);
+export const expenseTypeEnum = pgEnum("expense_type", ["fixed", "variable"]);
+
+// ─── user_categories ──────────────────────────────────────────────────────────
+
+export const userCategories = pgTable(
+  "user_categories",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    userId: integer("userId").notNull(),
+    name: varchar("name", { length: 100 }).notNull(),
+    label: varchar("label", { length: 100 }).notNull(),
+    color: varchar("color", { length: 7 }).notNull().default('#6B7280'),
+    icon: varchar("icon", { length: 50 }).notNull().default('category'),
+    isDefault: boolean("isDefault").default(false),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("user_categories_user_name_idx").on(t.userId, t.name)],
+);
+
+export type DbUserCategory = typeof userCategories.$inferSelect;
+export type InsertUserCategory = typeof userCategories.$inferInsert;
 
 // ─── expenses ─────────────────────────────────────────────────────────────────
 
@@ -77,7 +98,7 @@ export const expenses = pgTable(
     userId: integer("userId").notNull(),
     clientId: varchar("clientId", { length: 128 }),
     name: varchar("name", { length: 255 }).notNull(),
-    category: expenseCategoryEnum("category").notNull(),
+    category: varchar("category", { length: 100 }).notNull(),
     value: numeric("value", { precision: 10, scale: 2 }).notNull(),
     date: varchar("date", { length: 30 }).notNull(),
     month: varchar("month", { length: 7 }).notNull(),
@@ -86,6 +107,7 @@ export const expenses = pgTable(
     source: expenseSourceEnum("source").default("manual"),
     bank: varchar("bank", { length: 100 }),
     paymentType: expensePaymentTypeEnum("paymentType"),
+    expenseType: expenseTypeEnum("expenseType"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
@@ -135,7 +157,7 @@ export const categoryBudgets = pgTable(
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
     userId: integer("userId").notNull(),
     month: varchar("month", { length: 7 }).notNull(),
-    category: expenseCategoryEnum("category").notNull(),
+    category: varchar("category", { length: 100 }).notNull(),
     amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },

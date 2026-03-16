@@ -40,6 +40,10 @@ const config: ExpoConfig = {
     policy: "appVersion",
   },
 
+  updates: {
+    url: "https://u.expo.dev/fba3145b-33ac-45a7-97b9-beb3c022e06b",
+  },
+
   extra: {
     eas: {
       projectId: "fba3145b-33ac-45a7-97b9-beb3c022e06b",
@@ -55,7 +59,6 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: bundleId,
-    buildNumber: "2",
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },

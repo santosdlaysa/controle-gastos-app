@@ -13,6 +13,7 @@ import { adminRouter } from "./admin-router";
 import { uberEarningsRouter } from "./uber-earnings-router";
 import { assistantRouter } from "./assistant-router";
 import { profileRouter } from "./profile-router";
+import { categoryRouter } from "./category-router";
 
 export const appRouter = router({
   system: systemRouter,
@@ -38,6 +39,7 @@ export const appRouter = router({
   uberEarnings: uberEarningsRouter,
   assistant: assistantRouter,
   profile: profileRouter,
+  category: categoryRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -185,12 +185,8 @@ export default function BankSelectScreen() {
   const [limitsBank, setLimitsBank] = useState<BankItem | null>(null);
 
   function selectBank(bank: BankItem | null) {
-    if (bank) {
-      router.replace(`/bank/${bank.id}`);
-    } else {
-      setSelectedBank(null);
-      router.replace('/(tabs)');
-    }
+    setSelectedBank(bank ? { id: bank.id, name: bank.name } : null);
+    router.replace('/(tabs)');
   }
 
   async function handleCreate() {
