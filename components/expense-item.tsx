@@ -25,12 +25,15 @@ interface ExpenseItemProps {
   expense: Expense;
   onPress: (expense: Expense) => void;
   onTogglePaid?: (expense: Expense) => void;
+  colorMap?: Record<string, string>;
+  labelMap?: Record<string, string>;
+  iconMap?: Record<string, string>;
 }
 
-export function ExpenseItem({ expense, onPress, onTogglePaid }: ExpenseItemProps) {
-  const categoryColor = CATEGORY_COLORS[expense.category];
-  const categoryLabel = CATEGORY_LABELS[expense.category];
-  const icon = (CATEGORY_ICONS[expense.category] ?? 'category') as React.ComponentProps<typeof MaterialIcons>['name'];
+export function ExpenseItem({ expense, onPress, onTogglePaid, colorMap, labelMap, iconMap }: ExpenseItemProps) {
+  const categoryColor = (colorMap?.[expense.category] ?? CATEGORY_COLORS[expense.category]) || '#6B7280';
+  const categoryLabel = (labelMap?.[expense.category] ?? CATEGORY_LABELS[expense.category]) || expense.category;
+  const icon = ((iconMap?.[expense.category] ?? CATEGORY_ICONS[expense.category]) ?? 'category') as React.ComponentProps<typeof MaterialIcons>['name'];
   const accentColor = expense.paid ? '#22C55E' : categoryColor;
 
   return (

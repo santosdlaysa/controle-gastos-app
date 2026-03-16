@@ -234,7 +234,7 @@ export default function HomeScreen() {
   } = useExpenses(currentMonth);
 
   const colors = useColors();
-  const { categories, colorMap, labelMap } = useCategories();
+  const { categories, colorMap, labelMap, iconMap } = useCategories();
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportYear, setExportYear] = useState(() => String(new Date().getFullYear()));
   const [exporting, setExporting] = useState(false);
@@ -472,44 +472,34 @@ export default function HomeScreen() {
 
         {/* ─── HERO ─────────────────────────────────────── */}
         <View style={{ backgroundColor: '#0c3a5e' }}>
-          {/* Toolbar */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 }}>
+          {/* Linha 1: menu + mês navegável + export */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
             <Pressable onPress={() => setMenuVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
               <MaterialIcons name="menu" size={24} color="rgba(255,255,255,0.9)" />
             </Pressable>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#0a7ea4', alignItems: 'center', justifyContent: 'center' }}>
-                <MaterialIcons name="account-balance-wallet" size={16} color="#fff" />
-              </View>
-              <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700', letterSpacing: -0.3 }}>Despesas Pessoais</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Pressable onPress={handlePreviousMonth} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
+                <MaterialIcons name="chevron-left" size={24} color="rgba(255,255,255,0.6)" />
+              </Pressable>
+              <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 15, fontWeight: '600', textTransform: 'capitalize', marginHorizontal: 4 }}>
+                {getMonthName(currentMonth)}
+              </Text>
+              <Pressable onPress={handleNextMonth} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
+                <MaterialIcons name="chevron-right" size={24} color="rgba(255,255,255,0.6)" />
+              </Pressable>
             </View>
             <Pressable onPress={() => setShowExportModal(true)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
               <MaterialIcons name="file-download" size={22} color="rgba(255,255,255,0.9)" />
             </Pressable>
           </View>
 
-          {/* Seletor de banco */}
-          {allBanks.length > 0 && (
-            <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4, alignItems: 'center' }}>
-              <Pressable onPress={() => setBankPickerVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)', backgroundColor: bankFilter ? 'rgba(255,255,255,0.2)' : 'transparent' }}>
-                  <MaterialIcons name="account-balance" size={14} color={bankFilter ? '#fff' : 'rgba(255,255,255,0.55)'} />
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter ? '#fff' : 'rgba(255,255,255,0.55)' }}>
-                    {bankFilter ?? 'Todos os bancos'}
-                  </Text>
-                  <MaterialIcons name="arrow-drop-down" size={16} color={bankFilter ? '#fff' : 'rgba(255,255,255,0.55)'} />
-                </View>
-              </Pressable>
-            </View>
-          )}
-
-          {/* Toggle Débito / Crédito */}
-          <View style={{ marginHorizontal: 20, marginTop: 8, marginBottom: 4 }}>
-            <View style={{ flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 3 }}>
+          {/* Linha 2: Toggle Déb/Créd + Banco */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10, gap: 10 }}>
+            <View style={{ flex: 1, flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 3 }}>
               {(['debit', 'credit'] as const).map((type) => (
                 <Pressable key={type} onPress={() => { setPaymentTypeFilter(type); if (type === 'debit') setShowOnlyUnpaid(false); }} style={{ flex: 1 }}>
                   <View style={{
-                    paddingVertical: 7,
+                    paddingVertical: 6,
                     borderRadius: 10,
                     alignItems: 'center',
                     backgroundColor: paymentTypeFilter === type ? 'rgba(255,255,255,0.22)' : 'transparent',
@@ -525,86 +515,48 @@ export default function HomeScreen() {
                 </Pressable>
               ))}
             </View>
+            {allBanks.length > 0 && (
+              <Pressable onPress={() => setBankPickerVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: bankFilter ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)', backgroundColor: bankFilter ? 'rgba(255,255,255,0.2)' : 'transparent' }}>
+                  <MaterialIcons name="account-balance" size={13} color={bankFilter ? '#fff' : 'rgba(255,255,255,0.55)'} />
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: bankFilter ? '#fff' : 'rgba(255,255,255,0.55)' }}>
+                    {bankFilter ?? 'Banco'}
+                  </Text>
+                  <MaterialIcons name="arrow-drop-down" size={14} color={bankFilter ? '#fff' : 'rgba(255,255,255,0.55)'} />
+                </View>
+              </Pressable>
+            )}
           </View>
 
-          {/* Month navigation */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 28, paddingVertical: 8 }}>
-            <Pressable onPress={handlePreviousMonth} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
-              <MaterialIcons name="chevron-left" size={30} color="rgba(255,255,255,0.6)" />
-            </Pressable>
-            <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 15, fontWeight: '600', textTransform: 'capitalize' }}>
-              {getMonthName(currentMonth)}
-            </Text>
-            <Pressable onPress={handleNextMonth} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
-              <MaterialIcons name="chevron-right" size={30} color="rgba(255,255,255,0.6)" />
-            </Pressable>
-          </View>
-
-          {/* Hero: Saldo Restante */}
+          {/* Linha 3: Saldo */}
           <Pressable
             onPress={bankFilter ? () => { setBankBalanceInput(bankIncome != null ? bankIncome.toFixed(2) : ''); setBankBalanceEditVisible(true); } : undefined}
-            style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 12, paddingHorizontal: 24, opacity: pressed && !!bankFilter ? 0.7 : 1 }]}
+            style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 8, paddingHorizontal: 24, opacity: pressed && !!bankFilter ? 0.7 : 1 }]}
           >
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
-              {bankFilter ? 'Saldo Atual' : 'Saldo Restante'}
-            </Text>
-            <Text style={{ color: filteredBalance >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+              <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                {bankFilter ? 'Saldo Atual' : 'Saldo Restante'}
+              </Text>
+              {bankFilter && <MaterialIcons name="edit" size={11} color="rgba(255,255,255,0.4)" />}
+            </View>
+            <Text style={{ color: filteredBalance >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 34, fontWeight: '800', letterSpacing: -1.5, lineHeight: 40 }}>
               R$ {fmt(filteredBalance)}
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-              {bankFilter ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }}>
-                  <MaterialIcons name="edit" size={11} color="rgba(255,255,255,0.6)" />
-                  <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '600' }}>
-                    toque para definir saldo · R$ {fmt(filteredTotal)} gastos
-                  </Text>
-                </View>
-              ) : (
-                <>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: filteredBalance >= 0 ? '#93C5FD' : '#FCA5A5' }} />
-                  <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>
-                    {filteredExpenses.length} transaç{filteredExpenses.length === 1 ? 'ão' : 'ões'} · R$ {fmt(filteredTotal)} gastos
-                  </Text>
-                </>
-              )}
-            </View>
           </Pressable>
 
-          {/* Cards: Renda + Despesas */}
-          <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 28, gap: 10 }}>
-            {/* Renda */}
-            <Pressable onPress={handleStartEditIncome} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1 }]}>
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(147,197,253,0.25)' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#93C5FD', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase' }}>Renda</Text>
-                  <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(147,197,253,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <MaterialIcons name="edit" size={14} color="#93C5FD" />
-                  </View>
-                </View>
-                <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>
-                  R$ {fmt(totalIncome)}
-                </Text>
-                <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>
-                  {incomeOverride !== null ? 'personalizada · toque p/ editar' : 'toque para editar'}
-                </Text>
+          {/* Linha 4: 2 métricas */}
+          <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 24, paddingTop: 10 }}>
+            <Pressable onPress={handleStartEditIncome} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.7 : 1, alignItems: 'center' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Renda</Text>
+                <MaterialIcons name="edit" size={10} color="rgba(255,255,255,0.35)" />
               </View>
+              <Text style={{ color: '#93C5FD', fontSize: 15, fontWeight: '700', letterSpacing: -0.3 }}>R$ {fmt(totalIncome)}</Text>
             </Pressable>
-            {/* Despesas */}
-            <Pressable onPress={handleAddExpense} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1 }]}>
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(252,165,165,0.25)' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#FCA5A5', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase' }}>Despesas</Text>
-                  <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(252,165,165,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <MaterialIcons name="add" size={16} color="#FCA5A5" />
-                  </View>
-                </View>
-                <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>
-                  R$ {fmt(filteredTotal)}
-                </Text>
-                <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>
-                  {filteredExpenses.length} registro{filteredExpenses.length !== 1 ? 's' : ''} · toque p/ adicionar
-                </Text>
-              </View>
+            <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginVertical: 2 }} />
+            <Pressable onPress={handleAddExpense} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.7 : 1, alignItems: 'center' }]}>
+              <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Despesas</Text>
+              <Text style={{ color: '#FCA5A5', fontSize: 15, fontWeight: '700', letterSpacing: -0.3 }}>R$ {fmt(filteredTotal)}</Text>
             </Pressable>
           </View>
         </View>
@@ -713,6 +665,57 @@ export default function HomeScreen() {
             </Pressable>
           )}
 
+          {/* Preview categorias */}
+          {categories.length > 0 && (() => {
+            const sorted = categories
+              .filter(c => (categoryTotals[c.name] || 0) > 0)
+              .sort((a, b) => (categoryTotals[b.name] || 0) - (categoryTotals[a.name] || 0))
+              .slice(0, 4);
+            if (sorted.length === 0) return null;
+            const total = Object.values(categoryTotals).reduce((s, v) => s + v, 0);
+            return (
+              <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.foreground }}>Categorias</Text>
+                  <Pressable onPress={() => router.navigate('/(tabs)/categories')} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, flexDirection: 'row', alignItems: 'center', gap: 2 }]}>
+                    <Text style={{ fontSize: 13, color: colors.primary }}>Ver todas</Text>
+                    <MaterialIcons name="chevron-right" size={16} color={colors.primary} />
+                  </Pressable>
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {sorted.map((cat) => {
+                    const spent = categoryTotals[cat.name] || 0;
+                    const budget = categoryBudgets?.[cat.name] ?? 0;
+                    const percent = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0;
+                    const color = colorMap[cat.name] ?? '#6B7280';
+                    const label = labelMap[cat.name] ?? cat.name;
+                    const barColor = percent >= 100 ? '#EF4444' : percent >= 80 ? '#F59E0B' : '#22C55E';
+                    return (
+                      <Pressable
+                        key={cat.name}
+                        onPress={() => router.navigate('/(tabs)/categories')}
+                        style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, flex: 1, minWidth: '45%' }]}
+                      >
+                        <View style={{ backgroundColor: colors.surface, borderRadius: 10, padding: 8, borderLeftWidth: 3, borderLeftColor: color }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                            <Text style={{ fontSize: 11, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{label}</Text>
+                            <Text style={{ fontSize: 10, color: colors.muted }}>{total > 0 ? `${((spent / total) * 100).toFixed(0)}%` : '0%'}</Text>
+                          </View>
+                          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.foreground }}>R$ {fmt(spent)}</Text>
+                          {budget > 0 && (
+                            <View style={{ height: 2, borderRadius: 1, backgroundColor: '#E5E7EB', marginTop: 4, overflow: 'hidden' }}>
+                              <View style={{ height: 2, borderRadius: 1, backgroundColor: barColor, width: `${percent}%` }} />
+                            </View>
+                          )}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })()}
+
           {/* Filtros rápidos */}
           <View style={{ paddingHorizontal: 16, paddingTop: 10, flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
             {paymentTypeFilter === 'credit' && (
@@ -749,23 +752,13 @@ export default function HomeScreen() {
             </Pressable>
             {categories.map((catObj) => {
               const cat = catObj.name;
-              const total = categoryTotals[cat] || 0;
-              const catBudget = categoryBudgets?.[cat];
-              const catPercent = catBudget && catBudget > 0 ? Math.min(999, (total / catBudget) * 100) : null;
               const isSelected = selectedCategory === cat;
               const color = colorMap[cat] ?? CATEGORY_COLORS[cat] ?? '#6B7280';
               return (
                 <Pressable key={cat} onPress={() => setSelectedCategory((prev) => prev === cat ? 'all' : cat)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: isSelected ? 2 : 1.5, borderColor: isSelected ? color : colors.border, backgroundColor: isSelected ? color + '15' : 'transparent' }}>
                     <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
-                    <View>
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: isSelected ? color : colors.foreground }}>{labelMap[cat] ?? CATEGORY_LABELS[cat] ?? cat}</Text>
-                      {catBudget && catBudget > 0 ? (
-                        <Text style={{ fontSize: 10, color: colors.muted }}>R$ {fmt(total)} de R$ {fmt(catBudget)}{catPercent !== null ? ` (${catPercent.toFixed(0)}%)` : ''}</Text>
-                      ) : (
-                        <Text style={{ fontSize: 10, color: colors.muted }}>R$ {fmt(total)}</Text>
-                      )}
-                    </View>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: isSelected ? color : colors.foreground }}>{labelMap[cat] ?? CATEGORY_LABELS[cat] ?? cat}</Text>
                   </View>
                 </Pressable>
               );
@@ -807,7 +800,7 @@ export default function HomeScreen() {
                 data={filteredExpenses}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <ExpenseItem expense={item} onPress={handleEditExpense} onTogglePaid={handleTogglePaid} />
+                  <ExpenseItem expense={item} onPress={handleEditExpense} onTogglePaid={handleTogglePaid} colorMap={colorMap} labelMap={labelMap} iconMap={iconMap} />
                 )}
                 scrollEnabled={false}
               />

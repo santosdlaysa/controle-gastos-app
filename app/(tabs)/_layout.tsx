@@ -1,4 +1,4 @@
-import { Tabs, useRouter } from "expo-router";
+import { Tabs, useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
@@ -11,6 +11,8 @@ export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const pathname = usePathname();
+  const isUber = pathname === '/uber-earnings';
   const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
   const tabBarHeight = 56 + bottomPadding;
 
@@ -54,6 +56,7 @@ export default function TabLayout() {
         options={{
           title: "Categorias",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.pie.fill" color={color} />,
+          href: isUber ? null : undefined,
         }}
       />
       <Tabs.Screen
@@ -68,6 +71,7 @@ export default function TabLayout() {
         options={{
           title: "Bancos",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="creditcard.fill" color={color} />,
+          href: isUber ? null : undefined,
         }}
       />
       <Tabs.Screen
