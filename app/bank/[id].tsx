@@ -340,6 +340,7 @@ export default function BankDetailScreen() {
                     colorMap={colorMap}
                     labelMap={labelMap}
                     iconMap={iconMap}
+                    hideBankLabel
                   />
                 )}
                 scrollEnabled={false}

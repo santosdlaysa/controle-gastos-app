@@ -318,27 +318,23 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background }}>
 
         {/* HERO */}
-        <View style={{ backgroundColor: '#0c3a5e', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 28 }}>
-          {/* Linha 1: menu */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 20 }}>
-            <Pressable onPress={() => setMenuVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
-              <MaterialIcons name="menu" size={24} color="rgba(255,255,255,0.9)" />
-            </Pressable>
-          </View>
-
-          {/* Linha 2: avatar + saudação + nome */}
+        <View style={{ backgroundColor: '#0c3a5e', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 48 }}>
+          {/* Avatar + saudação + nome + menu */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
             <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)' }}>
               <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>
                 {user?.name ? user.name.trim()[0].toUpperCase() : '?'}
               </Text>
             </View>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: '500' }}>Bem-vindo de volta</Text>
               <Text style={{ fontSize: 18, fontWeight: '800', color: '#fff' }}>
                 {user?.name ? user.name.split(' ')[0] : 'Usuário'}
               </Text>
             </View>
+            <Pressable onPress={() => setMenuVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
+              <MaterialIcons name="menu" size={24} color="rgba(255,255,255,0.9)" />
+            </Pressable>
           </View>
         </View>
 

@@ -28,9 +28,10 @@ interface ExpenseItemProps {
   colorMap?: Record<string, string>;
   labelMap?: Record<string, string>;
   iconMap?: Record<string, string>;
+  hideBankLabel?: boolean;
 }
 
-export function ExpenseItem({ expense, onPress, onTogglePaid, colorMap, labelMap, iconMap }: ExpenseItemProps) {
+export function ExpenseItem({ expense, onPress, onTogglePaid, colorMap, labelMap, iconMap, hideBankLabel }: ExpenseItemProps) {
   const categoryColor = (colorMap?.[expense.category] ?? CATEGORY_COLORS[expense.category]) || '#6B7280';
   const categoryLabel = (labelMap?.[expense.category] ?? CATEGORY_LABELS[expense.category]) || expense.category;
   const icon = ((iconMap?.[expense.category] ?? CATEGORY_ICONS[expense.category]) ?? 'category') as React.ComponentProps<typeof MaterialIcons>['name'];
@@ -99,7 +100,7 @@ export function ExpenseItem({ expense, onPress, onTogglePaid, colorMap, labelMap
                 </Text>
               </>
             ) : null}
-            {expense.bank ? (
+            {!hideBankLabel && expense.bank ? (
               <>
                 <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#9CA3AF' }} />
                 <Text className="text-muted" style={{ fontSize: 11 }}>
