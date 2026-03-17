@@ -30,7 +30,8 @@
       "Bash(cmd /c \"nvm use 18.20.4\" 2>&1)",
       "Bash(node:*)",
       "Read(//c/dev/app/$LOCALAPPDATA/Android/Sdk/ndk/**)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "Bash(taskkill:*)"
     ]
   }
 }
