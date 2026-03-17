@@ -24,6 +24,7 @@ import { getUberFeatureEnabled, setUberFeatureEnabled } from '@/lib/uber-feature
 import { useFocusEffect } from '@react-navigation/native';
 import { useColors } from '@/hooks/use-colors';
 import { trpc } from '@/lib/trpc';
+import { Toast, useToast } from '@/components/toast';
 
 const getCurrentMonth = () => {
   const now = new Date();
@@ -129,6 +130,7 @@ export default function SettingsScreen() {
   const [nameInput, setNameInput] = useState(user?.name ?? '');
   const [savingName, setSavingName] = useState(false);
   const updateNameMutation = trpc.profile.updateName.useMutation();
+  const { toast, show: showToast } = useToast();
 
   const handleSaveName = async () => {
     if (!nameInput.trim() || nameInput.trim() === user?.name) return;
@@ -136,8 +138,9 @@ export default function SettingsScreen() {
     try {
       await updateNameMutation.mutateAsync({ name: nameInput.trim() });
       await applyLogin({ ...user!, name: nameInput.trim() });
+      showToast('Nome atualizado!');
     } catch {
-      Alert.alert('Erro', 'Não foi possível atualizar o nome.');
+      showToast('Não foi possível atualizar o nome.', 'error');
     } finally {
       setSavingName(false);
     }
@@ -189,7 +192,7 @@ export default function SettingsScreen() {
         if (!isNaN(num) && num > 0) catBudgets[cat.name] = num;
       });
       await updateCategoryBudgets(catBudgets);
-      Alert.alert('Salvo!', 'Configurações financeiras atualizadas.');
+      showToast('Configurações salvas!');
     } finally {
       setSaving(false);
     }
@@ -683,8 +686,9 @@ export default function SettingsScreen() {
                     await createCategory({ name, label, color: validColor, icon: 'category' });
                     setNewCatLabel('');
                     setNewCatColor('#6B7280');
+                    showToast('Categoria criada!');
                   } catch (e: any) {
-                    Alert.alert('Erro', e?.message ?? 'Não foi possível criar a categoria.');
+                    showToast(e?.message ?? 'Não foi possível criar a categoria.', 'error');
                   } finally {
                     setCreatingCat(false);
                   }
@@ -710,7 +714,7 @@ export default function SettingsScreen() {
                     onPress={() => {
                       Alert.alert('Excluir categoria', `Excluir "${cat.label}"? As despesas existentes mantêm a categoria.`, [
                         { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Excluir', style: 'destructive', onPress: () => deleteCategory(cat.id) },
+                        { text: 'Excluir', style: 'destructive', onPress: () => { deleteCategory(cat.id); showToast('Categoria removida', 'info'); } },
                       ]);
                     }}
                     hitSlop={8}
@@ -725,6 +729,7 @@ export default function SettingsScreen() {
         </Pressable>
         </KeyboardAvoidingView>
       </Modal>
+      <Toast {...toast} />
     </ScreenContainer>
   );
 }

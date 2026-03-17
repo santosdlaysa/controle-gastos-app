@@ -8,6 +8,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { trpc } from '@/lib/trpc';
+import { Toast, useToast } from '@/components/toast';
 
 export default function BanksScreen() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function BanksScreen() {
   const [newBankName, setNewBankName] = useState('');
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const { toast, show: showToast } = useToast();
 
   async function handleCreate() {
     const name = newBankName.trim();
@@ -35,6 +37,7 @@ export default function BanksScreen() {
       await createBank.mutateAsync({ name });
       setNewBankName('');
       setModalVisible(false);
+      showToast('Conta cadastrada!');
     } catch (err: any) {
       Alert.alert('Erro', err?.message ?? 'Não foi possível cadastrar o banco.');
     } finally {
@@ -51,7 +54,7 @@ export default function BanksScreen() {
         {
           text: 'Remover',
           style: 'destructive',
-          onPress: () => deleteBank.mutate({ id: item.id }),
+          onPress: () => { deleteBank.mutate({ id: item.id }); showToast('Conta removida', 'info'); },
         },
       ]
     );
@@ -197,6 +200,7 @@ export default function BanksScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+      <Toast {...toast} />
     </ScreenContainer>
   );
 }

@@ -10,6 +10,7 @@ import {
   Modal,
   Share,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
@@ -24,6 +25,7 @@ import { CATEGORY_LABELS, CATEGORY_COLORS, Expense } from '@/types/expense';
 import { trpc } from '@/lib/trpc';
 import { setAppMode } from '@/lib/mode';
 import { getUberFeatureEnabled } from '@/lib/uber-feature';
+import { Toast, useToast } from '@/components/toast';
 
 const BANK_PALETTE = ['#6366F1','#EC4899','#F59E0B','#10B981','#3B82F6','#EF4444','#8B5CF6','#14B8A6','#F97316','#06B6D4'];
 function bankColor(name: string) {
@@ -258,6 +260,7 @@ export default function HomeScreen() {
   const [unbankedModalVisible, setUnbankedModalVisible] = useState(false);
   const [editExpenseVisible, setEditExpenseVisible] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>();
+  const { toast, show: showToast } = useToast();
 
   const { data: allBanks = [] } = trpc.bank.getAll.useQuery();
   const bankUtils = trpc.useUtils();
@@ -383,8 +386,7 @@ export default function HomeScreen() {
               return b.debitBalance != null || s.debitTotal > 0;
             });
             const totalAvailable = banks.reduce((sum, b) => {
-              const s = bankSummaries[b.name] ?? { debitTotal: 0, creditTotal: 0 };
-              return sum + (b.debitBalance != null ? parseFloat(String(b.debitBalance)) - s.debitTotal : 0);
+              return sum + (b.debitBalance != null ? parseFloat(String(b.debitBalance)) : 0);
             }, 0);
             const hasSaldo = banks.some(b => b.debitBalance != null);
 
@@ -430,7 +432,6 @@ export default function HomeScreen() {
                                 <BankLogo name={bank.name} size={38} />
                                 <View style={{ flex: 1 }}>
                                   <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{bank.name}</Text>
-                                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>Cartão de crédito</Text>
                                 </View>
                                 <MaterialIcons name="chevron-right" size={18} color={colors.muted} />
                               </View>
@@ -473,9 +474,7 @@ export default function HomeScreen() {
                       </Pressable>
                     </View>
                     {accounts.map(bank => {
-                      const s = bankSummaries[bank.name] ?? { debitTotal: 0, creditTotal: 0 };
                       const debitBalance = bank.debitBalance != null ? parseFloat(String(bank.debitBalance)) : null;
-                      const available = debitBalance != null ? debitBalance - s.debitTotal : null;
                       const bc = bankColor(bank.name);
                       return (
                         <Pressable key={`acc-${bank.id}`} onPress={() => router.push(`/bank/${bank.id}`)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
@@ -488,8 +487,8 @@ export default function HomeScreen() {
                                 <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>Conta corrente</Text>
                               </View>
                               <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                                {available != null ? (
-                                  <Text style={{ fontSize: 16, fontWeight: '800', color: available >= 0 ? '#10B981' : '#EF4444' }}>R$ {fmt(available)}</Text>
+                                {debitBalance != null ? (
+                                  <Text style={{ fontSize: 16, fontWeight: '800', color: debitBalance >= 0 ? '#10B981' : '#EF4444' }}>R$ {fmt(debitBalance)}</Text>
                                 ) : (
                                   <Text style={{ fontSize: 14, fontWeight: '700', color: colors.muted }}>—</Text>
                                 )}
@@ -547,10 +546,10 @@ export default function HomeScreen() {
         visible={editExpenseVisible}
         expense={selectedExpense}
         onClose={() => { setEditExpenseVisible(false); setSelectedExpense(undefined); }}
-        onSave={async (data) => { if (selectedExpense) await updateExpense(selectedExpense.id, data); }}
-        onDelete={async (id) => { await deleteExpense(id); }}
-        onMoveToNextMonth={async (id) => { await moveExpenseToNextMonth(id); }}
-        onGenerateRemainingInstallments={async (id) => { await generateRemainingInstallments(id); }}
+        onSave={async (data) => { if (selectedExpense) { await updateExpense(selectedExpense.id, data); showToast('Despesa atualizada!'); } }}
+        onDelete={async (id) => { await deleteExpense(id); showToast('Despesa removida', 'info'); }}
+        onMoveToNextMonth={async (id) => { await moveExpenseToNextMonth(id); showToast('Movida para o próximo mês!'); }}
+        onGenerateRemainingInstallments={async (id) => { await generateRemainingInstallments(id); showToast('Parcelas geradas!'); }}
       />
 
       {/* FAB */}
@@ -647,6 +646,7 @@ export default function HomeScreen() {
 
       {/* Bank balance edit modal */}
       <Modal visible={bankBalanceEditVisible} transparent animationType="fade" onRequestClose={() => { setBankBalanceEditVisible(false); setBankReceivedInput(''); }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }} onPress={() => { setBankBalanceEditVisible(false); setBankReceivedInput(''); }}>
           <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderRadius: 20, padding: 24, gap: 14 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -716,6 +716,7 @@ export default function HomeScreen() {
                   await bankUtils.bank.getAll.invalidate();
                   setBankReceivedInput('');
                   setBankBalanceEditVisible(false);
+                  showToast('Saldo atualizado!');
                 }}
                 style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.6 : 1, backgroundColor: colors.tint, borderRadius: 12, padding: 14, alignItems: 'center' }]}
               >
@@ -724,8 +725,10 @@ export default function HomeScreen() {
             </View>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
+      <Toast {...toast} />
     </ScreenContainer>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, Pressable, ActivityIndicator,
   TouchableOpacity, FlatList, TextInput, Alert, Modal,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -14,6 +15,7 @@ import { useExpenses } from '@/hooks/use-expenses';
 import { useCategories } from '@/hooks/use-categories';
 import { trpc } from '@/lib/trpc';
 import { Expense, CATEGORY_LABELS, CATEGORY_COLORS } from '@/types/expense';
+import { Toast, useToast } from '@/components/toast';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -108,6 +110,7 @@ export default function BankDetailScreen() {
   const [bankBalanceInput, setBankBalanceInput] = useState('');
   const [bankReceivedInput, setBankReceivedInput] = useState('');
   const [fabMenuVisible, setFabMenuVisible] = useState(false);
+  const { toast, show: showToast } = useToast();
 
   const { data: bank } = trpc.bank.getById.useQuery({ id: bankId }, { enabled: bankId > 0 });
   const bankUtils = trpc.useUtils();
@@ -155,8 +158,6 @@ export default function BankDetailScreen() {
   // Balance info
   const debitBalance = bank?.debitBalance != null ? parseFloat(String(bank.debitBalance)) : null;
   const creditLimit = bank?.creditLimit != null ? parseFloat(String(bank.creditLimit)) : null;
-  const debitTotal = useMemo(() => expenses.filter(e => e.bank === bank?.name && e.paymentType === 'debit').reduce((s, e) => s + e.value, 0), [expenses, bank?.name]);
-  const available = debitBalance != null ? debitBalance - debitTotal : null;
 
   const bc = bank ? bankColor(bank.name) : '#0a7ea4';
 
@@ -173,10 +174,27 @@ export default function BankDetailScreen() {
   const handleSaveExpense = useCallback(async (data: Omit<Expense, 'id' | 'date' | 'month'>) => {
     if (selectedExpense) {
       await updateExpense(selectedExpense.id, data);
+      // Ajusta saldo: desfaz valor antigo, aplica valor novo
+      if (bank?.id != null && debitBalance != null) {
+        const oldDebit = selectedExpense.paymentType === 'debit' && selectedExpense.bank === bank.name;
+        const newDebit = data.paymentType === 'debit' && data.bank === bank.name;
+        const adjustment = (oldDebit ? selectedExpense.value : 0) - (newDebit ? data.value : 0);
+        if (adjustment !== 0) {
+          await updateBankLimits.mutateAsync({ id: bank.id, debitBalance: debitBalance + adjustment });
+          await bankUtils.bank.getById.invalidate({ id: bank.id });
+        }
+      }
+      showToast('Despesa atualizada!');
     } else {
       await addExpense(data);
+      // Subtrai do saldo se débito
+      if (bank?.id != null && debitBalance != null && data.paymentType === 'debit' && data.bank === bank.name) {
+        await updateBankLimits.mutateAsync({ id: bank.id, debitBalance: debitBalance - data.value });
+        await bankUtils.bank.getById.invalidate({ id: bank.id });
+      }
+      showToast('Despesa adicionada!');
     }
-  }, [selectedExpense, addExpense, updateExpense]);
+  }, [selectedExpense, addExpense, updateExpense, bank, debitBalance]);
 
   return (
     <ScreenContainer className="p-0">
@@ -233,7 +251,7 @@ export default function BankDetailScreen() {
                 <MaterialIcons name="edit" size={11} color="rgba(255,255,255,0.6)" />
                 <Text style={{ fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>
                   {paymentTypeFilter === 'debit'
-                    ? (available != null ? `R$ ${fmt(available)} disp.` : 'Saldo')
+                    ? (debitBalance != null ? `R$ ${fmt(debitBalance)}` : 'Saldo')
                     : (creditLimit != null ? `R$ ${fmt(creditLimit)} limite` : 'Limite')}
                 </Text>
               </View>
@@ -248,7 +266,7 @@ export default function BankDetailScreen() {
               </Text>
               <Text style={{ color: '#93C5FD', fontSize: 18, fontWeight: '800', letterSpacing: -0.5 }}>
                 {paymentTypeFilter === 'debit'
-                  ? (available != null ? `R$ ${fmt(available)}` : '—')
+                  ? (debitBalance != null ? `R$ ${fmt(debitBalance)}` : '—')
                   : (creditLimit != null ? `R$ ${fmt(creditLimit)}` : '—')}
               </Text>
             </View>
@@ -256,11 +274,6 @@ export default function BankDetailScreen() {
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Despesas</Text>
               <Text style={{ color: '#FCA5A5', fontSize: 18, fontWeight: '800', letterSpacing: -0.5 }}>R$ {fmt(filteredTotal)}</Text>
-            </View>
-            <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginVertical: 4 }} />
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Itens</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 18, fontWeight: '800' }}>{filteredExpenses.length}</Text>
             </View>
           </View>
         </View>
@@ -325,13 +338,8 @@ export default function BankDetailScreen() {
           )}
 
           {/* Cabeçalho da lista */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 }}>
+          <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>Despesas</Text>
-            <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, backgroundColor: colors.border }}>
-              <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted }}>
-                {filteredExpenses.length} {filteredExpenses.length === 1 ? 'item' : 'itens'}
-              </Text>
-            </View>
           </View>
 
           {/* Lista */}
@@ -426,6 +434,7 @@ export default function BankDetailScreen() {
 
       {/* Modal editar saldo/limite */}
       <Modal visible={bankBalanceEditVisible} transparent animationType="fade" onRequestClose={() => { setBankBalanceEditVisible(false); setBankReceivedInput(''); }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }} onPress={() => { setBankBalanceEditVisible(false); setBankReceivedInput(''); }}>
           <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderRadius: 20, padding: 24, gap: 14 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -494,9 +503,13 @@ export default function BankDetailScreen() {
                     debitBalance: paymentTypeFilter === 'debit' ? total : undefined,
                     creditLimit: paymentTypeFilter === 'credit' ? total : undefined,
                   });
-                  await bankUtils.bank.getAll.invalidate();
+                  await Promise.all([
+                    bankUtils.bank.getAll.invalidate(),
+                    bankUtils.bank.getById.invalidate({ id: bank.id! }),
+                  ]);
                   setBankReceivedInput('');
                   setBankBalanceEditVisible(false);
+                  showToast(paymentTypeFilter === 'debit' ? 'Saldo atualizado!' : 'Limite atualizado!');
                 }}
                 style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.6 : 1, backgroundColor: colors.tint, borderRadius: 12, padding: 14, alignItems: 'center' }]}
               >
@@ -505,6 +518,7 @@ export default function BankDetailScreen() {
             </View>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal: despesas sem débito/crédito */}
@@ -545,12 +559,23 @@ export default function BankDetailScreen() {
         expense={selectedExpense}
         defaultBank={bank?.name}
         defaultPaymentType={paymentTypeFilter}
+        hideBankField={!selectedExpense}
+        hidePaymentTypeField={!selectedExpense}
         onClose={() => setModalVisible(false)}
         onSave={handleSaveExpense}
-        onDelete={async (id) => { await deleteExpense(id); }}
-        onMoveToNextMonth={async (id) => { await moveExpenseToNextMonth(id); }}
-        onGenerateRemainingInstallments={async (id) => { await generateRemainingInstallments(id); }}
+        onDelete={async (id) => {
+          const exp = expenses.find(e => e.id === id);
+          await deleteExpense(id);
+          if (exp && bank?.id != null && debitBalance != null && exp.paymentType === 'debit' && exp.bank === bank.name) {
+            await updateBankLimits.mutateAsync({ id: bank.id, debitBalance: debitBalance + exp.value });
+            await bankUtils.bank.getById.invalidate({ id: bank.id });
+          }
+          showToast('Despesa removida', 'info');
+        }}
+        onMoveToNextMonth={async (id) => { await moveExpenseToNextMonth(id); showToast('Movida para o próximo mês!'); }}
+        onGenerateRemainingInstallments={async (id) => { await generateRemainingInstallments(id); showToast('Parcelas geradas!'); }}
       />
+      <Toast {...toast} />
     </ScreenContainer>
   );
 }

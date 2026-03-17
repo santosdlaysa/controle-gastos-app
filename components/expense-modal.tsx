@@ -17,6 +17,8 @@ interface ExpenseModalProps {
   expense?: Expense;
   defaultBank?: string;
   defaultPaymentType?: 'debit' | 'credit';
+  hideBankField?: boolean;
+  hidePaymentTypeField?: boolean;
   onClose: () => void;
   onSave: (data: Omit<Expense, 'id' | 'date' | 'month'>) => void;
   onDelete?: (id: string) => void;
@@ -29,6 +31,8 @@ export function ExpenseModal({
   expense,
   defaultBank,
   defaultPaymentType,
+  hideBankField,
+  hidePaymentTypeField,
   onClose,
   onSave,
   onDelete,
@@ -239,7 +243,7 @@ export function ExpenseModal({
             </View>
 
             {/* Bank field */}
-            <View className="mb-4">
+            {!hideBankField && <View className="mb-4">
               <Text className="text-sm font-semibold text-foreground mb-2">
                 Banco/Cartão (opcional)
               </Text>
@@ -279,10 +283,10 @@ export function ExpenseModal({
                   ))}
                 </View>
               )}
-            </View>
+            </View>}
 
             {/* Payment type field */}
-            <View className="mb-4">
+            {!hidePaymentTypeField && <View className="mb-4">
               <Text className="text-sm font-semibold text-foreground mb-2">
                 Tipo de Pagamento (opcional)
               </Text>
@@ -311,7 +315,7 @@ export function ExpenseModal({
                   </Pressable>
                 ))}
               </View>
-            </View>
+            </View>}
 
             {/* Expense type field */}
             <View className="mb-4">
