@@ -657,21 +657,25 @@ export default function SettingsScreen() {
 
             {/* New category form */}
             <View style={{ paddingHorizontal: 16, marginBottom: 16, gap: 8 }}>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TextInput
-                  value={newCatLabel}
-                  onChangeText={setNewCatLabel}
-                  placeholder="Nome da categoria"
-                  placeholderTextColor={colors.muted}
-                  style={{ flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.foreground, backgroundColor: colors.surface }}
-                />
-                <TextInput
-                  value={newCatColor}
-                  onChangeText={setNewCatColor}
-                  placeholder="#6B7280"
-                  placeholderTextColor={colors.muted}
-                  style={{ width: 90, borderWidth: 1.5, borderColor: newCatColor.match(/^#[0-9A-Fa-f]{6}$/) ? newCatColor : colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.foreground, backgroundColor: colors.surface }}
-                />
+              <TextInput
+                value={newCatLabel}
+                onChangeText={setNewCatLabel}
+                placeholder="Nome da categoria"
+                placeholderTextColor={colors.muted}
+                style={{ borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.foreground, backgroundColor: colors.surface }}
+              />
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {['#EF4444','#F97316','#EAB308','#22C55E','#10B981','#06B6D4','#3B82F6','#6366F1','#8B5CF6','#EC4899','#F43F5E','#14B8A6','#84CC16','#F59E0B','#6B7280','#1E293B'].map((color) => (
+                  <Pressable key={color} onPress={() => setNewCatColor(color)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                    <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: color, borderWidth: newCatColor === color ? 3 : 0, borderColor: '#fff', shadowColor: '#000', shadowOpacity: newCatColor === color ? 0.4 : 0, shadowRadius: 4, elevation: newCatColor === color ? 4 : 0, alignItems: 'center', justifyContent: 'center' }}>
+                      {newCatColor === color && <MaterialIcons name="check" size={16} color="#fff" />}
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: newCatColor }} />
+                <Text style={{ fontSize: 12, color: colors.muted }}>{newCatColor}</Text>
               </View>
               <Pressable
                 onPress={async () => {
