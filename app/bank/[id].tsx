@@ -145,6 +145,13 @@ export default function BankDetailScreen() {
     };
   }, [expenses, bank?.name, paymentTypeFilter, selectedCategory, showOnlyUnpaid, showOnlyInstallments]);
 
+  // Despesas deste banco sem paymentType
+  const uncategorizedPayment = useMemo(
+    () => expenses.filter(e => e.bank === bank?.name && !e.paymentType),
+    [expenses, bank?.name]
+  );
+  const [uncategorizedModalVisible, setUncategorizedModalVisible] = useState(false);
+
   // Balance info
   const debitBalance = bank?.debitBalance != null ? parseFloat(String(bank.debitBalance)) : null;
   const creditLimit = bank?.creditLimit != null ? parseFloat(String(bank.creditLimit)) : null;
@@ -301,6 +308,19 @@ export default function BankDetailScreen() {
               );
             })}
           </ScrollView>
+
+          {/* Banner: despesas sem débito/crédito */}
+          {uncategorizedPayment.length > 0 && (
+            <Pressable onPress={() => setUncategorizedModalVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, marginHorizontal: 16, marginTop: 8, marginBottom: 4 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F59E0B', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 }}>
+                <MaterialIcons name="warning" size={18} color="#fff" />
+                <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: '#fff' }}>
+                  {uncategorizedPayment.length} {uncategorizedPayment.length === 1 ? 'despesa sem débito/crédito' : 'despesas sem débito/crédito'}
+                </Text>
+                <MaterialIcons name="chevron-right" size={18} color="#fff" />
+              </View>
+            </Pressable>
+          )}
 
           {/* Cabeçalho da lista */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 }}>
@@ -481,6 +501,38 @@ export default function BankDetailScreen() {
                 <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Salvar</Text>
               </Pressable>
             </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal: despesas sem débito/crédito */}
+      <Modal visible={uncategorizedModalVisible} transparent animationType="slide" onRequestClose={() => setUncategorizedModalVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }} onPress={() => setUncategorizedModalVisible(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, maxHeight: '75%' }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, marginBottom: 4 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F59E0B20', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="warning" size={18} color="#F59E0B" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>Sem débito/crédito</Text>
+                <Text style={{ fontSize: 12, color: colors.muted }}>{uncategorizedPayment.length} {uncategorizedPayment.length === 1 ? 'despesa' : 'despesas'} sem tipo definido</Text>
+              </View>
+            </View>
+            <ScrollView style={{ paddingHorizontal: 16, marginTop: 8 }} showsVerticalScrollIndicator={false}>
+              {uncategorizedPayment.map(exp => (
+                <Pressable key={exp.id} onPress={() => { setUncategorizedModalVisible(false); setSelectedExpense(exp); setModalVisible(true); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{exp.name}</Text>
+                      <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{exp.category} · {exp.date ? new Date(exp.date).toLocaleDateString('pt-BR') : '—'}</Text>
+                    </View>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>R$ {fmt(exp.value)}</Text>
+                    <MaterialIcons name="edit" size={16} color={colors.muted} />
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>

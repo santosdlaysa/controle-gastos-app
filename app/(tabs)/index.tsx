@@ -254,6 +254,7 @@ export default function HomeScreen() {
   const [bankBalanceInput, setBankBalanceInput] = useState('');
   const [bankReceivedInput, setBankReceivedInput] = useState('');
   const [bankBalanceTarget, setBankBalanceTarget] = useState<{ id: number; name: string; debitBalance: number | null; creditLimit: number | null } | null>(null);
+  const [unbankedModalVisible, setUnbankedModalVisible] = useState(false);
 
   const { data: allBanks = [] } = trpc.bank.getAll.useQuery();
   const bankUtils = trpc.useUtils();
@@ -302,6 +303,8 @@ export default function HomeScreen() {
     getUberFeatureEnabled().then(setUberEnabled);
   }, []));
 
+  const unbankedExpenses = useMemo(() => expenses.filter(e => !e.bank), [expenses]);
+
   const bankSummaries = useMemo(() => {
     const result: Record<string, { debitTotal: number; creditTotal: number }> = {};
     for (const exp of expenses) {
@@ -340,6 +343,19 @@ export default function HomeScreen() {
 
         {/* CONTENT */}
         <View className="bg-background" style={{ borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -20, paddingTop: 20, paddingHorizontal: 16, paddingBottom: 100 }}>
+
+          {/* Banner: despesas sem banco */}
+          {unbankedExpenses.length > 0 && (
+            <Pressable onPress={() => setUnbankedModalVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, marginBottom: 16 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F59E0B', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 }}>
+                <MaterialIcons name="warning" size={18} color="#fff" />
+                <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: '#fff' }}>
+                  {unbankedExpenses.length} {unbankedExpenses.length === 1 ? 'despesa sem conta atribuída' : 'despesas sem conta atribuída'}
+                </Text>
+                <MaterialIcons name="chevron-right" size={18} color="#fff" />
+              </View>
+            </Pressable>
+          )}
           {loading ? (
             <ActivityIndicator color={colors.tint} style={{ marginTop: 40 }} />
           ) : allBanks.length === 0 ? (
@@ -487,6 +503,35 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
+
+      {/* Modal: despesas sem banco */}
+      <Modal visible={unbankedModalVisible} transparent animationType="slide" onRequestClose={() => setUnbankedModalVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }} onPress={() => setUnbankedModalVisible(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, maxHeight: '75%' }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, marginBottom: 4 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F59E0B20', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="warning" size={18} color="#F59E0B" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>Sem conta atribuída</Text>
+                <Text style={{ fontSize: 12, color: colors.muted }}>{unbankedExpenses.length} {unbankedExpenses.length === 1 ? 'despesa' : 'despesas'} neste mês</Text>
+              </View>
+            </View>
+            <ScrollView style={{ paddingHorizontal: 16, marginTop: 8 }} showsVerticalScrollIndicator={false}>
+              {unbankedExpenses.map(exp => (
+                <View key={exp.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{exp.name}</Text>
+                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{exp.category} · {exp.date ? new Date(exp.date).toLocaleDateString('pt-BR') : '—'}</Text>
+                  </View>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>R$ {fmt(exp.value)}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* FAB */}
       <Pressable
