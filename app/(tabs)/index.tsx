@@ -718,18 +718,34 @@ export default function HomeScreen() {
                   })
                   .map(exp => {
                     const val = parseFloat(String(exp.value));
+                    const asExpense: Expense = {
+                      id: String(exp.id),
+                      name: exp.name,
+                      category: exp.category as Expense['category'],
+                      value: val,
+                      date: exp.date,
+                      month: exp.month,
+                      quantity: exp.quantity ?? undefined,
+                      paid: exp.paid ?? undefined,
+                      bank: exp.bank ?? null,
+                      paymentType: (exp.paymentType as Expense['paymentType']) ?? null,
+                      expenseType: (exp.expenseType as Expense['expenseType']) ?? null,
+                    };
                     return (
-                      <View key={exp.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{exp.name}</Text>
-                          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
-                            {CATEGORY_LABELS[exp.category] ?? exp.category}
-                            {exp.bank ? ` · ${exp.bank}` : ''}
-                            {exp.quantity ? ` · ${exp.quantity}` : ''}
-                          </Text>
+                      <Pressable key={exp.id} onPress={() => { setSelectedNextMonthExpense(asExpense); setEditNextMonthVisible(true); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{exp.name}</Text>
+                            <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
+                              {CATEGORY_LABELS[exp.category] ?? exp.category}
+                              {exp.bank ? ` · ${exp.bank}` : ''}
+                              {exp.quantity ? ` · ${exp.quantity}` : ''}
+                            </Text>
+                          </View>
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: '#EF4444' }}>R$ {fmt(val)}</Text>
+                          <MaterialIcons name="chevron-right" size={16} color={colors.muted} />
                         </View>
-                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#EF4444' }}>R$ {fmt(val)}</Text>
-                      </View>
+                      </Pressable>
                     );
                   });
               })()}
@@ -737,6 +753,35 @@ export default function HomeScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* ExpenseModal para editar despesas do próximo mês */}
+      <ExpenseModal
+        visible={editNextMonthVisible}
+        expense={selectedNextMonthExpense}
+        onClose={() => { setEditNextMonthVisible(false); setSelectedNextMonthExpense(undefined); }}
+        onSave={async (data) => {
+          if (selectedNextMonthExpense) {
+            await updateNextMonthExp.mutateAsync({
+              id: parseInt(selectedNextMonthExpense.id, 10),
+              ...(data.name !== undefined && { name: data.name }),
+              ...(data.category !== undefined && { category: data.category }),
+              ...(data.value !== undefined && { value: data.value }),
+              ...(data.quantity !== undefined && { quantity: data.quantity ?? null }),
+              ...(data.paid !== undefined && { paid: data.paid }),
+              ...('bank' in data && { bank: data.bank ?? null }),
+              ...('paymentType' in data && { paymentType: data.paymentType ?? null }),
+              ...('expenseType' in data && { expenseType: data.expenseType ?? null }),
+            });
+            showToast('Despesa atualizada!');
+          }
+        }}
+        onDelete={async (id) => {
+          await deleteNextMonthExp.mutateAsync({ id: parseInt(id, 10) });
+          setEditNextMonthVisible(false);
+          setSelectedNextMonthExpense(undefined);
+          showToast('Despesa removida', 'info');
+        }}
+      />
 
       {/* ExpenseModal para editar despesas sem banco */}
       <ExpenseModal

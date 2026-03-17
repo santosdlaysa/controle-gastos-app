@@ -33,7 +33,7 @@ export const bankRouter = router({
       name: z.string().min(1).max(100).trim(),
       isCredit: z.boolean().optional(),
       creditLimit: z.number().min(0).nullable().optional(),
-      debitBalance: z.number().min(0).nullable().optional(),
+      debitBalance: z.number().nullable().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
@@ -73,7 +73,7 @@ export const bankRouter = router({
       id: z.number().int().positive(),
       isCredit: z.boolean().optional(),
       creditLimit: z.number().min(0).nullable().optional(),
-      debitBalance: z.number().min(0).nullable().optional(),
+      debitBalance: z.number().nullable().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
