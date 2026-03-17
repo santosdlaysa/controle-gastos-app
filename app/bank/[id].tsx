@@ -16,6 +16,7 @@ import { useCategories } from '@/hooks/use-categories';
 import { trpc } from '@/lib/trpc';
 import { Expense, CATEGORY_LABELS, CATEGORY_COLORS } from '@/types/expense';
 import { Toast, useToast } from '@/components/toast';
+import { TransferModal } from '@/components/transfer-modal';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -110,6 +111,7 @@ export default function BankDetailScreen() {
   const [bankBalanceInput, setBankBalanceInput] = useState('');
   const [bankReceivedInput, setBankReceivedInput] = useState('');
   const [fabMenuVisible, setFabMenuVisible] = useState(false);
+  const [transferVisible, setTransferVisible] = useState(false);
   const { toast, show: showToast } = useToast();
 
   const { data: bank } = trpc.bank.getById.useQuery({ id: bankId }, { enabled: bankId > 0 });
@@ -406,6 +408,19 @@ export default function BankDetailScreen() {
             </View>
           </Pressable>
 
+          {/* Opção: Transferência */}
+          {paymentTypeFilter === 'debit' && (
+            <Pressable
+              onPress={() => { setFabMenuVisible(false); setTransferVisible(true); }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+            >
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff', textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>Transferir</Text>
+              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 }}>
+                <MaterialIcons name="swap-horiz" size={22} color="#fff" />
+              </View>
+            </Pressable>
+          )}
+
           {/* Opção: Nova despesa */}
           <Pressable
             onPress={() => { setFabMenuVisible(false); handleAddExpense(); }}
@@ -571,6 +586,18 @@ export default function BankDetailScreen() {
         onMoveToNextMonth={async (id) => { await moveExpenseToNextMonth(id); showToast('Movida para o próximo mês!'); }}
         onGenerateRemainingInstallments={async (id) => { await generateRemainingInstallments(id); showToast('Parcelas geradas!'); }}
       />
+      {bank && (
+        <TransferModal
+          visible={transferVisible}
+          fromBank={{ id: bank.id!, name: bank.name, debitBalance: bank.debitBalance ?? null }}
+          onClose={() => setTransferVisible(false)}
+          onSuccess={() => {
+            bankUtils.bank.getAll.invalidate();
+            bankUtils.bank.getById.invalidate({ id: bank.id! });
+            showToast('Transferência realizada!');
+          }}
+        />
+      )}
       <Toast {...toast} />
     </ScreenContainer>
   );

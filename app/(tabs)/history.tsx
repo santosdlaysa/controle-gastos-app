@@ -24,7 +24,12 @@ const getShortMonthLabel = (monthStr: string) => {
 function PersonalHistory() {
   const colors = useColors();
   const [year, setYear] = useState(String(new Date().getFullYear()));
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.history.getSummaries.useQuery();
+
+  useFocusEffect(useCallback(() => {
+    utils.history.getSummaries.invalidate();
+  }, [utils]));
 
   const income = data?.income;
   const totalIncome = income

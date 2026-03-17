@@ -169,6 +169,13 @@ export function useExpenses(month: string) {
       }
     }
 
+    const nextMonthData = await utils.expense.getByMonth.fetch({ month: nextMonth });
+    const alreadyExists = nextMonthData.some(e =>
+      e.name === expenseToMove.name &&
+      (nextQuantity ? e.quantity === nextQuantity : !e.quantity)
+    );
+    if (alreadyExists) return;
+
     await createMut.mutateAsync({
       name: expenseToMove.name,
       category: expenseToMove.category,

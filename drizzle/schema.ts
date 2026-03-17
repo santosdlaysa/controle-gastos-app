@@ -11,6 +11,7 @@ export const banks = pgTable(
     isCredit: boolean("isCredit").default(false).notNull(),
     creditLimit: numeric("creditLimit", { precision: 10, scale: 2 }),
     debitBalance: numeric("debitBalance", { precision: 10, scale: 2 }),
+    position: integer("position").default(0).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
   (t) => [uniqueIndex("banks_user_name_idx").on(t.userId, t.name)],

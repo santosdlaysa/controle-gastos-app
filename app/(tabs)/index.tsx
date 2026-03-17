@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   ScrollView,
   Text,
@@ -259,6 +259,7 @@ export default function HomeScreen() {
   const [bankReceivedInput, setBankReceivedInput] = useState('');
   const [bankBalanceTarget, setBankBalanceTarget] = useState<{ id: number; name: string; debitBalance: number | null; creditLimit: number | null } | null>(null);
   const [unbankedModalVisible, setUnbankedModalVisible] = useState(false);
+  const [nextMonthModalVisible, setNextMonthModalVisible] = useState(false);
   const [editExpenseVisible, setEditExpenseVisible] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>();
   const { toast, show: showToast } = useToast();
@@ -267,10 +268,44 @@ export default function HomeScreen() {
   const { data: allBanks = [] } = trpc.bank.getAll.useQuery();
   const bankUtils = trpc.useUtils();
   const updateBankLimits = trpc.bank.updateLimits.useMutation();
+  const reorderBanks = trpc.bank.reorder.useMutation();
+  const [reorderMode, setReorderMode] = useState(false);
+  const [orderedBanks, setOrderedBanks] = useState<typeof allBanks>([]);
+  const reorderModeRef = useRef(false);
+  reorderModeRef.current = reorderMode;
+
+  useEffect(() => {
+    if (!reorderModeRef.current) {
+      setOrderedBanks([...allBanks]);
+    }
+  }, [allBanks]);
+
+  function moveBank(list: typeof allBanks, fromIdx: number, toIdx: number) {
+    const next = [...list];
+    const [item] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, item);
+    return next;
+  }
+
+  async function saveOrder() {
+    const payload = orderedBanks.map((b, i) => ({ id: b.id, position: i }));
+    await reorderBanks.mutateAsync(payload);
+    bankUtils.bank.getAll.invalidate();
+    setReorderMode(false);
+    showToast('Ordem salva!');
+  }
 
   const { expenses, loading, updateExpense, deleteExpense, moveExpenseToNextMonth, generateRemainingInstallments } = useExpenses(currentMonth);
 
+  const nextMonth = useMemo(() => addMonths(currentMonth, 1), [currentMonth]);
+  const { data: nextMonthExpenses = [] } = trpc.expense.getByMonth.useQuery({ month: nextMonth });
+  const nextMonthTotal = useMemo(() => nextMonthExpenses.reduce((sum, e) => sum + parseFloat(String(e.value)), 0), [nextMonthExpenses]);
+  const [editNextMonthVisible, setEditNextMonthVisible] = useState(false);
+  const [selectedNextMonthExpense, setSelectedNextMonthExpense] = useState<Expense | undefined>();
+
   const expUtils = trpc.useUtils();
+  const updateNextMonthExp = trpc.expense.update.useMutation({ onSuccess: () => expUtils.expense.getByMonth.invalidate({ month: nextMonth }) });
+  const deleteNextMonthExp = trpc.expense.delete.useMutation({ onSuccess: () => expUtils.expense.getByMonth.invalidate({ month: nextMonth }) });
   const colors = useColors();
 
   const fetchExpYear = useCallback(async () => {
@@ -317,6 +352,7 @@ export default function HomeScreen() {
       bankUtils.bank.getAll.invalidate(),
       expUtils.expense.getByMonth.invalidate(),
     ]);
+
     setRefreshing(false);
   }, [bankUtils, expUtils]);
 
@@ -393,7 +429,7 @@ export default function HomeScreen() {
               </Pressable>
             </View>
           ) : (() => {
-            const banks = allBanks.filter(b => b.id != null);
+            const banks = (orderedBanks.length > 0 ? orderedBanks : allBanks).filter(b => b.id != null);
             const creditCards = banks.filter(b => {
               const s = bankSummaries[b.name] ?? { debitTotal: 0, creditTotal: 0 };
               return b.isCredit || b.creditLimit != null || s.creditTotal > 0;
@@ -425,57 +461,114 @@ export default function HomeScreen() {
                   </View>
                 )}
 
+                {/* ── Próximo Mês ── */}
+                {nextMonthExpenses.length > 0 && (
+                  <Pressable onPress={() => setNextMonthModalVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+                    <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
+                      <View style={{ gap: 4 }}>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Despesas do próximo mês</Text>
+                        <Text style={{ fontSize: 10, color: colors.muted }}>{getMonthName(nextMonth)} · {nextMonthExpenses.length} {nextMonthExpenses.length === 1 ? 'despesa' : 'despesas'}</Text>
+                        <Text style={{ fontSize: 24, fontWeight: '900', color: '#EF4444', letterSpacing: -0.5, marginTop: 2 }}>
+                          R$ {fmt(nextMonthTotal)}
+                        </Text>
+                      </View>
+                      <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#EF444415', alignItems: 'center', justifyContent: 'center' }}>
+                        <MaterialIcons name="calendar-today" size={22} color="#EF4444" />
+                      </View>
+                    </View>
+                  </Pressable>
+                )}
+
                 {/* ── Cartões de Crédito ── */}
                 {creditCards.length > 0 && (
                   <View style={{ gap: 12 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>Cartões de crédito</Text>
-                      <Pressable onPress={() => router.navigate('/(tabs)/banks')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' }]}>
-                        <MaterialIcons name="add" size={18} color={colors.muted} />
-                      </Pressable>
+                      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                        {reorderMode ? (
+                          <>
+                            <Pressable onPress={saveOrder} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: '#10B981' }]}>
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>Salvar</Text>
+                            </Pressable>
+                            <Pressable onPress={() => { setOrderedBanks([...allBanks]); setReorderMode(false); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: colors.border }]}>
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.foreground }}>Cancelar</Text>
+                            </Pressable>
+                          </>
+                        ) : (
+                          <>
+                            <Pressable onPress={() => setReorderMode(true)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' }]}>
+                              <MaterialIcons name="swap-vert" size={18} color={colors.muted} />
+                            </Pressable>
+                            <Pressable onPress={() => router.navigate('/(tabs)/banks')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' }]}>
+                              <MaterialIcons name="add" size={18} color={colors.muted} />
+                            </Pressable>
+                          </>
+                        )}
+                      </View>
                     </View>
-                    {creditCards.map(bank => {
+                    {creditCards.map((bank) => {
                       const s = bankSummaries[bank.name] ?? { debitTotal: 0, creditTotal: 0 };
                       const creditLimit = bank.creditLimit != null ? parseFloat(String(bank.creditLimit)) : null;
                       const usedPct = creditLimit != null && creditLimit > 0 ? Math.min(100, (s.creditTotal / creditLimit) * 100) : null;
                       const barColor = usedPct != null ? (usedPct >= 90 ? '#EF4444' : usedPct >= 70 ? '#F59E0B' : '#10B981') : '#10B981';
                       const bc = bankColor(bank.name);
+                      const allIdx = orderedBanks.findIndex(b => b.id === bank.id);
                       return (
-                        <Pressable key={`cc-${bank.id}`} onPress={() => router.push(`/bank/${bank.id}`)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
-                          <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
-                            <View style={{ height: 3, backgroundColor: bc }} />
-                            <View style={{ padding: 16, gap: 12 }}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                                <BankLogo name={bank.name} size={38} />
-                                <View style={{ flex: 1 }}>
-                                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{bank.name}</Text>
-                                </View>
-                                <MaterialIcons name="chevron-right" size={18} color={colors.muted} />
-                              </View>
-                              <View style={{ flexDirection: 'row', gap: 0 }}>
-                                <View style={{ flex: 1 }}>
-                                  <Text style={{ fontSize: 10, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 }}>Fatura</Text>
-                                  <Text style={{ fontSize: 16, fontWeight: '800', color: s.creditTotal > 0 ? '#EF4444' : colors.foreground }}>R$ {fmt(s.creditTotal)}</Text>
-                                </View>
-                                <View style={{ width: 1, backgroundColor: colors.border, marginVertical: 2, marginHorizontal: 16 }} />
-                                <View style={{ flex: 1 }}>
-                                  <Text style={{ fontSize: 10, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 }}>Limite</Text>
-                                  <Text style={{ fontSize: 16, fontWeight: '800', color: colors.foreground }}>
-                                    {creditLimit != null ? `R$ ${fmt(creditLimit)}` : '—'}
-                                  </Text>
-                                </View>
-                              </View>
-                              {usedPct != null && (
-                                <View style={{ gap: 4 }}>
-                                  <View style={{ height: 5, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' }}>
-                                    <View style={{ height: 5, borderRadius: 3, backgroundColor: barColor, width: `${usedPct}%` }} />
-                                  </View>
-                                  <Text style={{ fontSize: 10, color: colors.muted }}>{usedPct.toFixed(0)}% do limite utilizado</Text>
-                                </View>
-                              )}
+                        <View key={`cc-${bank.id}`} style={{ flexDirection: 'row', alignItems: 'center', gap: reorderMode ? 8 : 0 }}>
+                          {reorderMode && (
+                            <View style={{ gap: 4 }}>
+                              <Pressable
+                                onPress={() => { if (allIdx > 0) setOrderedBanks(moveBank(orderedBanks, allIdx, allIdx - 1)); }}
+                                disabled={allIdx === 0}
+                                style={({ pressed }) => [{ opacity: (pressed || allIdx === 0) ? 0.3 : 1, width: 30, height: 30, borderRadius: 8, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }]}
+                              >
+                                <MaterialIcons name="keyboard-arrow-up" size={20} color={colors.foreground} />
+                              </Pressable>
+                              <Pressable
+                                onPress={() => { if (allIdx < orderedBanks.length - 1) setOrderedBanks(moveBank(orderedBanks, allIdx, allIdx + 1)); }}
+                                disabled={allIdx === orderedBanks.length - 1}
+                                style={({ pressed }) => [{ opacity: (pressed || allIdx === orderedBanks.length - 1) ? 0.3 : 1, width: 30, height: 30, borderRadius: 8, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }]}
+                              >
+                                <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.foreground} />
+                              </Pressable>
                             </View>
-                          </View>
-                        </Pressable>
+                          )}
+                          <Pressable style={{ flex: 1 }} onPress={() => !reorderMode && router.push(`/bank/${bank.id}`)}>
+                            <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
+                              <View style={{ height: 3, backgroundColor: bc }} />
+                              <View style={{ padding: 16, gap: 12 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                  <BankLogo name={bank.name} size={38} />
+                                  <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{bank.name}</Text>
+                                  </View>
+                                  {!reorderMode && <MaterialIcons name="chevron-right" size={18} color={colors.muted} />}
+                                </View>
+                                <View style={{ flexDirection: 'row', gap: 0 }}>
+                                  <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 10, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 }}>Fatura</Text>
+                                    <Text style={{ fontSize: 16, fontWeight: '800', color: s.creditTotal > 0 ? '#EF4444' : colors.foreground }}>R$ {fmt(s.creditTotal)}</Text>
+                                  </View>
+                                  <View style={{ width: 1, backgroundColor: colors.border, marginVertical: 2, marginHorizontal: 16 }} />
+                                  <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 10, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 }}>Limite</Text>
+                                    <Text style={{ fontSize: 16, fontWeight: '800', color: colors.foreground }}>
+                                      {creditLimit != null ? `R$ ${fmt(creditLimit)}` : '—'}
+                                    </Text>
+                                  </View>
+                                </View>
+                                {usedPct != null && (
+                                  <View style={{ gap: 4 }}>
+                                    <View style={{ height: 5, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' }}>
+                                      <View style={{ height: 5, borderRadius: 3, backgroundColor: barColor, width: `${usedPct}%` }} />
+                                    </View>
+                                    <Text style={{ fontSize: 10, color: colors.muted }}>{usedPct.toFixed(0)}% do limite utilizado</Text>
+                                  </View>
+                                )}
+                              </View>
+                            </View>
+                          </Pressable>
+                        </View>
                       );
                     })}
                   </View>
@@ -486,34 +579,73 @@ export default function HomeScreen() {
                   <View style={{ gap: 12 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>Minhas contas</Text>
-                      <Pressable onPress={() => router.navigate('/(tabs)/banks')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' }]}>
-                        <MaterialIcons name="add" size={18} color={colors.muted} />
-                      </Pressable>
+                      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                        {reorderMode ? (
+                          <>
+                            <Pressable onPress={saveOrder} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: '#10B981' }]}>
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>Salvar</Text>
+                            </Pressable>
+                            <Pressable onPress={() => { setOrderedBanks([...allBanks]); setReorderMode(false); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: colors.border }]}>
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.foreground }}>Cancelar</Text>
+                            </Pressable>
+                          </>
+                        ) : (
+                          <>
+                            <Pressable onPress={() => setReorderMode(true)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' }]}>
+                              <MaterialIcons name="swap-vert" size={18} color={colors.muted} />
+                            </Pressable>
+                            <Pressable onPress={() => router.navigate('/(tabs)/banks')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' }]}>
+                              <MaterialIcons name="add" size={18} color={colors.muted} />
+                            </Pressable>
+                          </>
+                        )}
+                      </View>
                     </View>
-                    {accounts.map(bank => {
+                    {accounts.map((bank) => {
                       const debitBalance = bank.debitBalance != null ? parseFloat(String(bank.debitBalance)) : null;
                       const bc = bankColor(bank.name);
+                      const allIdx = orderedBanks.findIndex(b => b.id === bank.id);
                       return (
-                        <Pressable key={`acc-${bank.id}`} onPress={() => router.push(`/bank/${bank.id}`)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
-                          <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
-                            <View style={{ height: 3, backgroundColor: bc }} />
-                            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
-                              <BankLogo name={bank.name} size={38} />
-                              <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{bank.name}</Text>
-                                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>Conta corrente</Text>
-                              </View>
-                              <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                                {debitBalance != null ? (
-                                  <Text style={{ fontSize: 16, fontWeight: '800', color: debitBalance >= 0 ? '#10B981' : '#EF4444' }}>R$ {fmt(debitBalance)}</Text>
-                                ) : (
-                                  <Text style={{ fontSize: 14, fontWeight: '700', color: colors.muted }}>—</Text>
-                                )}
-                              </View>
-                              <MaterialIcons name="chevron-right" size={18} color={colors.muted} />
+                        <View key={`acc-${bank.id}`} style={{ flexDirection: 'row', alignItems: 'center', gap: reorderMode ? 8 : 0 }}>
+                          {reorderMode && (
+                            <View style={{ gap: 4 }}>
+                              <Pressable
+                                onPress={() => { if (allIdx > 0) setOrderedBanks(moveBank(orderedBanks, allIdx, allIdx - 1)); }}
+                                disabled={allIdx === 0}
+                                style={({ pressed }) => [{ opacity: (pressed || allIdx === 0) ? 0.3 : 1, width: 30, height: 30, borderRadius: 8, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }]}
+                              >
+                                <MaterialIcons name="keyboard-arrow-up" size={20} color={colors.foreground} />
+                              </Pressable>
+                              <Pressable
+                                onPress={() => { if (allIdx < orderedBanks.length - 1) setOrderedBanks(moveBank(orderedBanks, allIdx, allIdx + 1)); }}
+                                disabled={allIdx === orderedBanks.length - 1}
+                                style={({ pressed }) => [{ opacity: (pressed || allIdx === orderedBanks.length - 1) ? 0.3 : 1, width: 30, height: 30, borderRadius: 8, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }]}
+                              >
+                                <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.foreground} />
+                              </Pressable>
                             </View>
-                          </View>
-                        </Pressable>
+                          )}
+                          <Pressable style={{ flex: 1 }} onPress={() => !reorderMode && router.push(`/bank/${bank.id}`)}>
+                            <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
+                              <View style={{ height: 3, backgroundColor: bc }} />
+                              <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+                                <BankLogo name={bank.name} size={38} />
+                                <View style={{ flex: 1 }}>
+                                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{bank.name}</Text>
+                                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>Conta corrente</Text>
+                                </View>
+                                <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                                  {debitBalance != null ? (
+                                    <Text style={{ fontSize: 16, fontWeight: '800', color: debitBalance >= 0 ? '#10B981' : '#EF4444' }}>R$ {fmt(debitBalance)}</Text>
+                                  ) : (
+                                    <Text style={{ fontSize: 14, fontWeight: '700', color: colors.muted }}>—</Text>
+                                  )}
+                                </View>
+                                {!reorderMode && <MaterialIcons name="chevron-right" size={18} color={colors.muted} />}
+                              </View>
+                            </View>
+                          </Pressable>
+                        </View>
                       );
                     })}
                   </View>
@@ -553,6 +685,54 @@ export default function HomeScreen() {
                   </View>
                 </Pressable>
               ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal: despesas do próximo mês */}
+      <Modal visible={nextMonthModalVisible} transparent animationType="slide" onRequestClose={() => setNextMonthModalVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }} onPress={() => setNextMonthModalVisible(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, maxHeight: '80%' }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, marginBottom: 12 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#EF444415', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="calendar-today" size={20} color="#EF4444" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>Despesas do próximo mês</Text>
+                <Text style={{ fontSize: 12, color: colors.muted, textTransform: 'capitalize' }}>{getMonthName(nextMonth)} · {nextMonthExpenses.length} {nextMonthExpenses.length === 1 ? 'despesa' : 'despesas'}</Text>
+              </View>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#EF4444' }}>R$ {fmt(nextMonthTotal)}</Text>
+            </View>
+            <ScrollView style={{ paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+              {(() => {
+                const seen = new Set<string>();
+                return [...nextMonthExpenses]
+                  .sort((a, b) => parseFloat(String(b.value)) - parseFloat(String(a.value)))
+                  .filter(exp => {
+                    const key = `${exp.name}||${exp.quantity ?? ''}||${exp.bank ?? ''}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                  })
+                  .map(exp => {
+                    const val = parseFloat(String(exp.value));
+                    return (
+                      <View key={exp.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{exp.name}</Text>
+                          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
+                            {CATEGORY_LABELS[exp.category] ?? exp.category}
+                            {exp.bank ? ` · ${exp.bank}` : ''}
+                            {exp.quantity ? ` · ${exp.quantity}` : ''}
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#EF4444' }}>R$ {fmt(val)}</Text>
+                      </View>
+                    );
+                  });
+              })()}
             </ScrollView>
           </Pressable>
         </Pressable>

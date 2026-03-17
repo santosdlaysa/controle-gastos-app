@@ -120,12 +120,16 @@ export default function SettingsScreen() {
   useFocusEffect(useCallback(() => {
     getUberFeatureEnabled().then(setUberEnabledState);
   }, []));
-  const { categories, createCategory, deleteCategory } = useCategories();
+  const { categories, createCategory, deleteCategory, updateCategory } = useCategories();
   const [catMgmtOpen, setCatMgmtOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatLabel, setNewCatLabel] = useState('');
   const [newCatColor, setNewCatColor] = useState('#6B7280');
   const [creatingCat, setCreatingCat] = useState(false);
+  const [editingCatId, setEditingCatId] = useState<number | null>(null);
+  const [editCatLabel, setEditCatLabel] = useState('');
+  const [editCatColor, setEditCatColor] = useState('#6B7280');
+  const [savingCat, setSavingCat] = useState(false);
 
   const [nameInput, setNameInput] = useState(user?.name ?? '');
   const [savingName, setSavingName] = useState(false);
@@ -706,28 +710,84 @@ export default function SettingsScreen() {
 
             {/* Category list */}
             <ScrollView style={{ paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
-              {categories.map((cat) => (
-                <View key={cat.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: cat.color + '25', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                    <MaterialIcons name={cat.icon as any} size={17} color={cat.color} />
+              {categories.map((cat) => {
+                const isEditing = editingCatId === cat.id;
+                return (
+                  <View key={cat.id} style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                    {/* Row */}
+                    <Pressable
+                      onPress={() => {
+                        if (isEditing) {
+                          setEditingCatId(null);
+                        } else {
+                          setEditingCatId(cat.id);
+                          setEditCatLabel(cat.label);
+                          setEditCatColor(cat.color);
+                        }
+                      }}
+                      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }]}
+                    >
+                      <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: cat.color, marginRight: 12 }} />
+                      <Text style={{ flex: 1, fontSize: 15, color: colors.foreground }}>{cat.label}</Text>
+                      <MaterialIcons name={isEditing ? 'expand-less' : 'edit'} size={18} color={colors.muted} style={{ marginRight: 8 }} />
+                      <Pressable
+                        onPress={() => {
+                          Alert.alert('Excluir categoria', `Excluir "${cat.label}"? As despesas existentes mantêm a categoria.`, [
+                            { text: 'Cancelar', style: 'cancel' },
+                            { text: 'Excluir', style: 'destructive', onPress: () => { deleteCategory(cat.id); showToast('Categoria removida', 'info'); } },
+                          ]);
+                        }}
+                        hitSlop={8}
+                        style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+                      >
+                        <MaterialIcons name="delete-outline" size={20} color={colors.muted} />
+                      </Pressable>
+                    </Pressable>
+
+                    {/* Inline edit form */}
+                    {isEditing && (
+                      <View style={{ paddingBottom: 12, gap: 8 }}>
+                        <TextInput
+                          value={editCatLabel}
+                          onChangeText={setEditCatLabel}
+                          placeholder="Nome da categoria"
+                          placeholderTextColor={colors.muted}
+                          style={{ borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.foreground, backgroundColor: colors.surface }}
+                        />
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                          {['#EF4444','#F97316','#EAB308','#22C55E','#10B981','#06B6D4','#3B82F6','#6366F1','#8B5CF6','#EC4899','#F43F5E','#14B8A6','#84CC16','#F59E0B','#6B7280','#1E293B'].map((color) => (
+                            <Pressable key={color} onPress={() => setEditCatColor(color)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: color, borderWidth: editCatColor === color ? 3 : 0, borderColor: '#fff', elevation: editCatColor === color ? 4 : 0, alignItems: 'center', justifyContent: 'center' }}>
+                                {editCatColor === color && <MaterialIcons name="check" size={16} color="#fff" />}
+                              </View>
+                            </Pressable>
+                          ))}
+                        </View>
+                        <Pressable
+                          onPress={async () => {
+                            const label = editCatLabel.trim();
+                            if (!label) return;
+                            setSavingCat(true);
+                            try {
+                              await updateCategory({ id: cat.id, label, color: editCatColor, icon: cat.icon });
+                              setEditingCatId(null);
+                              showToast('Categoria atualizada!');
+                            } catch (e: any) {
+                              showToast(e?.message ?? 'Erro ao atualizar categoria.', 'error');
+                            } finally {
+                              setSavingCat(false);
+                            }
+                          }}
+                          disabled={savingCat || !editCatLabel.trim()}
+                          style={({ pressed }) => [{ opacity: (pressed || savingCat || !editCatLabel.trim()) ? 0.6 : 1, backgroundColor: editCatColor, borderRadius: 12, padding: 10, alignItems: 'center' }]}
+                        >
+                          {savingCat ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Salvar</Text>}
+                        </Pressable>
+                      </View>
+                    )}
                   </View>
-                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: cat.color, marginRight: 10 }} />
-                  <Text style={{ flex: 1, fontSize: 15, color: colors.foreground }}>{cat.label}</Text>
-                  <Text style={{ fontSize: 11, color: colors.muted, marginRight: 8 }}>{cat.color}</Text>
-                  <Pressable
-                    onPress={() => {
-                      Alert.alert('Excluir categoria', `Excluir "${cat.label}"? As despesas existentes mantêm a categoria.`, [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Excluir', style: 'destructive', onPress: () => { deleteCategory(cat.id); showToast('Categoria removida', 'info'); } },
-                      ]);
-                    }}
-                    hitSlop={8}
-                    style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
-                  >
-                    <MaterialIcons name="delete-outline" size={20} color={colors.muted} />
-                  </Pressable>
-                </View>
-              ))}
+                );
+              })}
             </ScrollView>
           </Pressable>
         </Pressable>

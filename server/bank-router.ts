@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import { z } from "zod";
 import { router, protectedProcedure } from "./_core/trpc";
 import { banks } from "../drizzle/schema";
@@ -9,11 +9,24 @@ export const bankRouter = router({
     const db = await getDb();
     if (!db) return [];
     return db
-      .select({ id: banks.id, name: banks.name, isCredit: banks.isCredit, creditLimit: banks.creditLimit, debitBalance: banks.debitBalance })
+      .select({ id: banks.id, name: banks.name, isCredit: banks.isCredit, creditLimit: banks.creditLimit, debitBalance: banks.debitBalance, position: banks.position })
       .from(banks)
       .where(eq(banks.userId, ctx.user.id))
-      .orderBy(banks.name);
+      .orderBy(asc(banks.position), asc(banks.name));
   }),
+
+  reorder: protectedProcedure
+    .input(z.array(z.object({ id: z.number().int().positive(), position: z.number().int() })))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      await Promise.all(
+        input.map(({ id, position }) =>
+          db.update(banks).set({ position }).where(and(eq(banks.id, id), eq(banks.userId, ctx.user.id)))
+        )
+      );
+      return { ok: true };
+    }),
 
   create: protectedProcedure
     .input(z.object({
@@ -70,6 +83,31 @@ export const bankRouter = router({
       if (input.creditLimit !== undefined) set.creditLimit = input.creditLimit?.toFixed(2) ?? null;
       if (input.debitBalance !== undefined) set.debitBalance = input.debitBalance?.toFixed(2) ?? null;
       await db.update(banks).set(set).where(and(eq(banks.id, input.id), eq(banks.userId, ctx.user.id)));
+      return { ok: true };
+    }),
+
+  transfer: protectedProcedure
+    .input(z.object({
+      fromId: z.number().int().positive(),
+      toId: z.number().int().positive(),
+      amount: z.number().positive(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      const rows = await db
+        .select({ id: banks.id, debitBalance: banks.debitBalance })
+        .from(banks)
+        .where(and(eq(banks.userId, ctx.user.id)));
+      const from = rows.find(r => r.id === input.fromId);
+      const to = rows.find(r => r.id === input.toId);
+      if (!from || !to) throw new Error("Conta não encontrada");
+      const fromBalance = from.debitBalance != null ? parseFloat(String(from.debitBalance)) : 0;
+      const toBalance = to.debitBalance != null ? parseFloat(String(to.debitBalance)) : 0;
+      await db.update(banks).set({ debitBalance: (fromBalance - input.amount).toFixed(2) })
+        .where(and(eq(banks.id, input.fromId), eq(banks.userId, ctx.user.id)));
+      await db.update(banks).set({ debitBalance: (toBalance + input.amount).toFixed(2) })
+        .where(and(eq(banks.id, input.toId), eq(banks.userId, ctx.user.id)));
       return { ok: true };
     }),
 
