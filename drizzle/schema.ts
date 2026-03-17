@@ -8,6 +8,7 @@ export const banks = pgTable(
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
     userId: integer("userId").notNull(),
     name: varchar("name", { length: 100 }).notNull(),
+    isCredit: boolean("isCredit").default(false).notNull(),
     creditLimit: numeric("creditLimit", { precision: 10, scale: 2 }),
     debitBalance: numeric("debitBalance", { precision: 10, scale: 2 }),
     createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -9,14 +9,19 @@ export const bankRouter = router({
     const db = await getDb();
     if (!db) return [];
     return db
-      .select({ id: banks.id, name: banks.name, creditLimit: banks.creditLimit, debitBalance: banks.debitBalance })
+      .select({ id: banks.id, name: banks.name, isCredit: banks.isCredit, creditLimit: banks.creditLimit, debitBalance: banks.debitBalance })
       .from(banks)
       .where(eq(banks.userId, ctx.user.id))
       .orderBy(banks.name);
   }),
 
   create: protectedProcedure
-    .input(z.object({ name: z.string().min(1).max(100).trim() }))
+    .input(z.object({
+      name: z.string().min(1).max(100).trim(),
+      isCredit: z.boolean().optional(),
+      creditLimit: z.number().min(0).nullable().optional(),
+      debitBalance: z.number().min(0).nullable().optional(),
+    }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB unavailable");
@@ -28,8 +33,14 @@ export const bankRouter = router({
       if (existing.length > 0) throw new Error("Banco já cadastrado");
       const rows = await db
         .insert(banks)
-        .values({ userId: ctx.user.id, name: input.name })
-        .returning({ id: banks.id, name: banks.name, creditLimit: banks.creditLimit, debitBalance: banks.debitBalance });
+        .values({
+          userId: ctx.user.id,
+          name: input.name,
+          isCredit: input.isCredit ?? false,
+          creditLimit: input.creditLimit != null ? input.creditLimit.toFixed(2) : null,
+          debitBalance: input.debitBalance != null ? input.debitBalance.toFixed(2) : null,
+        })
+        .returning({ id: banks.id, name: banks.name, isCredit: banks.isCredit, creditLimit: banks.creditLimit, debitBalance: banks.debitBalance });
       return rows[0];
     }),
 
@@ -47,6 +58,7 @@ export const bankRouter = router({
   updateLimits: protectedProcedure
     .input(z.object({
       id: z.number().int().positive(),
+      isCredit: z.boolean().optional(),
       creditLimit: z.number().min(0).nullable().optional(),
       debitBalance: z.number().min(0).nullable().optional(),
     }))
@@ -54,6 +66,7 @@ export const bankRouter = router({
       const db = await getDb();
       if (!db) throw new Error("DB unavailable");
       const set: Record<string, any> = {};
+      if (input.isCredit !== undefined) set.isCredit = input.isCredit;
       if (input.creditLimit !== undefined) set.creditLimit = input.creditLimit?.toFixed(2) ?? null;
       if (input.debitBalance !== undefined) set.debitBalance = input.debitBalance?.toFixed(2) ?? null;
       await db.update(banks).set(set).where(and(eq(banks.id, input.id), eq(banks.userId, ctx.user.id)));
@@ -66,7 +79,7 @@ export const bankRouter = router({
       const db = await getDb();
       if (!db) return null;
       const rows = await db
-        .select({ id: banks.id, name: banks.name, creditLimit: banks.creditLimit, debitBalance: banks.debitBalance })
+        .select({ id: banks.id, name: banks.name, isCredit: banks.isCredit, creditLimit: banks.creditLimit, debitBalance: banks.debitBalance })
         .from(banks)
         .where(eq(banks.id, input.id))
         .limit(1);

@@ -382,7 +382,7 @@ export default function BankDetailScreen() {
 
       {/* FAB menu overlay */}
       {fabMenuVisible && (
-        <Pressable style={{ position: 'absolute', inset: 0 }} onPress={() => setFabMenuVisible(false)} />
+        <Pressable style={{ position: 'absolute', top: -200, left: 0, right: 0, bottom: -100, backgroundColor: 'rgba(0,0,0,0.45)' }} onPress={() => setFabMenuVisible(false)} />
       )}
       {fabMenuVisible && (
         <View style={{ position: 'absolute', bottom: 84, right: 20, gap: 10, alignItems: 'flex-end' }}>
@@ -398,11 +398,9 @@ export default function BankDetailScreen() {
             }}
             style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
           >
-            <View style={{ backgroundColor: colors.background, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 4, elevation: 4 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
-                {paymentTypeFilter === 'debit' ? 'Atualizar saldo' : 'Atualizar limite'}
-              </Text>
-            </View>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff', textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
+              {paymentTypeFilter === 'debit' ? 'Atualizar saldo' : 'Atualizar limite'}
+            </Text>
             <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 }}>
               <MaterialIcons name="account-balance-wallet" size={20} color="#fff" />
             </View>
@@ -413,9 +411,7 @@ export default function BankDetailScreen() {
             onPress={() => { setFabMenuVisible(false); handleAddExpense(); }}
             style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
           >
-            <View style={{ backgroundColor: colors.background, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 4, elevation: 4 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>Nova despesa</Text>
-            </View>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff', textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>Nova despesa</Text>
             <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 }}>
               <MaterialIcons name="add" size={22} color="#fff" />
             </View>
@@ -427,7 +423,7 @@ export default function BankDetailScreen() {
       <TouchableOpacity
         onPress={() => setFabMenuVisible(v => !v)}
         activeOpacity={0.8}
-        style={{ position: 'absolute', bottom: 16, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#0a7ea4', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 }}
+        style={{ position: 'absolute', bottom: 32, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#0a7ea4', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 }}
       >
         <MaterialIcons name={fabMenuVisible ? 'close' : 'add'} size={26} color="#fff" />
       </TouchableOpacity>

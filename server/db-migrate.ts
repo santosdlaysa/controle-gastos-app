@@ -152,6 +152,15 @@ export async function ensureSchema(databaseUrl: string): Promise<void> {
     await sql`ALTER TABLE banks ADD COLUMN IF NOT EXISTS "creditLimit" numeric(10,2)`;
     await sql`ALTER TABLE banks ADD COLUMN IF NOT EXISTS "debitBalance" numeric(10,2)`;
     await sql`ALTER TABLE banks ADD COLUMN IF NOT EXISTS "createdAt" timestamp NOT NULL DEFAULT now()`;
+    await sql`ALTER TABLE banks ADD COLUMN IF NOT EXISTS "isCredit" boolean NOT NULL DEFAULT false`;
+    // Auto-mark banks that have ever had a credit expense
+    await sql`
+      UPDATE banks b SET "isCredit" = true
+      WHERE EXISTS (
+        SELECT 1 FROM expenses e
+        WHERE e.bank = b.name AND e."userId" = b."userId" AND e."paymentType" = 'credit'
+      )
+    `;
 
     await sql`
       CREATE UNIQUE INDEX IF NOT EXISTS banks_user_name_idx

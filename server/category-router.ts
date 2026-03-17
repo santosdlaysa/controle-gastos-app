@@ -42,6 +42,23 @@ export const categoryRouter = router({
       return { success: true };
     }),
 
+  update: protectedProcedure
+    .input(z.object({
+      id: z.number().int().positive(),
+      label: z.string().min(1).max(100),
+      color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+      icon: z.string().min(1).max(50),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      const { id, ...data } = input;
+      await db.update(userCategories).set(data).where(
+        and(eq(userCategories.id, id), eq(userCategories.userId, ctx.user.id))
+      );
+      return { success: true };
+    }),
+
   delete: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {

@@ -11,6 +11,7 @@ import {
   Share,
   Platform,
   KeyboardAvoidingView,
+  RefreshControl,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
@@ -262,6 +263,7 @@ export default function HomeScreen() {
   const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>();
   const { toast, show: showToast } = useToast();
 
+  const [refreshing, setRefreshing] = useState(false);
   const { data: allBanks = [] } = trpc.bank.getAll.useQuery();
   const bankUtils = trpc.useUtils();
   const updateBankLimits = trpc.bank.updateLimits.useMutation();
@@ -309,6 +311,15 @@ export default function HomeScreen() {
     getUberFeatureEnabled().then(setUberEnabled);
   }, []));
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      bankUtils.bank.getAll.invalidate(),
+      expUtils.expense.getByMonth.invalidate(),
+    ]);
+    setRefreshing(false);
+  }, [bankUtils, expUtils]);
+
   const unbankedExpenses = useMemo(() => expenses.filter(e => !e.bank), [expenses]);
 
   const bankSummaries = useMemo(() => {
@@ -324,7 +335,13 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer className="p-0">
-      <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={{ backgroundColor: colors.background }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.tint} colors={[colors.tint]} />
+        }
+      >
 
         {/* HERO */}
         <View style={{ backgroundColor: '#0c3a5e', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 48 }}>
@@ -379,7 +396,7 @@ export default function HomeScreen() {
             const banks = allBanks.filter(b => b.id != null);
             const creditCards = banks.filter(b => {
               const s = bankSummaries[b.name] ?? { debitTotal: 0, creditTotal: 0 };
-              return b.creditLimit != null || s.creditTotal > 0;
+              return b.isCredit || b.creditLimit != null || s.creditTotal > 0;
             });
             const accounts = banks.filter(b => {
               const s = bankSummaries[b.name] ?? { debitTotal: 0, creditTotal: 0 };
@@ -551,14 +568,6 @@ export default function HomeScreen() {
         onMoveToNextMonth={async (id) => { await moveExpenseToNextMonth(id); showToast('Movida para o próximo mês!'); }}
         onGenerateRemainingInstallments={async (id) => { await generateRemainingInstallments(id); showToast('Parcelas geradas!'); }}
       />
-
-      {/* FAB */}
-      <Pressable
-        onPress={() => router.navigate('/(tabs)/banks')}
-        style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, position: 'absolute', bottom: 24, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#0a7ea4', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8 }]}
-      >
-        <MaterialIcons name="add" size={26} color="#fff" />
-      </Pressable>
 
       {/* Menu modal */}
       <Modal visible={menuVisible} transparent animationType="slide" onRequestClose={() => setMenuVisible(false)}>

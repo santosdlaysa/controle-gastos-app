@@ -25,6 +25,9 @@ export default function BanksScreen() {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [newBankName, setNewBankName] = useState('');
+  const [newIsCredit, setNewIsCredit] = useState(false);
+  const [newCreditLimit, setNewCreditLimit] = useState('');
+  const [newDebitBalance, setNewDebitBalance] = useState('');
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const { toast, show: showToast } = useToast();
@@ -34,8 +37,18 @@ export default function BanksScreen() {
     if (!name) return;
     setSaving(true);
     try {
-      await createBank.mutateAsync({ name });
+      const creditLimit = newCreditLimit.trim() ? parseFloat(newCreditLimit.replace(',', '.')) : null;
+      const debitBalance = newDebitBalance.trim() ? parseFloat(newDebitBalance.replace(',', '.')) : null;
+      await createBank.mutateAsync({
+        name,
+        isCredit: newIsCredit,
+        creditLimit: creditLimit != null && !isNaN(creditLimit) ? creditLimit : null,
+        debitBalance: debitBalance != null && !isNaN(debitBalance) ? debitBalance : null,
+      });
       setNewBankName('');
+      setNewIsCredit(false);
+      setNewCreditLimit('');
+      setNewDebitBalance('');
       setModalVisible(false);
       showToast('Conta cadastrada!');
     } catch (err: any) {
@@ -71,7 +84,7 @@ export default function BanksScreen() {
           </Text>
         </View>
         <Pressable
-          onPress={() => { setNewBankName(''); setModalVisible(true); setTimeout(() => inputRef.current?.focus(), 80); }}
+          onPress={() => { setNewBankName(''); setNewIsCredit(false); setNewCreditLimit(''); setNewDebitBalance(''); setModalVisible(true); setTimeout(() => inputRef.current?.focus(), 80); }}
           style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, backgroundColor: colors.tint, borderRadius: 14, padding: 10 }]}
         >
           <MaterialIcons name="add" size={22} color="#fff" />
@@ -156,13 +169,13 @@ export default function BanksScreen() {
           onPress={() => setModalVisible(false)}
         >
           <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderRadius: 20, padding: 24, gap: 16 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>Novo banco</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>Novo banco / cartão</Text>
 
             <TextInput
               ref={inputRef}
               value={newBankName}
               onChangeText={setNewBankName}
-              placeholder="Nome do banco (ex: Nubank)"
+              placeholder="Nome (ex: Nubank, Bradesco)"
               placeholderTextColor={colors.muted}
               style={{
                 borderWidth: 1.5,
@@ -175,9 +188,72 @@ export default function BanksScreen() {
                 backgroundColor: colors.surface,
               }}
               autoCapitalize="words"
-              returnKeyType="done"
-              onSubmitEditing={handleCreate}
+              returnKeyType="next"
             />
+
+            {/* Type toggle */}
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pressable
+                onPress={() => setNewIsCredit(false)}
+                style={({ pressed }) => [{
+                  flex: 1, opacity: pressed ? 0.8 : 1,
+                  backgroundColor: !newIsCredit ? colors.tint : colors.surface,
+                  borderRadius: 10, padding: 10, alignItems: 'center',
+                  borderWidth: 1.5, borderColor: !newIsCredit ? colors.tint : colors.border,
+                }]}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '600', color: !newIsCredit ? '#fff' : colors.muted }}>Débito / Conta</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setNewIsCredit(true)}
+                style={({ pressed }) => [{
+                  flex: 1, opacity: pressed ? 0.8 : 1,
+                  backgroundColor: newIsCredit ? colors.tint : colors.surface,
+                  borderRadius: 10, padding: 10, alignItems: 'center',
+                  borderWidth: 1.5, borderColor: newIsCredit ? colors.tint : colors.border,
+                }]}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '600', color: newIsCredit ? '#fff' : colors.muted }}>Cartão de crédito</Text>
+              </Pressable>
+            </View>
+
+            {/* Debit balance */}
+            {!newIsCredit && (
+              <View>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: colors.muted, marginBottom: 6 }}>Saldo disponível (opcional)</Text>
+                <TextInput
+                  value={newDebitBalance}
+                  onChangeText={setNewDebitBalance}
+                  placeholder="Ex: 1500.00"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="decimal-pad"
+                  style={{
+                    borderWidth: 1.5, borderColor: colors.border, borderRadius: 12,
+                    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15,
+                    color: colors.text, backgroundColor: colors.surface,
+                  }}
+                />
+              </View>
+            )}
+
+            {/* Credit limit */}
+            {newIsCredit && (
+              <View>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: colors.muted, marginBottom: 6 }}>Limite de crédito (opcional)</Text>
+                <TextInput
+                  value={newCreditLimit}
+                  onChangeText={setNewCreditLimit}
+                  placeholder="Ex: 5000.00"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="decimal-pad"
+                  style={{
+                    borderWidth: 1.5, borderColor: colors.border, borderRadius: 12,
+                    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15,
+                    color: colors.text, backgroundColor: colors.surface,
+                  }}
+                />
+              </View>
+            )}
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Pressable

@@ -8,6 +8,9 @@ export function useCategories() {
   const createMut = trpc.category.create.useMutation({
     onSuccess: () => utils.category.getAll.invalidate(),
   });
+  const updateMut = trpc.category.update.useMutation({
+    onSuccess: () => utils.category.getAll.invalidate(),
+  });
   const deleteMut = trpc.category.delete.useMutation({
     onSuccess: () => utils.category.getAll.invalidate(),
   });
@@ -29,6 +32,8 @@ export function useCategories() {
     iconMap,
     createCategory: (data: { name: string; label: string; color: string; icon: string }) =>
       createMut.mutateAsync(data),
+    updateCategory: (data: { id: number; label: string; color: string; icon: string }) =>
+      updateMut.mutateAsync(data),
     deleteCategory: (id: number) => deleteMut.mutateAsync({ id }),
   };
 }

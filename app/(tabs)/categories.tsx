@@ -6,6 +6,8 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { useExpenses } from '@/hooks/use-expenses';
 import { useCategories } from '@/hooks/use-categories';
+import { CategoryEditModal } from '@/components/category-edit-modal';
+import { UserCategory } from '@/types/expense';
 
 function addMonths(month: string, delta: number): string {
   const [y, m] = month.split('-').map(Number);
@@ -110,9 +112,10 @@ const CATEGORY_ICONS: Record<string, React.ComponentProps<typeof MaterialIcons>[
 
 export default function CategoriesScreen() {
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth());
+  const [editingCategory, setEditingCategory] = useState<UserCategory | null>(null);
   const colors = useColors();
   const { expenses, categoryBudgets, loading } = useExpenses(currentMonth);
-  const { categories, colorMap, labelMap, iconMap } = useCategories();
+  const { categories, colorMap, labelMap, iconMap, updateCategory } = useCategories();
 
   const { totals, totalSpent, sorted } = useMemo(() => {
     const totals: Record<string, number> = {};
@@ -215,9 +218,14 @@ export default function CategoriesScreen() {
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{label}</Text>
-                        <Text style={{ fontSize: 15, fontWeight: '700', color: spent === 0 ? colors.muted : colors.foreground }}>
-                          {spent > 0 ? `R$ ${fmt(spent)}` : '—'}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: spent === 0 ? colors.muted : colors.foreground }}>
+                            {spent > 0 ? `R$ ${fmt(spent)}` : '—'}
+                          </Text>
+                          <Pressable onPress={() => setEditingCategory(cat)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
+                            <MaterialIcons name="edit" size={16} color={colors.muted} />
+                          </Pressable>
+                        </View>
                       </View>
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
                         <Text style={{ fontSize: 11, color: colors.muted }}>
@@ -243,6 +251,13 @@ export default function CategoriesScreen() {
           )}
         </View>
       </ScrollView>
+
+      <CategoryEditModal
+        visible={editingCategory !== null}
+        category={editingCategory}
+        onClose={() => setEditingCategory(null)}
+        onSave={updateCategory}
+      />
     </ScreenContainer>
   );
 }

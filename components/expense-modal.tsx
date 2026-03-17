@@ -8,6 +8,8 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Expense, ExpenseCategory } from '@/types/expense';
 import { trpc } from '@/lib/trpc';
@@ -76,7 +78,7 @@ export function ExpenseModal({
       return;
     }
 
-    const numValue = parseFloat(value);
+    const numValue = parseFloat(value.replace(',', '.'));
     if (isNaN(numValue) || numValue <= 0) {
       Alert.alert('Erro', 'Valor deve ser um número positivo');
       return;
@@ -160,9 +162,13 @@ export function ExpenseModal({
       transparent={true}
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-background rounded-t-3xl p-6 pb-8">
-          <ScrollView showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1, justifyContent: 'flex-end' }}
+      >
+        <View className="flex-1 bg-black/50" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+        <View className="bg-background rounded-t-3xl p-6 pb-8" style={{ maxHeight: '85%' }}>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {/* Header */}
             <View className="flex-row justify-between items-center mb-6">
               <Text className="text-2xl font-bold text-foreground">
@@ -453,7 +459,7 @@ export function ExpenseModal({
             </View>
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
