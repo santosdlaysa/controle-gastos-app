@@ -140,6 +140,9 @@ export const expenseRouter = router({
             paid: z.boolean().optional(),
             source: sourceEnum.optional(),
             clientId: z.string().optional(),
+            bank: z.string().optional(),
+            paymentType: z.enum(["debit", "credit"]).optional(),
+            expenseType: z.enum(["fixed", "variable"]).optional(),
           }),
         ),
       }),
@@ -157,6 +160,9 @@ export const expenseRouter = router({
           paid: e.paid ?? false,
           source: e.source ?? "manual",
           clientId: e.clientId ?? null,
+          bank: e.bank ?? null,
+          paymentType: e.paymentType ?? null,
+          expenseType: e.expenseType ?? null,
         })),
       );
       return { success: true };
