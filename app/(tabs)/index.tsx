@@ -17,9 +17,10 @@ import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/use-colors';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenContainer } from '@/components/screen-container';
+import { ExpenseModal } from '@/components/expense-modal';
 import { useExpenses } from '@/hooks/use-expenses';
 import { useAuthContext } from '@/lib/auth-context';
-import { CATEGORY_LABELS, CATEGORY_COLORS } from '@/types/expense';
+import { CATEGORY_LABELS, CATEGORY_COLORS, Expense } from '@/types/expense';
 import { trpc } from '@/lib/trpc';
 import { setAppMode } from '@/lib/mode';
 import { getUberFeatureEnabled } from '@/lib/uber-feature';
@@ -255,12 +256,14 @@ export default function HomeScreen() {
   const [bankReceivedInput, setBankReceivedInput] = useState('');
   const [bankBalanceTarget, setBankBalanceTarget] = useState<{ id: number; name: string; debitBalance: number | null; creditLimit: number | null } | null>(null);
   const [unbankedModalVisible, setUnbankedModalVisible] = useState(false);
+  const [editExpenseVisible, setEditExpenseVisible] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>();
 
   const { data: allBanks = [] } = trpc.bank.getAll.useQuery();
   const bankUtils = trpc.useUtils();
   const updateBankLimits = trpc.bank.updateLimits.useMutation();
 
-  const { expenses, loading } = useExpenses(currentMonth);
+  const { expenses, loading, updateExpense, deleteExpense, moveExpenseToNextMonth, generateRemainingInstallments } = useExpenses(currentMonth);
 
   const expUtils = trpc.useUtils();
   const colors = useColors();
@@ -520,18 +523,32 @@ export default function HomeScreen() {
             </View>
             <ScrollView style={{ paddingHorizontal: 16, marginTop: 8 }} showsVerticalScrollIndicator={false}>
               {unbankedExpenses.map(exp => (
-                <View key={exp.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{exp.name}</Text>
-                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{exp.category} · {exp.date ? new Date(exp.date).toLocaleDateString('pt-BR') : '—'}</Text>
+                <Pressable key={exp.id} onPress={() => { setSelectedExpense(exp); setUnbankedModalVisible(false); setEditExpenseVisible(true); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{exp.name}</Text>
+                      <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{exp.category} · {exp.date ? new Date(exp.date).toLocaleDateString('pt-BR') : '—'}</Text>
+                    </View>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>R$ {fmt(exp.value)}</Text>
+                    <MaterialIcons name="edit" size={16} color={colors.muted} />
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>R$ {fmt(exp.value)}</Text>
-                </View>
+                </Pressable>
               ))}
             </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* ExpenseModal para editar despesas sem banco */}
+      <ExpenseModal
+        visible={editExpenseVisible}
+        expense={selectedExpense}
+        onClose={() => { setEditExpenseVisible(false); setSelectedExpense(undefined); }}
+        onSave={async (data) => { if (selectedExpense) await updateExpense(selectedExpense.id, data); }}
+        onDelete={async (id) => { await deleteExpense(id); }}
+        onMoveToNextMonth={async (id) => { await moveExpenseToNextMonth(id); }}
+        onGenerateRemainingInstallments={async (id) => { await generateRemainingInstallments(id); }}
+      />
 
       {/* FAB */}
       <Pressable
