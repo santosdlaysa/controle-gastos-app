@@ -383,7 +383,8 @@ export default function HomeScreen() {
               return b.debitBalance != null || s.debitTotal > 0;
             });
             const totalAvailable = banks.reduce((sum, b) => {
-              return sum + (b.debitBalance != null ? parseFloat(String(b.debitBalance)) : 0);
+              const s = bankSummaries[b.name] ?? { debitTotal: 0, creditTotal: 0 };
+              return sum + (b.debitBalance != null ? parseFloat(String(b.debitBalance)) - s.debitTotal : 0);
             }, 0);
             const hasSaldo = banks.some(b => b.debitBalance != null);
 
@@ -472,7 +473,9 @@ export default function HomeScreen() {
                       </Pressable>
                     </View>
                     {accounts.map(bank => {
+                      const s = bankSummaries[bank.name] ?? { debitTotal: 0, creditTotal: 0 };
                       const debitBalance = bank.debitBalance != null ? parseFloat(String(bank.debitBalance)) : null;
+                      const available = debitBalance != null ? debitBalance - s.debitTotal : null;
                       const bc = bankColor(bank.name);
                       return (
                         <Pressable key={`acc-${bank.id}`} onPress={() => router.push(`/bank/${bank.id}`)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
@@ -485,8 +488,8 @@ export default function HomeScreen() {
                                 <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>Conta corrente</Text>
                               </View>
                               <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                                {debitBalance != null ? (
-                                  <Text style={{ fontSize: 16, fontWeight: '800', color: '#10B981' }}>R$ {fmt(debitBalance)}</Text>
+                                {available != null ? (
+                                  <Text style={{ fontSize: 16, fontWeight: '800', color: available >= 0 ? '#10B981' : '#EF4444' }}>R$ {fmt(available)}</Text>
                                 ) : (
                                   <Text style={{ fontSize: 14, fontWeight: '700', color: colors.muted }}>—</Text>
                                 )}

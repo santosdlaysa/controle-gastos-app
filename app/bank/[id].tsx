@@ -155,6 +155,8 @@ export default function BankDetailScreen() {
   // Balance info
   const debitBalance = bank?.debitBalance != null ? parseFloat(String(bank.debitBalance)) : null;
   const creditLimit = bank?.creditLimit != null ? parseFloat(String(bank.creditLimit)) : null;
+  const debitTotal = useMemo(() => expenses.filter(e => e.bank === bank?.name && e.paymentType === 'debit').reduce((s, e) => s + e.value, 0), [expenses, bank?.name]);
+  const available = debitBalance != null ? debitBalance - debitTotal : null;
 
   const bc = bank ? bankColor(bank.name) : '#0a7ea4';
 
@@ -231,7 +233,7 @@ export default function BankDetailScreen() {
                 <MaterialIcons name="edit" size={11} color="rgba(255,255,255,0.6)" />
                 <Text style={{ fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>
                   {paymentTypeFilter === 'debit'
-                    ? (debitBalance != null ? `R$ ${fmt(debitBalance)}` : 'Saldo')
+                    ? (available != null ? `R$ ${fmt(available)} disp.` : 'Saldo')
                     : (creditLimit != null ? `R$ ${fmt(creditLimit)} limite` : 'Limite')}
                 </Text>
               </View>
@@ -246,7 +248,7 @@ export default function BankDetailScreen() {
               </Text>
               <Text style={{ color: '#93C5FD', fontSize: 18, fontWeight: '800', letterSpacing: -0.5 }}>
                 {paymentTypeFilter === 'debit'
-                  ? (debitBalance != null ? `R$ ${fmt(debitBalance)}` : '—')
+                  ? (available != null ? `R$ ${fmt(available)}` : '—')
                   : (creditLimit != null ? `R$ ${fmt(creditLimit)}` : '—')}
               </Text>
             </View>
@@ -541,6 +543,8 @@ export default function BankDetailScreen() {
       <ExpenseModal
         visible={modalVisible}
         expense={selectedExpense}
+        defaultBank={bank?.name}
+        defaultPaymentType={paymentTypeFilter}
         onClose={() => setModalVisible(false)}
         onSave={handleSaveExpense}
         onDelete={async (id) => { await deleteExpense(id); }}

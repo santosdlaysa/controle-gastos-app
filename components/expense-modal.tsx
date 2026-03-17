@@ -15,6 +15,8 @@ import { trpc } from '@/lib/trpc';
 interface ExpenseModalProps {
   visible: boolean;
   expense?: Expense;
+  defaultBank?: string;
+  defaultPaymentType?: 'debit' | 'credit';
   onClose: () => void;
   onSave: (data: Omit<Expense, 'id' | 'date' | 'month'>) => void;
   onDelete?: (id: string) => void;
@@ -25,6 +27,8 @@ interface ExpenseModalProps {
 export function ExpenseModal({
   visible,
   expense,
+  defaultBank,
+  defaultPaymentType,
   onClose,
   onSave,
   onDelete,
@@ -56,8 +60,8 @@ export function ExpenseModal({
       setCategory(categoryList[0]?.name ?? 'outro');
       setQuantity('');
       setValue('');
-      setBank('');
-      setPaymentType(null);
+      setBank(defaultBank ?? '');
+      setPaymentType(defaultPaymentType ?? null);
       setExpenseType(null);
     }
   }, [expense, visible]);
