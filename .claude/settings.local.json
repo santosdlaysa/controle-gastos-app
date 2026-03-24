@@ -31,7 +31,8 @@
       "Bash(node:*)",
       "Read(//c/dev/app/$LOCALAPPDATA/Android/Sdk/ndk/**)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

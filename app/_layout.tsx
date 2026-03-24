@@ -8,6 +8,9 @@ import "react-native-reanimated";
 import { ActivityIndicator, Platform, Text, View } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { ThemeProvider as NavThemeProvider, DefaultTheme, DarkTheme } from "@react-navigation/native";
+import { useColors } from "@/hooks/use-colors";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -61,6 +64,15 @@ function NavLayout() {
   const { isAuthenticated, loading } = useAuthContext();
   const segments = useSegments();
   const router = useRouter();
+  const colors = useColors();
+  const scheme = useColorScheme();
+  const navTheme = {
+    ...(scheme === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(scheme === 'dark' ? DarkTheme : DefaultTheme).colors,
+      background: colors.background,
+    },
+  };
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
@@ -95,7 +107,7 @@ function NavLayout() {
 
   if (!isAuthenticated) {
     return (
-      <>
+      <NavThemeProvider value={navTheme}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
           <Stack.Screen name="forgot-password" />
@@ -104,23 +116,25 @@ function NavLayout() {
           <Stack.Screen name="(tabs)" />
         </Stack>
         <StatusBar style="auto" />
-      </>
+      </NavThemeProvider>
     );
   }
 
   return (
-    <MigrationGate>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
-        <Stack.Screen name="oauth/callback" />
-        <Stack.Screen name="mode-select" />
-        <Stack.Screen name="bank-select" />
-        <Stack.Screen name="bank/[id]" />
-        <Stack.Screen name="forgot-password" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
-      <StatusBar style="auto" />
-    </MigrationGate>
+    <NavThemeProvider value={navTheme}>
+      <MigrationGate>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
+          <Stack.Screen name="oauth/callback" />
+          <Stack.Screen name="mode-select" />
+          <Stack.Screen name="bank-select" />
+          <Stack.Screen name="bank/[id]" />
+          <Stack.Screen name="forgot-password" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+        <StatusBar style="auto" />
+      </MigrationGate>
+    </NavThemeProvider>
   );
 }
 

@@ -85,6 +85,10 @@ export default function TabLayout() {
         name="uber-earnings"
         options={{ href: null }}
       />
+      <Tabs.Screen
+        name="debtors"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }

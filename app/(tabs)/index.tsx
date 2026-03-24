@@ -245,6 +245,35 @@ const addMonths = (monthStr: string, months: number) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 };
 
+function DebtorsShortcut() {
+  const router = useRouter();
+  const colors = useColors();
+  const { data: debtors = [] } = trpc.debtor.getAll.useQuery();
+  const totalOwed = debtors.reduce((sum, d) => sum + parseFloat(String(d.totalOwed)), 0);
+  return (
+    <Pressable onPress={() => router.navigate('/(tabs)/debtors')} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+      <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
+        <View style={{ height: 3, backgroundColor: '#EF4444' }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+          <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: '#EF444415', alignItems: 'center', justifyContent: 'center' }}>
+            <MaterialIcons name="people" size={22} color="#EF4444" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>Devedores</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
+              {debtors.length === 0 ? 'Nenhum devedor' : `${debtors.length} ${debtors.length === 1 ? 'devedor' : 'devedores'}`}
+            </Text>
+          </View>
+          {totalOwed > 0 && (
+            <Text style={{ fontSize: 16, fontWeight: '800', color: '#EF4444' }}>R$ {totalOwed.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+          )}
+          <MaterialIcons name="chevron-right" size={18} color={colors.muted} />
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const currentMonth = getCurrentMonth();
@@ -650,6 +679,9 @@ export default function HomeScreen() {
                     })}
                   </View>
                 )}
+
+                {/* ── Devedores ── */}
+                <DebtorsShortcut />
 
               </View>
             );

@@ -17,6 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useColors } from '@/hooks/use-colors';
 import { trpc } from '@/lib/trpc';
 import { setAppMode } from '@/lib/mode';
+import { setFabListener } from '@/lib/fab-action';
 import { ScreenContainer } from '@/components/screen-container';
 import { UberEarningItem } from '@/components/uber-earning-item';
 import { UberEarningModal } from '@/components/uber-earning-modal';
@@ -220,6 +221,7 @@ export default function UberEarningsScreen() {
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth());
   const [modalVisible, setModalVisible] = useState(false);
   const [defaultEntryType, setDefaultEntryType] = useState<UberEntryType>('ganho');
+  const [typePickerVisible, setTypePickerVisible] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<UberEntry | undefined>();
   const [activeTab, setActiveTab] = useState<ActiveTab>('todos');
   const [selectedCategory, setSelectedCategory] = useState<UberCategory | 'all'>('all');
@@ -314,7 +316,11 @@ export default function UberEarningsScreen() {
     return { categoryTotals: totals, filteredEntries: filtered, listForTab: tabEntries };
   }, [entries, earnings, expenses, activeTab, selectedCategory]);
 
-  useFocusEffect(useCallback(() => { reload(); }, [reload]));
+  useFocusEffect(useCallback(() => {
+    reload();
+    setFabListener(() => setTypePickerVisible(true));
+    return () => setFabListener(null);
+  }, [reload]));
 
   const handleOpenAdd = useCallback((type: UberEntryType) => {
     setSelectedEntry(undefined);
@@ -717,6 +723,46 @@ export default function UberEarningsScreen() {
         onSave={handleSave}
         onDelete={handleDelete}
       />
+
+      {/* Seletor de tipo ao pressionar o FAB */}
+      <Modal visible={typePickerVisible} transparent animationType="slide" onRequestClose={() => setTypePickerVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }} onPress={() => setTypePickerVisible(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, paddingTop: 12 }}>
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 20 }} />
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.muted, paddingHorizontal: 20, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Novo registro</Text>
+
+            <Pressable
+              onPress={() => { setTypePickerVisible(false); handleOpenAdd('ganho'); }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 16 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#10B98115', alignItems: 'center', justifyContent: 'center' }}>
+                  <MaterialIcons name="arrow-downward" size={22} color="#10B981" />
+                </View>
+                <View>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>Ganho</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>Corrida, bônus, Uber Eats...</Text>
+                </View>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={() => { setTypePickerVisible(false); handleOpenAdd('gasto'); }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 16 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#EF444415', alignItems: 'center', justifyContent: 'center' }}>
+                  <MaterialIcons name="arrow-upward" size={22} color="#EF4444" />
+                </View>
+                <View>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>Gasto</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>Combustível, manutenção...</Text>
+                </View>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenContainer>
   );
 }

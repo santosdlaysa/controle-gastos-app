@@ -14,6 +14,7 @@ import { uberEarningsRouter } from "./uber-earnings-router";
 import { assistantRouter } from "./assistant-router";
 import { profileRouter } from "./profile-router";
 import { categoryRouter } from "./category-router";
+import { debtorRouter } from "./debtor-router";
 
 export const appRouter = router({
   system: systemRouter,
@@ -40,6 +41,7 @@ export const appRouter = router({
   assistant: assistantRouter,
   profile: profileRouter,
   category: categoryRouter,
+  debtor: debtorRouter,
 });
 
 export type AppRouter = typeof appRouter;

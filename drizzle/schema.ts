@@ -187,6 +187,24 @@ export const uberEarnings = pgTable("uber_earnings", {
 export type DbUberEarning = typeof uberEarnings.$inferSelect;
 export type InsertUberEarning = typeof uberEarnings.$inferInsert;
 
+// ─── debtors ──────────────────────────────────────────────────────────────────
+
+export const debtors = pgTable(
+  "debtors",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    userId: integer("userId").notNull(),
+    name: varchar("name", { length: 100 }).notNull(),
+    totalOwed: numeric("totalOwed", { precision: 10, scale: 2 }).notNull().default("0"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("debtors_user_name_idx").on(t.userId, t.name)],
+);
+
+export type DbDebtor = typeof debtors.$inferSelect;
+export type InsertDebtor = typeof debtors.$inferInsert;
+
 // ─── password_reset_tokens ─────────────────────────────────────────────────────
 
 export const passwordResetTokens = pgTable("password_reset_tokens", {

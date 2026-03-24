@@ -236,6 +236,23 @@ export async function ensureSchema(databaseUrl: string): Promise<void> {
       ALTER TABLE category_budgets ALTER COLUMN category TYPE varchar(100) USING category::text
     `.catch(() => {});
 
+    // debtors
+    await sql`
+      CREATE TABLE IF NOT EXISTS debtors (
+        id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "userId" integer NOT NULL,
+        name varchar(100) NOT NULL,
+        "totalOwed" numeric(10,2) NOT NULL DEFAULT 0,
+        "createdAt" timestamp NOT NULL DEFAULT now(),
+        "updatedAt" timestamp NOT NULL DEFAULT now()
+      )
+    `;
+
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS debtors_user_name_idx
+      ON debtors ("userId", name)
+    `;
+
     console.log("[db-migrate] Schema OK");
   } catch (err) {
     console.error("[db-migrate] Falha ao aplicar schema:", err);

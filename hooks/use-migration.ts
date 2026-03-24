@@ -30,15 +30,15 @@ export function useMigration() {
     setError(null);
 
     try {
-      // Apply any pending schema migrations on the server
-      await applyMigrations();
-
-      // Check if migration already completed locally
+      // Check if migration already completed locally — skip all network calls if so
       const doneFlagRaw = await AsyncStorage.getItem(MIGRATION_DONE_KEY);
       if (doneFlagRaw === "true") {
         setState("done");
         return;
       }
+
+      // Apply any pending schema migrations on the server
+      await applyMigrations();
 
       // Check if there's local data to migrate
       const localDataRaw = await AsyncStorage.getItem(STORAGE_KEY);
