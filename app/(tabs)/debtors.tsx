@@ -108,6 +108,9 @@ export default function DebtorsScreen() {
         showToast('Pagamento registrado!');
         closeModal();
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao salvar';
+      Alert.alert('Erro', msg);
     } finally {
       setSaving(false);
     }

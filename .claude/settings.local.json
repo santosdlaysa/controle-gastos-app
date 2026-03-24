@@ -32,7 +32,9 @@
       "Read(//c/dev/app/$LOCALAPPDATA/Android/Sdk/ndk/**)",
       "Bash(echo \"Exit: $?\")",
       "Bash(taskkill:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
     ]
   }
 }
