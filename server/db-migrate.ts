@@ -253,6 +253,11 @@ export async function ensureSchema(databaseUrl: string): Promise<void> {
       ON debtors ("userId", name)
     `;
 
+    // Garante coluna debtorId em expenses pré-existentes
+    await sql`
+      ALTER TABLE expenses ADD COLUMN IF NOT EXISTS "debtorId" integer
+    `;
+
     console.log("[db-migrate] Schema OK");
   } catch (err) {
     console.error("[db-migrate] Falha ao aplicar schema:", err);

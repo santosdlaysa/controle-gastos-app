@@ -67,6 +67,7 @@ export const expenseRouter = router({
         bank: z.string().max(100).optional(),
         paymentType: paymentTypeEnum.optional(),
         expenseType: expenseTypeZodEnum.optional(),
+        debtorId: z.number().int().positive().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -85,6 +86,7 @@ export const expenseRouter = router({
         bank: input.bank ?? null,
         paymentType: input.paymentType ?? null,
         expenseType: input.expenseType ?? null,
+        debtorId: input.debtorId ?? null,
       });
       return { id };
     }),
@@ -101,6 +103,7 @@ export const expenseRouter = router({
         bank: z.string().max(100).nullable().optional(),
         paymentType: paymentTypeEnum.nullable().optional(),
         expenseType: expenseTypeZodEnum.nullable().optional(),
+        debtorId: z.number().int().positive().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -115,6 +118,7 @@ export const expenseRouter = router({
       if (updates.bank !== undefined) data.bank = updates.bank;
       if (updates.paymentType !== undefined) data.paymentType = updates.paymentType;
       if (updates.expenseType !== undefined) data.expenseType = updates.expenseType;
+      if ("debtorId" in updates) data.debtorId = updates.debtorId ?? null;
       await updateExpense(ctx.user.id, id, data);
       return { success: true };
     }),

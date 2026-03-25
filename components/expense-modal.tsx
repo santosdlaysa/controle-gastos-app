@@ -49,9 +49,11 @@ export function ExpenseModal({
   const [bank, setBank] = useState('');
   const [paymentType, setPaymentType] = useState<'debit' | 'credit' | null>(null);
   const [expenseType, setExpenseType] = useState<'fixed' | 'variable' | null>(null);
+  const [debtorId, setDebtorId] = useState<number | null>(null);
 
   const { data: bankSuggestions = [] } = trpc.bank.getAll.useQuery();
   const { data: categoryList = [] } = trpc.category.getAll.useQuery();
+  const { data: debtorList = [] } = trpc.debtor.getAll.useQuery();
 
   useEffect(() => {
     if (expense) {
@@ -62,6 +64,7 @@ export function ExpenseModal({
       setBank(expense.bank || '');
       setPaymentType(expense.paymentType ?? null);
       setExpenseType(expense.expenseType ?? null);
+      setDebtorId(expense.debtorId ?? null);
     } else {
       setName('');
       setCategory(categoryList[0]?.name ?? 'outro');
@@ -70,6 +73,7 @@ export function ExpenseModal({
       setBank(defaultBank ?? '');
       setPaymentType(defaultPaymentType ?? null);
       setExpenseType(null);
+      setDebtorId(null);
     }
   }, [expense, visible]);
 
@@ -93,6 +97,7 @@ export function ExpenseModal({
       bank: bank.trim() || null,
       paymentType: paymentType ?? null,
       expenseType: expenseType ?? null,
+      debtorId: debtorId ?? null,
     });
 
     onClose();
@@ -355,6 +360,60 @@ export function ExpenseModal({
                 ))}
               </View>
             </View>
+
+            {/* Debtor field */}
+            {debtorList.length > 0 && (
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-foreground mb-2">
+                  Devedor (opcional)
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  <Pressable
+                    onPress={() => setDebtorId(null)}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+                  >
+                    <View
+                      className={cn(
+                        'px-3 py-2 rounded-full border',
+                        debtorId === null
+                          ? 'bg-primary border-primary'
+                          : 'bg-surface border-border'
+                      )}
+                    >
+                      <Text className={cn(
+                        'text-xs font-medium',
+                        debtorId === null ? 'text-background' : 'text-foreground'
+                      )}>
+                        Nenhum
+                      </Text>
+                    </View>
+                  </Pressable>
+                  {debtorList.map((d) => (
+                    <Pressable
+                      key={d.id}
+                      onPress={() => setDebtorId(debtorId === d.id ? null : d.id)}
+                      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+                    >
+                      <View
+                        className={cn(
+                          'px-3 py-2 rounded-full border',
+                          debtorId === d.id
+                            ? 'bg-primary border-primary'
+                            : 'bg-surface border-border'
+                        )}
+                      >
+                        <Text className={cn(
+                          'text-xs font-medium',
+                          debtorId === d.id ? 'text-background' : 'text-foreground'
+                        )}>
+                          {d.name}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
 
             {/* Value field */}
             <View className="mb-6">

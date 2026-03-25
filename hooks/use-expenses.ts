@@ -18,6 +18,8 @@ function toExpense(row: {
   bank?: string | null;
   paymentType?: "debit" | "credit" | null;
   expenseType?: "fixed" | "variable" | null;
+  debtorId?: number | null;
+  debtorName?: string | null;
 }): Expense {
   return {
     id: row.id.toString(),
@@ -31,6 +33,8 @@ function toExpense(row: {
     bank: row.bank ?? null,
     paymentType: row.paymentType ?? null,
     expenseType: row.expenseType ?? null,
+    debtorId: row.debtorId ?? null,
+    debtorName: row.debtorName ?? null,
   };
 }
 
@@ -131,6 +135,7 @@ export function useExpenses(month: string) {
       bank: expense.bank ?? undefined,
       paymentType: expense.paymentType ?? undefined,
       expenseType: expense.expenseType ?? undefined,
+      debtorId: expense.debtorId ?? undefined,
     });
   };
 
@@ -148,6 +153,7 @@ export function useExpenses(month: string) {
       ...("bank" in updates && { bank: updates.bank ?? null }),
       ...("paymentType" in updates && { paymentType: updates.paymentType ?? null }),
       ...("expenseType" in updates && { expenseType: updates.expenseType ?? null }),
+      ...("debtorId" in updates && { debtorId: updates.debtorId ?? null }),
     });
   };
 

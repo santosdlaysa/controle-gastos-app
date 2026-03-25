@@ -28,6 +28,10 @@ export interface Expense {
   paymentType?: "debit" | "credit" | null;
   /** Despesa fixa ou variável */
   expenseType?: 'fixed' | 'variable' | null;
+  /** ID do devedor vinculado (opcional) */
+  debtorId?: number | null;
+  /** Nome do devedor vinculado (preenchido na leitura) */
+  debtorName?: string | null;
 }
 
 export interface Income {

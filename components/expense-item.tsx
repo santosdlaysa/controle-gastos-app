@@ -116,6 +116,14 @@ export function ExpenseItem({ expense, onPress, onTogglePaid, colorMap, labelMap
                 </Text>
               </>
             ) : null}
+            {expense.debtorName ? (
+              <>
+                <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#9CA3AF' }} />
+                <Text style={{ fontSize: 10, fontWeight: '600', color: '#EC4899' }}>
+                  👤 {expense.debtorName}
+                </Text>
+              </>
+            ) : null}
           </View>
         </View>
 

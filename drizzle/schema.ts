@@ -110,6 +110,7 @@ export const expenses = pgTable(
     bank: varchar("bank", { length: 100 }),
     paymentType: expensePaymentTypeEnum("paymentType"),
     expenseType: expenseTypeEnum("expenseType"),
+    debtorId: integer("debtorId"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },

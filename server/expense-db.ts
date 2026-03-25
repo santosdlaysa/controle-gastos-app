@@ -1,6 +1,7 @@
 import { and, count, eq, like, sql } from "drizzle-orm";
 import {
   expenses,
+  debtors,
   incomes,
   budgets,
   categoryBudgets,
@@ -16,16 +17,37 @@ export async function getExpensesByMonth(userId: number, month: string) {
   const db = await getDb();
   if (!db) return [];
   try {
-    return await db
-      .select()
+    const rows = await db
+      .select({
+        id: expenses.id,
+        userId: expenses.userId,
+        clientId: expenses.clientId,
+        name: expenses.name,
+        category: expenses.category,
+        value: expenses.value,
+        date: expenses.date,
+        month: expenses.month,
+        quantity: expenses.quantity,
+        paid: expenses.paid,
+        source: expenses.source,
+        bank: expenses.bank,
+        paymentType: expenses.paymentType,
+        expenseType: expenses.expenseType,
+        debtorId: expenses.debtorId,
+        debtorName: debtors.name,
+        createdAt: expenses.createdAt,
+        updatedAt: expenses.updatedAt,
+      })
       .from(expenses)
+      .leftJoin(debtors, eq(expenses.debtorId, debtors.id))
       .where(and(eq(expenses.userId, userId), eq(expenses.month, month)));
+    return rows;
   } catch {
     // Fallback: select only core columns in case new columns don't exist yet in DB
     const rows = await db.execute(
       sql`SELECT id, "userId", "clientId", name, category, value, date, month, quantity, paid, source, "createdAt", "updatedAt" FROM expenses WHERE "userId" = ${userId} AND month = ${month}`,
     );
-    return (rows as any[]).map((r) => ({ ...r, bank: null, paymentType: null }));
+    return (rows as any[]).map((r) => ({ ...r, bank: null, paymentType: null, debtorId: null, debtorName: null }));
   }
 }
 
@@ -69,7 +91,7 @@ export async function createExpense(
 export async function updateExpense(
   userId: number,
   id: number,
-  data: Partial<Pick<InsertExpense, "name" | "category" | "value" | "quantity" | "paid" | "bank" | "paymentType" | "expenseType">>,
+  data: Partial<Pick<InsertExpense, "name" | "category" | "value" | "quantity" | "paid" | "bank" | "paymentType" | "expenseType" | "debtorId">>,
 ): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -80,7 +102,7 @@ export async function updateExpense(
       .where(and(eq(expenses.id, id), eq(expenses.userId, userId)));
   } catch {
     // Fallback: update only core columns if new columns don't exist yet
-    const { bank: _b, paymentType: _pt, expenseType: _et, ...safeData } = data;
+    const { bank: _b, paymentType: _pt, expenseType: _et, debtorId: _d, ...safeData } = data;
     if (Object.keys(safeData).length === 0) return;
     await db
       .update(expenses)
