@@ -92,13 +92,11 @@ async function startServer() {
     });
   }
 
-  // Run DB migrations after port is bound (non-blocking for Render health checks)
+  // Run DB migrations in background — do NOT await so the event loop stays free for health checks
   if (process.env.DATABASE_URL) {
-    try {
-      await ensureSchema(process.env.DATABASE_URL);
-    } catch (err) {
+    ensureSchema(process.env.DATABASE_URL).catch((err) => {
       console.error("[db-migrate] Migration failed, server still running:", err);
-    }
+    });
   }
 }
 
