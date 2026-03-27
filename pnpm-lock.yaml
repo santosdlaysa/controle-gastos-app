@@ -126,6 +126,9 @@ importers:
       openai:
         specifier: ^6.25.0
         version: 6.25.0(ws@8.18.3)(zod@4.2.1)
+      postgres:
+        specifier: ^3.4.8
+        version: 3.4.8
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -11125,8 +11128,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postgres@3.4.8:
-    optional: true
+  postgres@3.4.8: {}
 
   prelude-ls@1.2.1: {}
 
