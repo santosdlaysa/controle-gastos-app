@@ -29,7 +29,7 @@ const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
 
 const config: ExpoConfig = {
-  name: "Controle de Gastos",
+  name: "Orgenyx",
   slug: "controle-gastos-app",
 
   // 🔢 Versão visível ao usuário
