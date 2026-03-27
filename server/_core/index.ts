@@ -30,11 +30,6 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
-  // Cria tabelas automaticamente se não existirem
-  if (process.env.DATABASE_URL) {
-    await ensureSchema(process.env.DATABASE_URL);
-  }
-
   const app = express();
   const server = createServer(app);
 
@@ -80,6 +75,7 @@ async function startServer() {
     }),
   );
 
+  // Bind to port FIRST so Render detects it, then run migrations
   const preferredPort = parseInt(process.env.PORT || "3000");
 
   if (process.env.NODE_ENV === "production") {
@@ -94,6 +90,15 @@ async function startServer() {
     server.listen(port, () => {
       console.log(`[api] server listening on port ${port}`);
     });
+  }
+
+  // Run DB migrations after port is bound (non-blocking for Render health checks)
+  if (process.env.DATABASE_URL) {
+    try {
+      await ensureSchema(process.env.DATABASE_URL);
+    } catch (err) {
+      console.error("[db-migrate] Migration failed, server still running:", err);
+    }
   }
 }
 
