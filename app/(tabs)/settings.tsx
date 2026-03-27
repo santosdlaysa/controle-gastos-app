@@ -22,6 +22,7 @@ import { useAuthContext } from '@/lib/auth-context';
 import { useThemeContext } from '@/lib/theme-provider';
 import { getUberFeatureEnabled, setUberFeatureEnabled } from '@/lib/uber-feature';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/use-colors';
 import { trpc } from '@/lib/trpc';
 import { Toast, useToast } from '@/components/toast';
@@ -135,6 +136,8 @@ export default function SettingsScreen() {
   const [savingName, setSavingName] = useState(false);
   const updateNameMutation = trpc.profile.updateName.useMutation();
   const { toast, show: showToast } = useToast();
+  const router = useRouter();
+  const debtorsQuery = trpc.debtor.getAll.useQuery();
 
   const handleSaveName = async () => {
     if (!nameInput.trim() || nameInput.trim() === user?.name) return;
@@ -444,6 +447,19 @@ export default function SettingsScreen() {
             </View>
             <Text style={{ flex: 1, fontSize: 15, color: colors.foreground }}>Gerenciar categorias</Text>
             <Text style={{ fontSize: 13, color: colors.muted, marginRight: 4 }}>{categories.length}</Text>
+            <MaterialIcons name="chevron-right" size={20} color={colors.muted} />
+          </Pressable>
+        </SettingCard>
+
+        {/* ── Devedores ── */}
+        <SectionLabel label="Devedores" />
+        <SettingCard>
+          <Pressable onPress={() => router.push('/(tabs)/debtors')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 }]}>
+            <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#EF444420', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+              <MaterialIcons name="person-outline" size={17} color="#EF4444" />
+            </View>
+            <Text style={{ flex: 1, fontSize: 15, color: colors.foreground }}>Gerenciar devedores</Text>
+            <Text style={{ fontSize: 13, color: colors.muted, marginRight: 4 }}>{debtorsQuery.data?.length ?? 0}</Text>
             <MaterialIcons name="chevron-right" size={20} color={colors.muted} />
           </Pressable>
         </SettingCard>
