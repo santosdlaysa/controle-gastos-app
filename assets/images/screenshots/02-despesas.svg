@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect width="1280" height="40" fill="#0f172a"/>
+  <text x="40" y="26" font-family="Arial" font-size="13" fill="#94a3b8">09:41</text>
+
+  <!-- Header -->
+  <rect y="40" width="1280" height="70" fill="#1e293b"/>
+  <text x="40" y="90" font-family="Arial" font-size="24" font-weight="bold" fill="#ffffff">Despesas</text>
+
+  <!-- Month selector -->
+  <rect x="900" y="52" width="340" height="44" rx="12" fill="#0f172a"/>
+  <text x="960" y="80" font-family="Arial" font-size="14" fill="#94a3b8" text-anchor="middle">◀</text>
+  <text x="1070" y="80" font-family="Arial" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">Março 2026</text>
+  <text x="1210" y="80" font-family="Arial" font-size="14" fill="#94a3b8" text-anchor="middle">▶</text>
+
+  <!-- Summary row -->
+  <rect x="40" y="130" width="370" height="80" rx="12" fill="#1e293b"/>
+  <text x="60" y="158" font-family="Arial" font-size="12" fill="#94a3b8">Total gasto</text>
+  <text x="60" y="192" font-family="Arial" font-size="28" font-weight="bold" fill="#f43f5e">R$ 3.260,00</text>
+
+  <rect x="430" y="130" width="370" height="80" rx="12" fill="#1e293b"/>
+  <text x="450" y="158" font-family="Arial" font-size="12" fill="#94a3b8">Qtd. lançamentos</text>
+  <text x="450" y="192" font-family="Arial" font-size="28" font-weight="bold" fill="#ffffff">24</text>
+
+  <rect x="820" y="130" width="420" height="80" rx="12" fill="#1e293b"/>
+  <text x="840" y="158" font-family="Arial" font-size="12" fill="#94a3b8">Média por dia</text>
+  <text x="840" y="192" font-family="Arial" font-size="28" font-weight="bold" fill="#a5b4fc">R$ 108,67</text>
+
+  <!-- Filter chips -->
+  <rect x="40" y="228" width="100" height="32" rx="16" fill="url(#accent)"/>
+  <text x="90" y="249" font-family="Arial" font-size="13" fill="#ffffff" text-anchor="middle">Todos</text>
+  <rect x="152" y="228" width="130" height="32" rx="16" fill="#1e293b"/>
+  <text x="217" y="249" font-family="Arial" font-size="13" fill="#94a3b8" text-anchor="middle">Alimentação</text>
+  <rect x="294" y="228" width="120" height="32" rx="16" fill="#1e293b"/>
+  <text x="354" y="249" font-family="Arial" font-size="13" fill="#94a3b8" text-anchor="middle">Transporte</text>
+  <rect x="426" y="228" width="80" height="32" rx="16" fill="#1e293b"/>
+  <text x="466" y="249" font-family="Arial" font-size="13" fill="#94a3b8" text-anchor="middle">Saúde</text>
+  <rect x="518" y="228" width="80" height="32" rx="16" fill="#1e293b"/>
+  <text x="558" y="249" font-family="Arial" font-size="13" fill="#94a3b8" text-anchor="middle">Lazer</text>
+
+  <!-- Add button -->
+  <rect x="1160" y="224" width="80" height="36" rx="18" fill="url(#accent)"/>
+  <text x="1200" y="247" font-family="Arial" font-size="20" fill="#ffffff" text-anchor="middle">+</text>
+
+  <!-- Expense list -->
+  <!-- Day group -->
+  <text x="40" y="290" font-family="Arial" font-size="13" font-weight="bold" fill="#475569">02 de março</text>
+
+  <rect x="40" y="300" width="1200" height="60" rx="12" fill="#1e293b"/>
+  <circle cx="76" cy="330" r="20" fill="#6366f1" opacity="0.15"/>
+  <text x="76" y="336" font-family="Arial" font-size="18" text-anchor="middle">🛒</text>
+  <text x="110" y="322" font-family="Arial" font-size="15" font-weight="bold" fill="#ffffff">Supermercado Extra</text>
+  <text x="110" y="343" font-family="Arial" font-size="12" fill="#64748b">Alimentação · Cartão de crédito</text>
+  <text x="1220" y="327" font-family="Arial" font-size="16" font-weight="bold" fill="#f43f5e" text-anchor="end">- R$ 320,00</text>
+  <text x="1220" y="347" font-family="Arial" font-size="11" fill="#64748b" text-anchor="end">Manual</text>
+
+  <rect x="40" y="370" width="1200" height="60" rx="12" fill="#1e293b"/>
+  <circle cx="76" cy="400" r="20" fill="#f59e0b" opacity="0.15"/>
+  <text x="76" y="406" font-family="Arial" font-size="18" text-anchor="middle">☕</text>
+  <text x="110" y="392" font-family="Arial" font-size="15" font-weight="bold" fill="#ffffff">Café da manhã</text>
+  <text x="110" y="413" font-family="Arial" font-size="12" fill="#64748b">Alimentação · Débito</text>
+  <text x="1220" y="397" font-family="Arial" font-size="16" font-weight="bold" fill="#f43f5e" text-anchor="end">- R$ 28,50</text>
+  <text x="1220" y="417" font-family="Arial" font-size="11" fill="#64748b" text-anchor="end">Manual</text>
+
+  <text x="40" y="454" font-family="Arial" font-size="13" font-weight="bold" fill="#475569">01 de março</text>
+
+  <rect x="40" y="464" width="1200" height="60" rx="12" fill="#1e293b"/>
+  <circle cx="76" cy="494" r="20" fill="#f59e0b" opacity="0.15"/>
+  <text x="76" y="500" font-family="Arial" font-size="18" text-anchor="middle">⛽</text>
+  <text x="110" y="486" font-family="Arial" font-size="15" font-weight="bold" fill="#ffffff">Posto Shell</text>
+  <text x="110" y="507" font-family="Arial" font-size="12" fill="#64748b">Transporte · Cartão de crédito</text>
+  <text x="1220" y="491" font-family="Arial" font-size="16" font-weight="bold" fill="#f43f5e" text-anchor="end">- R$ 180,00</text>
+  <text x="1220" y="511" font-family="Arial" font-size="11" fill="#64748b" text-anchor="end">Manual</text>
+
+  <rect x="40" y="534" width="1200" height="60" rx="12" fill="#1e293b"/>
+  <circle cx="76" cy="564" r="20" fill="#10b981" opacity="0.15"/>
+  <text x="76" y="570" font-family="Arial" font-size="18" text-anchor="middle">💊</text>
+  <text x="110" y="556" font-family="Arial" font-size="15" font-weight="bold" fill="#ffffff">Drogaria São Paulo</text>
+  <text x="110" y="577" font-family="Arial" font-size="12" fill="#64748b">Saúde · Débito</text>
+  <text x="1220" y="561" font-family="Arial" font-size="16" font-weight="bold" fill="#f43f5e" text-anchor="end">- R$ 95,00</text>
+  <text x="1220" y="581" font-family="Arial" font-size="11" fill="#64748b" text-anchor="end">Manual</text>
+
+  <rect x="40" y="604" width="1200" height="60" rx="12" fill="#1e293b"/>
+  <circle cx="76" cy="634" r="20" fill="#8b5cf6" opacity="0.15"/>
+  <text x="76" y="640" font-family="Arial" font-size="18" text-anchor="middle">🎬</text>
+  <text x="110" y="626" font-family="Arial" font-size="15" font-weight="bold" fill="#ffffff">Cinemark</text>
+  <text x="110" y="647" font-family="Arial" font-size="12" fill="#64748b">Lazer · Cartão de crédito</text>
+  <text x="1220" y="631" font-family="Arial" font-size="16" font-weight="bold" fill="#f43f5e" text-anchor="end">- R$ 60,00</text>
+  <text x="1220" y="651" font-family="Arial" font-size="11" fill="#64748b" text-anchor="end">Manual</text>
+</svg>

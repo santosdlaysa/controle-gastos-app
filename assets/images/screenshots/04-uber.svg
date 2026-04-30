@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect width="1280" height="40" fill="#0f172a"/>
+  <text x="40" y="26" font-family="Arial" font-size="13" fill="#94a3b8">09:41</text>
+
+  <!-- Header -->
+  <rect y="40" width="1280" height="70" fill="#1e293b"/>
+  <text x="40" y="90" font-family="Arial" font-size="24" font-weight="bold" fill="#ffffff">Ganhos Uber 🚗</text>
+  <rect x="1060" y="52" width="180" height="44" rx="12" fill="url(#amber)" opacity="0.9"/>
+  <text x="1150" y="80" font-family="Arial" font-size="14" font-weight="bold" fill="#1a1a1a" text-anchor="middle">↑ Exportar PDF</text>
+
+  <!-- Summary cards -->
+  <rect x="40" y="130" width="270" height="100" rx="16" fill="#1e293b"/>
+  <rect x="40" y="130" width="270" height="4" rx="2" fill="url(#amber)"/>
+  <text x="60" y="162" font-family="Arial" font-size="12" fill="#94a3b8">Ganhos este mês</text>
+  <text x="60" y="200" font-family="Arial" font-size="26" font-weight="bold" fill="#fbbf24">R$ 1.850,00</text>
+
+  <rect x="326" y="130" width="270" height="100" rx="16" fill="#1e293b"/>
+  <rect x="326" y="130" width="270" height="4" rx="2" fill="#10b981"/>
+  <text x="346" y="162" font-family="Arial" font-size="12" fill="#94a3b8">Total de corridas</text>
+  <text x="346" y="200" font-family="Arial" font-size="26" font-weight="bold" fill="#ffffff">87</text>
+
+  <rect x="612" y="130" width="270" height="100" rx="16" fill="#1e293b"/>
+  <rect x="612" y="130" width="270" height="4" rx="2" fill="#6366f1"/>
+  <text x="632" y="162" font-family="Arial" font-size="12" fill="#94a3b8">Média por corrida</text>
+  <text x="632" y="200" font-family="Arial" font-size="26" font-weight="bold" fill="#a5b4fc">R$ 21,26</text>
+
+  <rect x="898" y="130" width="342" height="100" rx="16" fill="#1e293b"/>
+  <rect x="898" y="130" width="342" height="4" rx="2" fill="#f43f5e"/>
+  <text x="918" y="162" font-family="Arial" font-size="12" fill="#94a3b8">Gastos (combustível etc.)</text>
+  <text x="918" y="200" font-family="Arial" font-size="26" font-weight="bold" fill="#f43f5e">- R$ 420,00</text>
+
+  <!-- Weekly bar chart -->
+  <rect x="40" y="250" width="600" height="360" rx="16" fill="#1e293b"/>
+  <text x="60" y="282" font-family="Arial" font-size="15" font-weight="bold" fill="#ffffff">Ganhos por semana</text>
+
+  <!-- Bars -->
+  <text x="100" y="555" font-family="Arial" font-size="12" fill="#64748b" text-anchor="middle">S1</text>
+  <rect x="70" y="420" width="60" height="120" rx="6" fill="url(#amber)" opacity="0.9"/>
+  <text x="100" y="415" font-family="Arial" font-size="12" fill="#fbbf24" text-anchor="middle">R$520</text>
+
+  <text x="220" y="555" font-family="Arial" font-size="12" fill="#64748b" text-anchor="middle">S2</text>
+  <rect x="190" y="380" width="60" height="160" rx="6" fill="url(#amber)" opacity="0.9"/>
+  <text x="220" y="375" font-family="Arial" font-size="12" fill="#fbbf24" text-anchor="middle">R$640</text>
+
+  <text x="340" y="555" font-family="Arial" font-size="12" fill="#64748b" text-anchor="middle">S3</text>
+  <rect x="310" y="450" width="60" height="90" rx="6" fill="url(#amber)" opacity="0.9"/>
+  <text x="340" y="445" font-family="Arial" font-size="12" fill="#fbbf24" text-anchor="middle">R$380</text>
+
+  <text x="460" y="555" font-family="Arial" font-size="12" fill="#64748b" text-anchor="middle">S4</text>
+  <rect x="430" y="398" width="60" height="142" rx="6" fill="url(#amber)" opacity="0.9"/>
+  <text x="460" y="393" font-family="Arial" font-size="12" fill="#fbbf24" text-anchor="middle">R$310</text>
+
+  <line x1="60" y1="540" x2="580" y2="540" stroke="#334155" stroke-width="1"/>
+
+  <!-- Trips list -->
+  <rect x="660" y="250" width="580" height="360" rx="16" fill="#1e293b"/>
+  <text x="680" y="282" font-family="Arial" font-size="15" font-weight="bold" fill="#ffffff">Últimas corridas</text>
+
+  <!-- Trip row -->
+  <line x1="680" y1="300" x2="1220" y2="300" stroke="#334155" stroke-width="1"/>
+  <text x="680" y="325" font-family="Arial" font-size="12" fill="#64748b">Data</text>
+  <text x="820" y="325" font-family="Arial" font-size="12" fill="#64748b">Tipo</text>
+  <text x="980" y="325" font-family="Arial" font-size="12" fill="#64748b">Distância</text>
+  <text x="1160" y="325" font-family="Arial" font-size="12" fill="#64748b" text-anchor="end">Valor</text>
+  <line x1="680" y1="335" x2="1220" y2="335" stroke="#334155" stroke-width="1"/>
+
+  <text x="680" y="360" font-family="Arial" font-size="13" fill="#cbd5e1">02 mar 14:32</text>
+  <rect x="820" y="345" width="80" height="22" rx="11" fill="#6366f1" opacity="0.2"/>
+  <text x="860" y="361" font-family="Arial" font-size="12" fill="#a5b4fc" text-anchor="middle">UberX</text>
+  <text x="980" y="360" font-family="Arial" font-size="13" fill="#cbd5e1">8,4 km</text>
+  <text x="1160" y="360" font-family="Arial" font-size="14" font-weight="bold" fill="#fbbf24" text-anchor="end">R$ 24,50</text>
+
+  <text x="680" y="396" font-family="Arial" font-size="13" fill="#cbd5e1">02 mar 11:15</text>
+  <rect x="820" y="381" width="80" height="22" rx="11" fill="#10b981" opacity="0.2"/>
+  <text x="860" y="397" font-family="Arial" font-size="12" fill="#6ee7b7" text-anchor="middle">Comfort</text>
+  <text x="980" y="396" font-family="Arial" font-size="13" fill="#cbd5e1">12,1 km</text>
+  <text x="1160" y="396" font-family="Arial" font-size="14" font-weight="bold" fill="#fbbf24" text-anchor="end">R$ 38,20</text>
+
+  <text x="680" y="432" font-family="Arial" font-size="13" fill="#cbd5e1">01 mar 19:48</text>
+  <rect x="820" y="417" width="80" height="22" rx="11" fill="#6366f1" opacity="0.2"/>
+  <text x="860" y="433" font-family="Arial" font-size="12" fill="#a5b4fc" text-anchor="middle">UberX</text>
+  <text x="980" y="432" font-family="Arial" font-size="13" fill="#cbd5e1">5,2 km</text>
+  <text x="1160" y="432" font-family="Arial" font-size="14" font-weight="bold" fill="#fbbf24" text-anchor="end">R$ 18,90</text>
+
+  <text x="680" y="468" font-family="Arial" font-size="13" fill="#cbd5e1">01 mar 16:20</text>
+  <rect x="820" y="453" width="80" height="22" rx="11" fill="#f59e0b" opacity="0.2"/>
+  <text x="860" y="469" font-family="Arial" font-size="12" fill="#fcd34d" text-anchor="middle">Flash</text>
+  <text x="980" y="468" font-family="Arial" font-size="13" fill="#cbd5e1">3,8 km</text>
+  <text x="1160" y="468" font-family="Arial" font-size="14" font-weight="bold" fill="#fbbf24" text-anchor="end">R$ 15,40</text>
+
+  <text x="680" y="504" font-family="Arial" font-size="13" fill="#cbd5e1">01 mar 09:05</text>
+  <rect x="820" y="489" width="80" height="22" rx="11" fill="#6366f1" opacity="0.2"/>
+  <text x="860" y="505" font-family="Arial" font-size="12" fill="#a5b4fc" text-anchor="middle">UberX</text>
+  <text x="980" y="504" font-family="Arial" font-size="13" fill="#cbd5e1">22,3 km</text>
+  <text x="1160" y="504" font-family="Arial" font-size="14" font-weight="bold" fill="#fbbf24" text-anchor="end">R$ 56,80</text>
+
+  <text x="680" y="540" font-family="Arial" font-size="13" fill="#cbd5e1">28 fev 21:30</text>
+  <rect x="820" y="525" width="80" height="22" rx="11" fill="#10b981" opacity="0.2"/>
+  <text x="860" y="541" font-family="Arial" font-size="12" fill="#6ee7b7" text-anchor="middle">Comfort</text>
+  <text x="980" y="540" font-family="Arial" font-size="13" fill="#cbd5e1">9,7 km</text>
+  <text x="1160" y="540" font-family="Arial" font-size="14" font-weight="bold" fill="#fbbf24" text-anchor="end">R$ 31,10</text>
+
+  <!-- Import CSV button -->
+  <rect x="40" y="630" width="240" height="44" rx="12" fill="#1e293b"/>
+  <rect x="40" y="630" width="240" height="44" rx="12" fill="none" stroke="#334155" stroke-width="1"/>
+  <text x="160" y="658" font-family="Arial" font-size="14" fill="#94a3b8" text-anchor="middle">↑ Importar CSV</text>
+</svg>

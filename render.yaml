@@ -3,7 +3,7 @@ services:
     name: controle-gastos-api
     runtime: node
     buildCommand: npm install -g pnpm@9.12.0 && NODE_ENV=development pnpm install --frozen-lockfile && pnpm build
-    startCommand: pnpm start
+    startCommand: node dist/index.mjs
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV

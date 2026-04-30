@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e293b"/>
+      <stop offset="100%" style="stop-color:#0f172a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="500" fill="url(#bg)"/>
+
+  <!-- Subtle grid lines -->
+  <line x1="0" y1="100" x2="1024" y2="100" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="0" y1="200" x2="1024" y2="200" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="0" y1="300" x2="1024" y2="300" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="0" y1="400" x2="1024" y2="400" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="200" y1="0" x2="200" y2="500" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="400" y1="0" x2="400" y2="500" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="600" y1="0" x2="600" y2="500" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="800" y1="0" x2="800" y2="500" stroke="#ffffff08" stroke-width="1"/>
+
+  <!-- Glow circle left -->
+  <circle cx="150" cy="250" r="200" fill="#6366f1" opacity="0.07"/>
+  <!-- Glow circle right -->
+  <circle cx="900" cy="280" r="220" fill="#8b5cf6" opacity="0.07"/>
+
+  <!-- Bar chart (right side decoration) -->
+  <g transform="translate(620, 80)" opacity="0.85">
+    <!-- Chart background card -->
+    <rect x="0" y="0" width="360" height="320" rx="16" fill="#1e293b" opacity="0.9"/>
+    <rect x="0" y="0" width="360" height="4" rx="2" fill="url(#accent)"/>
+
+    <!-- Chart label -->
+    <text x="20" y="35" font-family="Arial, sans-serif" font-size="13" fill="#94a3b8">Gastos por categoria</text>
+
+    <!-- Bars -->
+    <!-- Alimentação -->
+    <rect x="28" y="160" width="44" height="110" rx="6" fill="url(#accent)" opacity="0.9"/>
+    <text x="50" y="285" font-family="Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Alim.</text>
+    <text x="50" y="150" font-family="Arial, sans-serif" font-size="11" fill="#a5b4fc" text-anchor="middle">R$820</text>
+
+    <!-- Transporte -->
+    <rect x="92" y="190" width="44" height="80" rx="6" fill="#6366f1" opacity="0.6"/>
+    <text x="114" y="285" font-family="Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Transp.</text>
+    <text x="114" y="180" font-family="Arial, sans-serif" font-size="11" fill="#a5b4fc" text-anchor="middle">R$580</text>
+
+    <!-- Lazer -->
+    <rect x="156" y="210" width="44" height="60" rx="6" fill="#8b5cf6" opacity="0.6"/>
+    <text x="178" y="285" font-family="Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Lazer</text>
+    <text x="178" y="200" font-family="Arial, sans-serif" font-size="11" fill="#a5b4fc" text-anchor="middle">R$430</text>
+
+    <!-- Saúde -->
+    <rect x="220" y="225" width="44" height="45" rx="6" fill="#6366f1" opacity="0.5"/>
+    <text x="242" y="285" font-family="Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Saúde</text>
+    <text x="242" y="215" font-family="Arial, sans-serif" font-size="11" fill="#a5b4fc" text-anchor="middle">R$310</text>
+
+    <!-- Outros -->
+    <rect x="284" y="240" width="44" height="30" rx="6" fill="#8b5cf6" opacity="0.4"/>
+    <text x="306" y="285" font-family="Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Outros</text>
+    <text x="306" y="232" font-family="Arial, sans-serif" font-size="11" fill="#a5b4fc" text-anchor="middle">R$200</text>
+
+    <!-- Baseline -->
+    <line x1="20" y1="270" x2="340" y2="270" stroke="#334155" stroke-width="1"/>
+  </g>
+
+  <!-- Small balance card -->
+  <g transform="translate(620, 415)" opacity="0.9">
+    <rect x="0" y="0" width="170" height="64" rx="12" fill="#6366f1" opacity="0.15"/>
+    <rect x="0" y="0" width="170" height="64" rx="12" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.4"/>
+    <text x="16" y="22" font-family="Arial, sans-serif" font-size="11" fill="#94a3b8">Saldo do mês</text>
+    <text x="16" y="48" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#ffffff">R$ 2.340</text>
+  </g>
+
+  <!-- Small Uber card -->
+  <g transform="translate(810" y="0">
+  </g>
+  <g transform="translate(810, 415)" opacity="0.9">
+    <rect x="0" y="0" width="170" height="64" rx="12" fill="#8b5cf6" opacity="0.15"/>
+    <rect x="0" y="0" width="170" height="64" rx="12" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.4"/>
+    <text x="16" y="22" font-family="Arial, sans-serif" font-size="11" fill="#94a3b8">Ganhos Uber</text>
+    <text x="16" y="48" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#ffffff">R$ 1.850</text>
+  </g>
+
+  <!-- Left side: Logo + tagline -->
+  <g transform="translate(80, 160)">
+    <!-- Logo circle -->
+    <circle cx="36" cy="36" r="36" fill="url(#accent)" opacity="0.15"/>
+    <circle cx="36" cy="36" r="36" fill="none" stroke="url(#accent)" stroke-width="2"/>
+    <text x="36" y="44" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="url(#accent)" text-anchor="middle">O</text>
+
+    <!-- App name -->
+    <text x="0" y="110" font-family="Arial, sans-serif" font-size="52" font-weight="bold" fill="#ffffff" letter-spacing="-1">Orgenyx</text>
+
+    <!-- Tagline -->
+    <text x="0" y="148" font-family="Arial, sans-serif" font-size="18" fill="#94a3b8">Suas finanças, organizadas e inteligentes.</text>
+
+    <!-- Feature pills -->
+    <g transform="translate(0, 175)">
+      <rect x="0" y="0" width="130" height="30" rx="15" fill="#6366f1" opacity="0.2"/>
+      <rect x="0" y="0" width="130" height="30" rx="15" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.5"/>
+      <text x="65" y="20" font-family="Arial, sans-serif" font-size="12" fill="#a5b4fc" text-anchor="middle">Controle de gastos</text>
+    </g>
+    <g transform="translate(142, 175)">
+      <rect x="0" y="0" width="110" height="30" rx="15" fill="#8b5cf6" opacity="0.2"/>
+      <rect x="0" y="0" width="110" height="30" rx="15" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.5"/>
+      <text x="55" y="20" font-family="Arial, sans-serif" font-size="12" fill="#c4b5fd" text-anchor="middle">Rastreador Uber</text>
+    </g>
+    <g transform="translate(264, 175)">
+      <rect x="0" y="0" width="90" height="30" rx="15" fill="#6366f1" opacity="0.2"/>
+      <rect x="0" y="0" width="90" height="30" rx="15" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.5"/>
+      <text x="45" y="20" font-family="Arial, sans-serif" font-size="12" fill="#a5b4fc" text-anchor="middle">IA Financeira</text>
+    </g>
+  </g>
+</svg>

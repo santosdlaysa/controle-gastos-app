@@ -8,14 +8,14 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com"
       }
     },
     "production": {
@@ -28,7 +28,7 @@
         "distribution": "store"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com"
       }
     }
   },
