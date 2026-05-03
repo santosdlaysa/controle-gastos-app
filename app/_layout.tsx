@@ -24,6 +24,7 @@ import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-run
 import { AuthProvider, useAuthContext } from "@/lib/auth-context";
 import { useMigration } from "@/hooks/use-migration";
 import { getUberFeatureEnabled, isUberFeatureUnconfigured } from "@/lib/uber-feature";
+import { initPurchases } from "@/hooks/use-purchases";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -148,6 +149,11 @@ export default function RootLayout() {
   // Initialize Manus runtime for cookie injection from parent container
   useEffect(() => {
     initManusRuntime();
+  }, []);
+
+  // Initialize RevenueCat
+  useEffect(() => {
+    initPurchases();
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {

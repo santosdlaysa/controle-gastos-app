@@ -35,7 +35,9 @@
       "mcp__ide__getDiagnostics",
       "Bash(git diff:*)",
       "Bash(git log:*)",
-      "Bash(npx esbuild:*)"
+      "Bash(npx esbuild:*)",
+      "Bash(wc:*)",
+      "Bash(npx expo:*)"
     ]
   }
 }

@@ -26,6 +26,7 @@ import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/use-colors';
 import { trpc } from '@/lib/trpc';
 import { Toast, useToast } from '@/components/toast';
+import { usePurchases } from '@/hooks/use-purchases';
 
 const getCurrentMonth = () => {
   const now = new Date();
@@ -138,6 +139,7 @@ export default function SettingsScreen() {
   const { toast, show: showToast } = useToast();
   const router = useRouter();
   const debtorsQuery = trpc.debtor.getAll.useQuery();
+  const { isPremium, packages, loading: purchasesLoading, purchasing, purchase, restore } = usePurchases();
 
   const handleSaveName = async () => {
     if (!nameInput.trim() || nameInput.trim() === user?.name) return;
@@ -267,6 +269,72 @@ export default function SettingsScreen() {
         <Text style={{ fontSize: 28, fontWeight: '800', color: colors.foreground, marginBottom: 24, letterSpacing: -0.5 }}>
           Configurações
         </Text>
+
+        {/* ── Premium ── */}
+        <SectionLabel label="Premium" />
+        <SettingCard>
+          {isPremium ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#22C55E20', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                <MaterialIcons name="star" size={17} color="#22C55E" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '600' }}>Plano Premium ativo</Text>
+                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Sem anuncios. Obrigado pelo apoio!</Text>
+              </View>
+              <MaterialIcons name="check-circle" size={22} color="#22C55E" />
+            </View>
+          ) : (
+            <>
+              <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#F59E0B20', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                    <MaterialIcons name="star" size={17} color="#F59E0B" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '600' }}>Remover anuncios</Text>
+                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Pagamento unico — sem assinatura</Text>
+                  </View>
+                </View>
+                {purchasesLoading ? (
+                  <ActivityIndicator size="small" color={colors.tint} style={{ marginVertical: 8 }} />
+                ) : packages.length > 0 ? (
+                  packages.map((pkg) => (
+                    <TouchableOpacity
+                      key={pkg.identifier}
+                      onPress={() => purchase(pkg)}
+                      disabled={purchasing}
+                      activeOpacity={0.8}
+                    >
+                      <View style={{ backgroundColor: colors.tint, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 6 }}>
+                        {purchasing
+                          ? <ActivityIndicator color="#fff" size="small" />
+                          : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
+                              Comprar por {pkg.product.priceString}
+                            </Text>
+                        }
+                      </View>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <View style={{ backgroundColor: colors.tint, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 6, opacity: 0.5 }}>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>R$ 10,00 — Remover anuncios</Text>
+                  </View>
+                )}
+              </View>
+              <RowSeparator />
+              <TouchableOpacity onPress={restore} disabled={purchasing} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16 }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#6366F120', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                    <MaterialIcons name="restore" size={17} color="#6366F1" />
+                  </View>
+                  <Text style={{ flex: 1, fontSize: 15, color: colors.foreground }}>Restaurar compra</Text>
+                  <MaterialIcons name="chevron-right" size={20} color={colors.muted} />
+                </View>
+              </TouchableOpacity>
+            </>
+          )}
+        </SettingCard>
 
         {/* ── Conta ── */}
         <SectionLabel label="Conta" />
