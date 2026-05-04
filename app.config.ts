@@ -33,7 +33,7 @@ const config: ExpoConfig = {
   slug: "controle-gastos-app",
 
   // 🔢 Versão visível ao usuário
-  version: "2.1.0",
+  version: "2.1.1",
 
   // 🔥 IMPORTANTE PARA EAS UPDATE (boa prática)
   runtimeVersion: {
