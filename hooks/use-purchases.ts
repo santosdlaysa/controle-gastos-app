@@ -2,19 +2,28 @@ import { useCallback, useEffect, useState } from "react";
 import Purchases, { LOG_LEVEL, PurchasesPackage } from "react-native-purchases";
 import { Platform, Alert } from "react-native";
 
-const REVENUECAT_API_KEY = "test_vMwmMOtXfmmZjjwyrFtFRFAtIwp";
+const REVENUECAT_API_KEY =
+  Platform.OS === "ios"
+    ? (process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? "")
+    : (process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? "");
 const ENTITLEMENT_ID = "premium";
 
 let initialized = false;
 
 export function initPurchases(userId?: string) {
   if (initialized) return;
-  Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-  Purchases.configure({ apiKey: REVENUECAT_API_KEY });
-  if (userId) {
-    Purchases.logIn(userId).catch(() => {});
+  if (Platform.OS === "web" || !REVENUECAT_API_KEY) return;
+
+  try {
+    Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
+    Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+    if (userId) {
+      Purchases.logIn(userId).catch(() => {});
+    }
+    initialized = true;
+  } catch (e) {
+    console.warn("RevenueCat init failed:", e);
   }
-  initialized = true;
 }
 
 export function usePurchases() {

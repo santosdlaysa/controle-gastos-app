@@ -8,14 +8,18 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com",
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_pzLeJaDnomFldqSsdJSSFJGzPvK",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com",
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_pzLeJaDnomFldqSsdJSSFJGzPvK",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr"
       }
     },
     "production": {
@@ -28,7 +32,9 @@
         "distribution": "store"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com",
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_pzLeJaDnomFldqSsdJSSFJGzPvK",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr"
       }
     }
   },

@@ -106,6 +106,7 @@ const config: ExpoConfig = {
 
   plugins: [
     "expo-router",
+    "react-native-purchases",
 
     [
       "expo-splash-screen",
@@ -123,6 +124,9 @@ const config: ExpoConfig = {
     [
       "expo-build-properties",
       {
+        ios: {
+          deploymentTarget: "15.0",
+        },
         android: {
           buildArchs: ["armeabi-v7a", "arm64-v8a"],
           minSdkVersion: 24,

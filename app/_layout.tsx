@@ -151,9 +151,13 @@ export default function RootLayout() {
     initManusRuntime();
   }, []);
 
-  // Initialize RevenueCat
+  // Initialize RevenueCat (wrapped in try/catch to prevent crash on init failure)
   useEffect(() => {
-    initPurchases();
+    try {
+      initPurchases();
+    } catch (e) {
+      console.warn("RevenueCat init error:", e);
+    }
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
