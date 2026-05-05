@@ -27,6 +27,8 @@ import { trpc } from '@/lib/trpc';
 import { setAppMode } from '@/lib/mode';
 import { getUberFeatureEnabled } from '@/lib/uber-feature';
 import { Toast, useToast } from '@/components/toast';
+import { AdBanner } from '@/components/ad-banner';
+import { usePurchases } from '@/hooks/use-purchases';
 
 const BANK_PALETTE = ['#6366F1','#EC4899','#F59E0B','#10B981','#3B82F6','#EF4444','#8B5CF6','#14B8A6','#F97316','#06B6D4'];
 function bankColor(name: string) {
@@ -278,6 +280,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const currentMonth = getCurrentMonth();
   const { user } = useAuthContext();
+  const { isPremium } = usePurchases();
   const [menuVisible, setMenuVisible] = useState(false);
   const [uberEnabled, setUberEnabled] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -687,6 +690,8 @@ export default function HomeScreen() {
             );
           })()}
         </View>
+
+        {!isPremium && <AdBanner />}
       </ScrollView>
 
 

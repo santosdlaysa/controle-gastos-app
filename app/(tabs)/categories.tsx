@@ -7,6 +7,8 @@ import { useColors } from '@/hooks/use-colors';
 import { useExpenses } from '@/hooks/use-expenses';
 import { useCategories } from '@/hooks/use-categories';
 import { CategoryEditModal } from '@/components/category-edit-modal';
+import { AdBanner } from '@/components/ad-banner';
+import { usePurchases } from '@/hooks/use-purchases';
 import { UserCategory } from '@/types/expense';
 
 function addMonths(month: string, delta: number): string {
@@ -114,6 +116,7 @@ export default function CategoriesScreen() {
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth());
   const [editingCategory, setEditingCategory] = useState<UserCategory | null>(null);
   const colors = useColors();
+  const { isPremium } = usePurchases();
   const { expenses, categoryBudgets, loading } = useExpenses(currentMonth);
   const { categories, colorMap, labelMap, iconMap, updateCategory } = useCategories();
 
@@ -250,6 +253,8 @@ export default function CategoriesScreen() {
             })
           )}
         </View>
+
+        {!isPremium && <AdBanner />}
       </ScrollView>
 
       <CategoryEditModal

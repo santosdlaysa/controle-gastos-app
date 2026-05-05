@@ -108,6 +108,14 @@ const config: ExpoConfig = {
     "expo-router",
 
     [
+      "react-native-google-mobile-ads",
+      {
+        androidAppId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID ?? "ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy",
+        iosAppId: process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID ?? "ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy",
+      },
+    ],
+
+    [
       "expo-splash-screen",
       {
         image: "./assets/images/splash-icon.png",

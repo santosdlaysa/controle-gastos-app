@@ -43,7 +43,9 @@
       "Bash(nslookup:*)",
       "Bash(git config:*)",
       "Bash(ping:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(adb logcat:*)",
+      "Bash(adb devices:*)"
     ]
   }
 }
