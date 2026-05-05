@@ -69,7 +69,7 @@ const config: ExpoConfig = {
     package: bundleId,
 
     // 🔢 OBRIGATÓRIO PARA PLAY STORE
-    versionCode: 5,
+    versionCode: 6,
 
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
