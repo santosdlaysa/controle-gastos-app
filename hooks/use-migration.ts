@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { trpc } from "@/lib/trpc";
 import type { MonthlyData, Income } from "@/types/expense";
@@ -25,6 +25,11 @@ export function useMigration() {
   const { mutateAsync: importAll } = trpc.migration.importAll.useMutation();
   const { mutateAsync: applyMigrations } = trpc.migration.applyMigrations.useMutation();
 
+  const refetchStatusRef = useRef(refetchStatus);
+  const applyMigrationsRef = useRef(applyMigrations);
+  refetchStatusRef.current = refetchStatus;
+  applyMigrationsRef.current = applyMigrations;
+
   const checkAndMigrate = useCallback(async () => {
     setState("checking");
     setError(null);
@@ -38,7 +43,7 @@ export function useMigration() {
       }
 
       // Apply any pending schema migrations on the server
-      await applyMigrations();
+      await applyMigrationsRef.current();
 
       // Check if there's local data to migrate
       const localDataRaw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -50,7 +55,7 @@ export function useMigration() {
       }
 
       // Check server status
-      const serverStatus = await refetchStatus();
+      const serverStatus = await refetchStatusRef.current();
       if (serverStatus.data?.hasMigrated) {
         // Server already has data — mark migration done
         await AsyncStorage.setItem(MIGRATION_DONE_KEY, "true");
@@ -64,7 +69,7 @@ export function useMigration() {
       setError(err instanceof Error ? err.message : "Erro ao verificar migração");
       setState("error");
     }
-  }, [refetchStatus, applyMigrations]);
+  }, []);
 
   const runMigration = useCallback(async () => {
     setState("in_progress");
