@@ -59,7 +59,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: bundleId,
-    buildNumber: "20",
+    buildNumber: "21",
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },
@@ -69,7 +69,7 @@ const config: ExpoConfig = {
     package: bundleId,
 
     // 🔢 OBRIGATÓRIO PARA PLAY STORE
-    versionCode: 4,
+    versionCode: 5,
 
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",

@@ -38,7 +38,12 @@
       "Bash(npx esbuild:*)",
       "Bash(wc:*)",
       "Bash(npx expo:*)",
-      "Bash(npx eas:*)"
+      "Bash(npx eas:*)",
+      "Bash(curl:*)",
+      "Bash(nslookup:*)",
+      "Bash(git config:*)",
+      "Bash(ping:*)",
+      "Bash(git pull:*)"
     ]
   }
 }
