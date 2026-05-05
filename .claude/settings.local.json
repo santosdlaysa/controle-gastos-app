@@ -45,7 +45,9 @@
       "Bash(ping:*)",
       "Bash(git pull:*)",
       "Bash(adb logcat:*)",
-      "Bash(adb devices:*)"
+      "Bash(adb devices:*)",
+      "Bash(adb -s RXGL1004ZLB logcat -d -t 200)",
+      "Bash(adb -s RXGL1004ZLB logcat -d)"
     ]
   }
 }
