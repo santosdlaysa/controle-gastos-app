@@ -51,7 +51,8 @@
       "Bash(adb -s emulator-5554 logcat -d)",
       "Bash(adb shell:*)",
       "Bash(adb -s RXGL1004ZLB logcat -c)",
-      "Bash(adb -s RXGL1004ZLB shell am start -n com.orgenyx/.MainActivity)"
+      "Bash(adb -s RXGL1004ZLB shell am start -n com.orgenyx/.MainActivity)",
+      "Bash(cd:*)"
     ]
   }
 }
