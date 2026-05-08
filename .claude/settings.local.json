@@ -52,7 +52,8 @@
       "Bash(adb shell:*)",
       "Bash(adb -s RXGL1004ZLB logcat -c)",
       "Bash(adb -s RXGL1004ZLB shell am start -n com.orgenyx/.MainActivity)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(git check-ignore:*)"
     ]
   }
 }
