@@ -478,6 +478,9 @@ export default function HomeScreen() {
             return (
               <View style={{ gap: 24 }}>
 
+                {/* ── Ad Banner ── */}
+                {!isPremium && <AdBanner />}
+
                 {/* ── Saldo Geral ── */}
                 {hasSaldo && (
                   <View style={{ backgroundColor: '#0a7ea4', borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
