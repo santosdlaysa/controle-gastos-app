@@ -7,10 +7,11 @@ type ApiResponse<T> = {
   error?: string;
 };
 
-export async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export async function apiCall<T>(endpoint: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
+  const { timeoutMs = 10000, ...fetchOptions } = options;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...((options.headers as Record<string, string>) || {}),
+    ...((fetchOptions.headers as Record<string, string>) || {}),
   };
 
   // Determine the auth method:
@@ -29,12 +30,16 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
   const url = baseUrl ? `${cleanBaseUrl}${cleanEndpoint}` : endpoint;
   console.log("[API] Full URL:", url);
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     console.log("[API] Making request...");
     const response = await fetch(url, {
-      ...options,
+      ...fetchOptions,
       headers,
       credentials: "include",
+      signal: controller.signal,
     });
 
     console.log("[API] Response status:", response.status, response.statusText);
@@ -72,10 +77,15 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
     return (text ? JSON.parse(text) : {}) as T;
   } catch (error) {
     console.log("[API] Request failed:", error);
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(`Request timeout after ${timeoutMs}ms`);
+    }
     if (error instanceof Error) {
       throw error;
     }
     throw new Error("Unknown error occurred");
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

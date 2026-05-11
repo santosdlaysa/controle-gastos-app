@@ -25,6 +25,7 @@ import { AuthProvider, useAuthContext } from "@/lib/auth-context";
 import { useMigration } from "@/hooks/use-migration";
 import { getUberFeatureEnabled, isUberFeatureUnconfigured } from "@/lib/uber-feature";
 import { initPurchases } from "@/hooks/use-purchases";
+import { useAppOpenAd } from "@/hooks/use-app-open-ad";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -67,6 +68,9 @@ function NavLayout() {
   const router = useRouter();
   const colors = useColors();
   const scheme = useColorScheme();
+
+  // Show app open ad when app launches or returns from background
+  useAppOpenAd();
   const navTheme = {
     ...(scheme === 'dark' ? DarkTheme : DefaultTheme),
     colors: {
