@@ -15,31 +15,36 @@ const APP_OPEN_AD_UNIT_ID = Platform.select({
 export function useAppOpenAd() {
   const appOpenAd = useRef<AppOpenAd | null>(null);
   const appState = useRef(AppState.currentState);
+  const shouldShowOnLoad = useRef(true);
 
   useEffect(() => {
     if (Platform.OS === "web") return;
 
-    function loadAd() {
+    function createAd() {
       appOpenAd.current = AppOpenAd.createForAdRequest(APP_OPEN_AD_UNIT_ID);
 
       appOpenAd.current.addAdEventListener(AdEventType.LOADED, () => {
-        appOpenAd.current?.show();
+        if (shouldShowOnLoad.current) {
+          appOpenAd.current?.show();
+        }
       });
 
       appOpenAd.current.addAdEventListener(AdEventType.CLOSED, () => {
-        // Pre-load next ad for when user returns to the app
-        loadAd();
+        // Pre-load next ad without showing it automatically
+        shouldShowOnLoad.current = false;
+        createAd();
+        appOpenAd.current?.load();
       });
 
       appOpenAd.current.addAdEventListener(AdEventType.ERROR, (error) => {
         console.warn("[AppOpenAd] Error:", error);
       });
-
-      appOpenAd.current.load();
     }
 
-    // Load the first ad
-    loadAd();
+    // Load and show the first ad on app launch
+    shouldShowOnLoad.current = true;
+    createAd();
+    appOpenAd.current?.load();
 
     // Show ad when user returns to the app from background
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -47,6 +52,7 @@ export function useAppOpenAd() {
         appState.current.match(/inactive|background/) &&
         nextAppState === "active"
       ) {
+        shouldShowOnLoad.current = true;
         if (appOpenAd.current) {
           appOpenAd.current.load();
         }
