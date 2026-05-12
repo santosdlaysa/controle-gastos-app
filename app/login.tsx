@@ -48,7 +48,19 @@ export default function LoginScreen() {
       // sem chamar getMe() para evitar falhas de autenticação no servidor
       await applyLogin(result.user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao autenticar.");
+      const msg = err instanceof Error ? err.message : String(err);
+      // Traduzir mensagens técnicas em mensagens amigáveis
+      if (msg.includes("401") || msg.toLowerCase().includes("unauthorized") || msg.toLowerCase().includes("incorrect") || msg.toLowerCase().includes("invalid")) {
+        setError("Email ou senha incorretos.");
+      } else if (msg.includes("does not exist") || msg.includes("not found") || msg.includes("404")) {
+        setError("Email ou senha incorretos.");
+      } else if (msg.includes("timeout") || msg.includes("abort")) {
+        setError("Servidor demorou para responder. Tente novamente.");
+      } else if (msg.includes("network") || msg.includes("fetch") || msg.includes("Failed to fetch")) {
+        setError("Sem conexão com o servidor. Verifique sua internet.");
+      } else {
+        setError(msg || "Erro ao autenticar.");
+      }
     } finally {
       setLoading(false);
     }

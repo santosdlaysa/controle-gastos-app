@@ -63,7 +63,7 @@ export function usePurchases() {
       const active = customerInfo.entitlements.active[ENTITLEMENT_ID];
       setIsPremium(!!active);
       if (active) {
-        Alert.alert("Sucesso!", "Anúncios removidos com sucesso. Obrigado pelo apoio!");
+        Alert.alert("Sucesso!", "Assinatura ativada! Anúncios removidos. Obrigado pelo apoio!");
       }
     } catch (e: any) {
       if (!e.userCancelled) {
@@ -81,7 +81,7 @@ export function usePurchases() {
       const active = info.entitlements.active[ENTITLEMENT_ID];
       setIsPremium(!!active);
       if (active) {
-        Alert.alert("Compra restaurada!", "Seus anúncios foram removidos.");
+        Alert.alert("Assinatura restaurada!", "Seus anúncios foram removidos.");
       } else {
         Alert.alert("Nenhuma compra encontrada", "Não encontramos nenhuma compra anterior.");
       }

@@ -280,7 +280,7 @@ export default function SettingsScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '600' }}>Plano Premium ativo</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Sem anuncios. Obrigado pelo apoio!</Text>
+                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Assinatura ativa — sem anúncios</Text>
               </View>
               <MaterialIcons name="check-circle" size={22} color="#22C55E" />
             </View>
@@ -293,7 +293,7 @@ export default function SettingsScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '600' }}>Remover anuncios</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Pagamento unico — sem assinatura</Text>
+                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Assinatura mensal — cancele quando quiser</Text>
                   </View>
                 </View>
                 {purchasesLoading ? (
@@ -310,7 +310,7 @@ export default function SettingsScreen() {
                         {purchasing
                           ? <ActivityIndicator color="#fff" size="small" />
                           : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-                              Comprar por {pkg.product.priceString}
+                              Assinar por {pkg.product.priceString}/mês
                             </Text>
                         }
                       </View>
@@ -318,7 +318,7 @@ export default function SettingsScreen() {
                   ))
                 ) : (
                   <View style={{ backgroundColor: colors.tint, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 6, opacity: 0.5 }}>
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>R$ 10,00 — Remover anuncios</Text>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Indisponível no momento</Text>
                   </View>
                 )}
               </View>

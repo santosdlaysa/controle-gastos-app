@@ -12,6 +12,8 @@ import {
   Platform,
   KeyboardAvoidingView,
   RefreshControl,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
@@ -279,7 +281,7 @@ function DebtorsShortcut() {
 export default function HomeScreen() {
   const router = useRouter();
   const currentMonth = getCurrentMonth();
-  const { user } = useAuthContext();
+  const { user, logout } = useAuthContext();
   const { isPremium } = usePurchases();
   const [menuVisible, setMenuVisible] = useState(false);
   const [uberEnabled, setUberEnabled] = useState(false);
@@ -295,6 +297,36 @@ export default function HomeScreen() {
   const [editExpenseVisible, setEditExpenseVisible] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>();
   const { toast, show: showToast } = useToast();
+
+  // Drawer lateral
+  const drawerWidth = Dimensions.get('window').width * 0.78;
+  const drawerAnim = useRef(new Animated.Value(-drawerWidth)).current;
+  const overlayAnim = useRef(new Animated.Value(0)).current;
+
+  const openDrawer = useCallback(() => {
+    setMenuVisible(true);
+    Animated.parallel([
+      Animated.spring(drawerAnim, { toValue: 0, useNativeDriver: true, damping: 22, stiffness: 200 }),
+      Animated.timing(overlayAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+    ]).start();
+  }, [drawerAnim, overlayAnim]);
+
+  const closeDrawer = useCallback(() => {
+    Animated.parallel([
+      Animated.spring(drawerAnim, { toValue: -drawerWidth, useNativeDriver: true, damping: 22, stiffness: 200 }),
+      Animated.timing(overlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start(() => setMenuVisible(false));
+  }, [drawerAnim, overlayAnim, drawerWidth]);
+
+  const handleLogout = useCallback(() => {
+    closeDrawer();
+    setTimeout(() => {
+      Alert.alert('Sair', 'Deseja deslogar da sua conta?', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sair', style: 'destructive', onPress: logout },
+      ]);
+    }, 300);
+  }, [closeDrawer, logout]);
 
   const [refreshing, setRefreshing] = useState(false);
   const { data: allBanks = [] } = trpc.bank.getAll.useQuery();
@@ -426,7 +458,7 @@ export default function HomeScreen() {
                 {user?.name ? user.name.split(' ')[0] : 'Usuário'}
               </Text>
             </View>
-            <Pressable onPress={() => setMenuVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
+            <Pressable onPress={openDrawer} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
               <MaterialIcons name="menu" size={24} color="rgba(255,255,255,0.9)" />
             </Pressable>
           </View>
@@ -834,46 +866,158 @@ export default function HomeScreen() {
         onGenerateRemainingInstallments={async (id) => { await generateRemainingInstallments(id); showToast('Parcelas geradas!'); }}
       />
 
-      {/* Menu modal */}
-      <Modal visible={menuVisible} transparent animationType="slide" onRequestClose={() => setMenuVisible(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} onPress={() => setMenuVisible(false)}>
-          <Pressable onPress={() => {}} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 12, paddingBottom: 32 }}>
-            {/* Handle */}
-            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 16 }} />
+      {/* Drawer lateral */}
+      {menuVisible && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 }}>
+          {/* Overlay */}
+          <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', opacity: overlayAnim }}>
+            <Pressable style={{ flex: 1 }} onPress={closeDrawer} />
+          </Animated.View>
 
-            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.muted, paddingHorizontal: 20, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Menu</Text>
-
-            <Pressable onPress={() => { setMenuVisible(false); setShowExportModal(true); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 14 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#10B98115', alignItems: 'center', justifyContent: 'center' }}>
-                  <MaterialIcons name="file-download" size={22} color="#10B981" />
-                </View>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Exportar Relatório</Text>
+          {/* Drawer */}
+          <Animated.View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              bottom: 0,
+              width: drawerWidth,
+              backgroundColor: colors.background,
+              transform: [{ translateX: drawerAnim }],
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 0 },
+              shadowOpacity: 0.15,
+              shadowRadius: 20,
+              elevation: 20,
+            }}
+          >
+            {/* Drawer header com perfil */}
+            <View style={{ backgroundColor: '#0c3a5e', paddingTop: 56, paddingBottom: 24, paddingHorizontal: 24, gap: 16 }}>
+              <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: 'rgba(255,255,255,0.3)' }}>
+                <Text style={{ fontSize: 26, fontWeight: '800', color: '#fff' }}>
+                  {user?.name ? user.name.trim()[0].toUpperCase() : '?'}
+                </Text>
               </View>
-            </Pressable>
-
-            <Pressable onPress={() => { setMenuVisible(false); router.navigate('/(tabs)/settings'); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 14 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#6366F115', alignItems: 'center', justifyContent: 'center' }}>
-                  <MaterialIcons name="settings" size={22} color="#6366F1" />
-                </View>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Configurações</Text>
+              <View>
+                <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>
+                  {user?.name || 'Usuário'}
+                </Text>
+                <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+                  {user?.email || ''}
+                </Text>
               </View>
-            </Pressable>
+            </View>
 
-            {uberEnabled && (
-              <Pressable onPress={() => { setMenuVisible(false); setAppMode('uber'); router.replace('/(tabs)/uber-earnings'); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 14 }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#F59E0B15', alignItems: 'center', justifyContent: 'center' }}>
-                    <MaterialIcons name="directions-car" size={22} color="#F59E0B" />
+            {/* Menu items */}
+            <ScrollView style={{ flex: 1, paddingTop: 8 }} showsVerticalScrollIndicator={false}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: colors.muted, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                Geral
+              </Text>
+
+              {/* Home */}
+              <Pressable onPress={closeDrawer} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingVertical: 13 }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: '#0a7ea415', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="home" size={21} color="#0a7ea4" />
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Ganhos de Uber</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Início</Text>
                 </View>
               </Pressable>
-            )}
-          </Pressable>
-        </Pressable>
-      </Modal>
+
+              {/* Categorias */}
+              <Pressable onPress={() => { closeDrawer(); setTimeout(() => router.navigate('/(tabs)/categories'), 300); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingVertical: 13 }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: '#F59E0B15', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="category" size={21} color="#F59E0B" />
+                  </View>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Categorias</Text>
+                </View>
+              </Pressable>
+
+              {/* Histórico */}
+              <Pressable onPress={() => { closeDrawer(); setTimeout(() => router.navigate('/(tabs)/history'), 300); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingVertical: 13 }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: '#6366F115', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="bar-chart" size={21} color="#6366F1" />
+                  </View>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Histórico</Text>
+                </View>
+              </Pressable>
+
+              {/* Bancos */}
+              <Pressable onPress={() => { closeDrawer(); setTimeout(() => router.navigate('/(tabs)/banks'), 300); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingVertical: 13 }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: '#3B82F615', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="account-balance" size={21} color="#3B82F6" />
+                  </View>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Bancos</Text>
+                </View>
+              </Pressable>
+
+              {/* Assistente */}
+              <Pressable onPress={() => { closeDrawer(); setTimeout(() => router.navigate('/(tabs)/assistant'), 300); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingVertical: 13 }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: '#8B5CF615', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="smart-toy" size={21} color="#8B5CF6" />
+                  </View>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Assistente IA</Text>
+                </View>
+              </Pressable>
+
+              {/* Uber */}
+              {uberEnabled && (
+                <Pressable onPress={() => { closeDrawer(); setTimeout(() => { setAppMode('uber'); router.replace('/(tabs)/uber-earnings'); }, 300); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingVertical: 13 }}>
+                    <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: '#F59E0B15', alignItems: 'center', justifyContent: 'center' }}>
+                      <MaterialIcons name="directions-car" size={21} color="#F59E0B" />
+                    </View>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Ganhos de Uber</Text>
+                  </View>
+                </Pressable>
+              )}
+
+              {/* Divider */}
+              <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 24, marginVertical: 12 }} />
+
+              <Text style={{ fontSize: 11, fontWeight: '700', color: colors.muted, paddingHorizontal: 24, paddingBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                Ferramentas
+              </Text>
+
+              {/* Exportar */}
+              <Pressable onPress={() => { closeDrawer(); setTimeout(() => setShowExportModal(true), 300); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingVertical: 13 }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: '#10B98115', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="file-download" size={21} color="#10B981" />
+                  </View>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Exportar Relatório</Text>
+                </View>
+              </Pressable>
+
+              {/* Configurações */}
+              <Pressable onPress={() => { closeDrawer(); setTimeout(() => router.navigate('/(tabs)/settings'), 300); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingVertical: 13 }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: '#6B728015', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="settings" size={21} color="#6B7280" />
+                  </View>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Configurações</Text>
+                </View>
+              </Pressable>
+            </ScrollView>
+
+            {/* Footer: logout */}
+            <View style={{ borderTopWidth: 1, borderTopColor: colors.border, padding: 16 }}>
+              <Pressable onPress={handleLogout} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 8, paddingVertical: 10 }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: '#EF444415', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="logout" size={21} color="#EF4444" />
+                  </View>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: '#EF4444' }}>Sair da conta</Text>
+                </View>
+              </Pressable>
+            </View>
+          </Animated.View>
+        </View>
+      )}
 
       {/* Export modal */}
       <Modal visible={showExportModal} transparent animationType="fade" onRequestClose={() => setShowExportModal(false)}>

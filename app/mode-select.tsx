@@ -128,7 +128,7 @@ export default function ModeSelectScreen() {
 
         {/* Opção 1: Despesas Pessoais */}
         <Pressable
-          onPress={() => { setAppMode('personal'); router.replace("/bank-select"); }}
+          onPress={() => { setAppMode('personal'); router.replace("/onboarding"); }}
           style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
         >
           <View

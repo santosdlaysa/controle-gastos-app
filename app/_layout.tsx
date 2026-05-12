@@ -24,6 +24,7 @@ import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-run
 import { AuthProvider, useAuthContext } from "@/lib/auth-context";
 import { useMigration } from "@/hooks/use-migration";
 import { getUberFeatureEnabled, isUberFeatureUnconfigured } from "@/lib/uber-feature";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initPurchases } from "@/hooks/use-purchases";
 import { useAppOpenAd } from "@/hooks/use-app-open-ad";
 
@@ -93,8 +94,12 @@ function NavLayout() {
       (async () => {
         const unconfigured = await isUberFeatureUnconfigured();
         const uberEnabled = await getUberFeatureEnabled();
+        const onboardingDone = await AsyncStorage.getItem("onboarding_checklist_dismissed");
+
         if (unconfigured || uberEnabled) {
           router.replace("/mode-select");
+        } else if (onboardingDone !== 'true') {
+          router.replace("/onboarding");
         } else {
           router.replace("/(tabs)");
         }
@@ -132,6 +137,7 @@ function NavLayout() {
           <Stack.Screen name="login" options={{ presentation: "fullScreenModal" }} />
           <Stack.Screen name="oauth/callback" />
           <Stack.Screen name="mode-select" />
+          <Stack.Screen name="onboarding" />
           <Stack.Screen name="bank-select" />
           <Stack.Screen name="bank/[id]" />
           <Stack.Screen name="forgot-password" />

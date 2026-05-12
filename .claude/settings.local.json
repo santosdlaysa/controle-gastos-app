@@ -55,7 +55,13 @@
       "Bash(cd:*)",
       "Bash(git check-ignore:*)",
       "Bash(adb install:*)",
-      "Bash(adb uninstall:*)"
+      "Bash(adb uninstall:*)",
+      "Bash(xxd \"C:/Users/ldsantos/Documents/controle-gastos-app/public/app-ads.txt\")",
+      "Read(//c/Users/ldsantos/Documents/**)",
+      "Bash(npx create-next-app@latest controle-gastos-web --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-pnpm --no-turbopack)",
+      "Bash(xargs basename:*)",
+      "Bash(npx next:*)",
+      "Bash(pnpm remove:*)"
     ]
   }
 }
