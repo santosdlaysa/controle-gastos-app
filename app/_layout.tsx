@@ -104,7 +104,7 @@ function NavLayout() {
         const uberEnabled = await getUberFeatureEnabled();
         const onboardingDone = await AsyncStorage.getItem("onboarding_checklist_dismissed");
 
-        if (unconfigured || uberEnabled) {
+        if (unconfigured) {
           router.replace("/mode-select");
         } else if (onboardingDone !== 'true') {
           router.replace("/onboarding");
