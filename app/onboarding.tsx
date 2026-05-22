@@ -115,17 +115,17 @@ export default function OnboardingScreen() {
     }
   }
 
-  function handleNext() {
+  async function handleNext() {
     if (isLastStep) {
-      AsyncStorage.setItem(ONBOARDING_DISMISSED_KEY, 'true');
+      await AsyncStorage.setItem(ONBOARDING_DISMISSED_KEY, 'true');
       router.replace('/(tabs)');
       return;
     }
     setCurrentStep((s) => s + 1);
   }
 
-  function handleSkip() {
-    AsyncStorage.setItem(ONBOARDING_DISMISSED_KEY, 'true');
+  async function handleSkip() {
+    await AsyncStorage.setItem(ONBOARDING_DISMISSED_KEY, 'true');
     router.replace('/(tabs)');
   }
 
