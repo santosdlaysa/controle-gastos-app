@@ -21,7 +21,7 @@ import { useCategories } from '@/hooks/use-categories';
 import { useAuthContext } from '@/lib/auth-context';
 import { useThemeContext } from '@/lib/theme-provider';
 import { getUberFeatureEnabled, setUberFeatureEnabled } from '@/lib/uber-feature';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/use-colors';
 import { trpc } from '@/lib/trpc';

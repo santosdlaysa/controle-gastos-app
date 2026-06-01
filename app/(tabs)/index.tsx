@@ -19,7 +19,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/use-colors';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { ExpenseModal } from '@/components/expense-modal';
 import { useExpenses } from '@/hooks/use-expenses';

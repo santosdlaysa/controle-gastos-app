@@ -3,7 +3,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { trpc } from "@/lib/trpc";
 import { getAppMode } from "@/lib/mode";
 import { useColors } from "@/hooks/use-colors";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 

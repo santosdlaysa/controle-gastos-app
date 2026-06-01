@@ -9,6 +9,7 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com",
+        "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_pzLeJaDnomFldqSsdJSSFJGzPvK",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr"
       }
@@ -18,6 +19,7 @@
       "channel": "preview",
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com",
+        "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_pzLeJaDnomFldqSsdJSSFJGzPvK",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr"
       }
@@ -33,6 +35,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com",
+        "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_pzLeJaDnomFldqSsdJSSFJGzPvK",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr"
       }

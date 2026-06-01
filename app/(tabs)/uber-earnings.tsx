@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { useColors } from '@/hooks/use-colors';
 import { trpc } from '@/lib/trpc';
 import { setAppMode } from '@/lib/mode';
