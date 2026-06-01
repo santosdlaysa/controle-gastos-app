@@ -308,35 +308,56 @@ export function ExpenseModal({
                 value={bank}
                 onChangeText={setBank}
               />
-              {bankSuggestions.length > 0 && (
-                <View className="flex-row flex-wrap gap-2 mt-2">
-                  {bankSuggestions.map((suggestion) => (
-                    <Pressable
-                      key={suggestion.id}
-                      onPress={() => setBank(suggestion.name)}
-                      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+              <View className="flex-row flex-wrap gap-2 mt-2">
+                {/* Opção: sem conta / dinheiro */}
+                <Pressable
+                  onPress={() => setBank('')}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+                >
+                  <View
+                    className={cn(
+                      'px-3 py-1 rounded-full border',
+                      bank.trim() === ''
+                        ? 'bg-primary border-primary'
+                        : 'bg-surface border-border'
+                    )}
+                  >
+                    <Text
+                      className={cn(
+                        'text-xs font-medium',
+                        bank.trim() === '' ? 'text-background' : 'text-foreground'
+                      )}
                     >
-                      <View
+                      💵 Dinheiro / Sem conta
+                    </Text>
+                  </View>
+                </Pressable>
+                {bankSuggestions.map((suggestion) => (
+                  <Pressable
+                    key={suggestion.id}
+                    onPress={() => setBank(suggestion.name)}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+                  >
+                    <View
+                      className={cn(
+                        'px-3 py-1 rounded-full border',
+                        bank === suggestion.name
+                          ? 'bg-primary border-primary'
+                          : 'bg-surface border-border'
+                      )}
+                    >
+                      <Text
                         className={cn(
-                          'px-3 py-1 rounded-full border',
-                          bank === suggestion.name
-                            ? 'bg-primary border-primary'
-                            : 'bg-surface border-border'
+                          'text-xs font-medium',
+                          bank === suggestion.name ? 'text-background' : 'text-foreground'
                         )}
                       >
-                        <Text
-                          className={cn(
-                            'text-xs font-medium',
-                            bank === suggestion.name ? 'text-background' : 'text-foreground'
-                          )}
-                        >
-                          {suggestion.name}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
+                        {suggestion.name}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
             </View>}
 
             {/* Payment type field */}

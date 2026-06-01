@@ -27,6 +27,7 @@ import { useAuthContext } from '@/lib/auth-context';
 import { CATEGORY_LABELS, CATEGORY_COLORS, Expense } from '@/types/expense';
 import { trpc } from '@/lib/trpc';
 import { setAppMode } from '@/lib/mode';
+import { setFabListener } from '@/lib/fab-action';
 import { getUberFeatureEnabled } from '@/lib/uber-feature';
 import { Toast, useToast } from '@/components/toast';
 import { AdBanner } from '@/components/ad-banner';
@@ -295,6 +296,7 @@ export default function HomeScreen() {
   const [unbankedModalVisible, setUnbankedModalVisible] = useState(false);
   const [nextMonthModalVisible, setNextMonthModalVisible] = useState(false);
   const [editExpenseVisible, setEditExpenseVisible] = useState(false);
+  const [addExpenseVisible, setAddExpenseVisible] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>();
   const { toast, show: showToast } = useToast();
 
@@ -359,7 +361,7 @@ export default function HomeScreen() {
     showToast('Ordem salva!');
   }
 
-  const { expenses, loading, updateExpense, deleteExpense, moveExpenseToNextMonth, generateRemainingInstallments } = useExpenses(currentMonth);
+  const { expenses, loading, addExpense, updateExpense, deleteExpense, moveExpenseToNextMonth, generateRemainingInstallments } = useExpenses(currentMonth);
 
   const nextMonth = useMemo(() => addMonths(currentMonth, 1), [currentMonth]);
   const { data: nextMonthExpenses = [] } = trpc.expense.getByMonth.useQuery({ month: nextMonth });
@@ -408,6 +410,12 @@ export default function HomeScreen() {
 
   useFocusEffect(useCallback(() => {
     getUberFeatureEnabled().then(setUberEnabled);
+  }, []));
+
+  // FAB central da navbar cria uma despesa direto (sem precisar abrir um banco antes)
+  useFocusEffect(useCallback(() => {
+    setFabListener(() => { setSelectedExpense(undefined); setAddExpenseVisible(true); });
+    return () => setFabListener(null);
   }, []));
 
   const handleRefresh = useCallback(async () => {
@@ -470,12 +478,12 @@ export default function HomeScreen() {
           {/* Banner: despesas sem banco */}
           {unbankedExpenses.length > 0 && (
             <Pressable onPress={() => setUnbankedModalVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, marginBottom: 16 }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#F59E0B14', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: '#F59E0B33' }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F59E0B22', alignItems: 'center', justifyContent: 'center' }}>
-                  <MaterialIcons name="warning-amber" size={18} color="#F59E0B" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: colors.border }}>
+                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#0a7ea415', alignItems: 'center', justifyContent: 'center' }}>
+                  <MaterialIcons name="payments" size={18} color="#0a7ea4" />
                 </View>
                 <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: colors.foreground }}>
-                  {unbankedExpenses.length} {unbankedExpenses.length === 1 ? 'despesa sem conta atribuída' : 'despesas sem conta atribuída'}
+                  {unbankedExpenses.length} {unbankedExpenses.length === 1 ? 'despesa sem conta' : 'despesas sem conta'}
                 </Text>
                 <MaterialIcons name="chevron-right" size={18} color={colors.muted} />
               </View>
@@ -903,6 +911,14 @@ export default function HomeScreen() {
         onDelete={async (id) => { await deleteExpense(id); showToast('Despesa removida', 'info'); }}
         onMoveToNextMonth={async (id) => { await moveExpenseToNextMonth(id); showToast('Movida para o próximo mês!'); }}
         onGenerateRemainingInstallments={async (id) => { await generateRemainingInstallments(id); showToast('Parcelas geradas!'); }}
+      />
+
+      {/* ExpenseModal para criar despesa rápida (FAB) — banco/cartão opcional */}
+      <ExpenseModal
+        visible={addExpenseVisible}
+        month={currentMonth}
+        onClose={() => setAddExpenseVisible(false)}
+        onSave={async (data) => { await addExpense(data); showToast('Despesa adicionada!'); }}
       />
 
       {/* Drawer lateral */}
