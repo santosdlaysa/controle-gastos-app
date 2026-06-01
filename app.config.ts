@@ -132,7 +132,7 @@ const config: ExpoConfig = {
       "expo-build-properties",
       {
         ios: {
-          deploymentTarget: "15.1",
+          deploymentTarget: "16.4",
         },
         android: {
           buildArchs: ["armeabi-v7a", "arm64-v8a"],
