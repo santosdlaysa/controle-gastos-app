@@ -173,7 +173,7 @@ export default function BankDetailScreen() {
     setModalVisible(true);
   }, []);
 
-  const handleSaveExpense = useCallback(async (data: Omit<Expense, 'id' | 'date' | 'month'>) => {
+  const handleSaveExpense = useCallback(async (data: Omit<Expense, 'id' | 'date' | 'month'> & { date?: string }) => {
     if (selectedExpense) {
       await updateExpense(selectedExpense.id, data);
       // Ajusta saldo: desfaz valor antigo, aplica valor novo
@@ -568,6 +568,7 @@ export default function BankDetailScreen() {
       <ExpenseModal
         visible={modalVisible}
         expense={selectedExpense}
+        month={currentMonth}
         defaultBank={bank?.name}
         defaultPaymentType={paymentTypeFilter}
         hideBankField={!selectedExpense}

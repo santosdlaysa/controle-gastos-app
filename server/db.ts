@@ -10,7 +10,17 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      const client = postgres(process.env.DATABASE_URL, { ssl: { rejectUnauthorized: false }, onnotice: () => {} });
+      const client = postgres(process.env.DATABASE_URL, {
+        ssl: { rejectUnauthorized: false },
+        onnotice: () => {},
+        // postgres() is lazy: it does NOT connect here, only on the first query.
+        // Without these, an unreachable DB makes every query hang until the
+        // platform gateway kills the request (~35s → 502). With a connect
+        // timeout the query rejects quickly and the route returns a clean 500.
+        connect_timeout: 10, // seconds to establish a connection
+        idle_timeout: 20, // close idle conns (free-tier friendly)
+        max: 5,
+      });
       _db = drizzle(client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);

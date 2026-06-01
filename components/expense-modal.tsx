@@ -20,10 +20,12 @@ interface ExpenseModalProps {
   expense?: Expense;
   defaultBank?: string;
   defaultPaymentType?: 'debit' | 'credit';
+  /** Mês corrente (YYYY-MM) ao qual a despesa pertence; usado para montar a data do dia escolhido */
+  month?: string;
   hideBankField?: boolean;
   hidePaymentTypeField?: boolean;
   onClose: () => void;
-  onSave: (data: Omit<Expense, 'id' | 'date' | 'month'>) => void;
+  onSave: (data: Omit<Expense, 'id' | 'date' | 'month'> & { date?: string }) => void;
   onDelete?: (id: string) => void;
   onMoveToNextMonth?: (id: string) => void;
   onGenerateRemainingInstallments?: (id: string) => void;
@@ -34,6 +36,7 @@ export function ExpenseModal({
   expense,
   defaultBank,
   defaultPaymentType,
+  month,
   hideBankField,
   hidePaymentTypeField,
   onClose,
@@ -46,6 +49,7 @@ export function ExpenseModal({
   const [category, setCategory] = useState<string>('');
   const [quantity, setQuantity] = useState('');
   const [value, setValue] = useState('');
+  const [day, setDay] = useState('');
   const [bank, setBank] = useState('');
   const [paymentType, setPaymentType] = useState<'debit' | 'credit' | null>(null);
   const [expenseType, setExpenseType] = useState<'fixed' | 'variable' | null>(null);
@@ -65,6 +69,7 @@ export function ExpenseModal({
       setPaymentType(expense.paymentType ?? null);
       setExpenseType(expense.expenseType ?? null);
       setDebtorId(expense.debtorId ?? null);
+      setDay(expense.date ? String(new Date(expense.date).getDate()) : '');
     } else {
       setName('');
       setCategory(categoryList[0]?.name ?? 'outro');
@@ -74,6 +79,10 @@ export function ExpenseModal({
       setPaymentType(defaultPaymentType ?? null);
       setExpenseType(null);
       setDebtorId(null);
+      // Pré-preenche com o dia de hoje quando o mês corrente é o mês atual
+      const now = new Date();
+      const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      setDay(!month || month === currentMonthStr ? String(now.getDate()) : '');
     }
   }, [expense, visible]);
 
@@ -89,6 +98,22 @@ export function ExpenseModal({
       return;
     }
 
+    // Monta a data a partir do dia escolhido dentro do mês corrente
+    let date: string | undefined;
+    if (day.trim()) {
+      const dayNum = parseInt(day.trim(), 10);
+      const [y, m] = (month ?? `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
+        .split('-')
+        .map(Number);
+      const daysInMonth = new Date(y, m, 0).getDate();
+      if (isNaN(dayNum) || dayNum < 1 || dayNum > daysInMonth) {
+        Alert.alert('Erro', `Dia deve ser um número entre 1 e ${daysInMonth}`);
+        return;
+      }
+      // Meio-dia local evita que a data "volte" um dia em fusos negativos
+      date = new Date(y, m - 1, dayNum, 12, 0, 0).toISOString();
+    }
+
     onSave({
       name: name.trim(),
       category,
@@ -98,6 +123,7 @@ export function ExpenseModal({
       paymentType: paymentType ?? null,
       expenseType: expenseType ?? null,
       debtorId: debtorId ?? null,
+      ...(date && { date }),
     });
 
     onClose();
@@ -251,6 +277,22 @@ export function ExpenseModal({
                 placeholderTextColor="#9BA1A6"
                 value={quantity}
                 onChangeText={setQuantity}
+              />
+            </View>
+
+            {/* Day field */}
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-foreground mb-2">
+                Dia do mês (opcional)
+              </Text>
+              <TextInput
+                className="bg-surface border border-border rounded-lg p-3 text-foreground"
+                placeholder="Ex: 15"
+                placeholderTextColor="#9BA1A6"
+                value={day}
+                onChangeText={(t) => setDay(t.replace(/[^0-9]/g, '').slice(0, 2))}
+                keyboardType="number-pad"
+                maxLength={2}
               />
             </View>
 

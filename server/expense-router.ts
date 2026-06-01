@@ -98,6 +98,7 @@ export const expenseRouter = router({
         name: z.string().min(1).optional(),
         category: categoryEnum.optional(),
         value: z.number().positive().optional(),
+        date: z.string().optional(),
         quantity: z.string().nullable().optional(),
         paid: z.boolean().optional(),
         bank: z.string().max(100).nullable().optional(),
@@ -113,6 +114,7 @@ export const expenseRouter = router({
       if (updates.name !== undefined) data.name = updates.name;
       if (updates.category !== undefined) data.category = updates.category;
       if (updates.value !== undefined) data.value = updates.value.toFixed(2);
+      if (updates.date !== undefined) data.date = updates.date;
       if (updates.quantity !== undefined) data.quantity = updates.quantity;
       if (updates.paid !== undefined) data.paid = updates.paid;
       if (updates.bank !== undefined) data.bank = updates.bank;

@@ -7,8 +7,13 @@ type ApiResponse<T> = {
   error?: string;
 };
 
+// Default timeout for normal requests. Auth endpoints use a larger value to
+// absorb the backend's cold start (Render free tier hibernates after idle).
+const DEFAULT_TIMEOUT_MS = 30000;
+const AUTH_TIMEOUT_MS = 60000;
+
 export async function apiCall<T>(endpoint: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
-  const { timeoutMs = 10000, ...fetchOptions } = options;
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, ...fetchOptions } = options;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((fetchOptions.headers as Record<string, string>) || {}),
@@ -101,6 +106,7 @@ export async function login(
   return apiCall<{ token: string; user: any }>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
+    timeoutMs: AUTH_TIMEOUT_MS,
   });
 }
 
@@ -111,6 +117,7 @@ export async function register(
   return apiCall<{ token: string; user: any }>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify({ email, password }),
+    timeoutMs: AUTH_TIMEOUT_MS,
   });
 }
 
@@ -145,6 +152,7 @@ export async function forgotPassword(email: string): Promise<void> {
   await apiCall<{ success: boolean }>("/api/auth/forgot-password", {
     method: "POST",
     body: JSON.stringify({ email }),
+    timeoutMs: AUTH_TIMEOUT_MS,
   });
 }
 
@@ -152,6 +160,7 @@ export async function resetPassword(email: string, code: string, newPassword: st
   await apiCall<{ success: boolean }>("/api/auth/reset-password", {
     method: "POST",
     body: JSON.stringify({ email, code, newPassword }),
+    timeoutMs: AUTH_TIMEOUT_MS,
   });
 }
 

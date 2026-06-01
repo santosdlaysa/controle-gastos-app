@@ -1,11 +1,17 @@
-import { ActivityIndicator, ScrollView, Text, View, Pressable } from "react-native";
+import { ActivityIndicator, ScrollView, Text, View, Pressable, Modal } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
+import { ExpenseItem } from "@/components/expense-item";
 import { trpc } from "@/lib/trpc";
 import { getAppMode } from "@/lib/mode";
 import { useColors } from "@/hooks/use-colors";
+import { useCategories } from "@/hooks/use-categories";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Expense } from "@/types/expense";
+
+const fmt = (value: number) =>
+  value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const getMonthLabel = (monthStr: string) => {
   const [year, month] = monthStr.split("-");
@@ -19,11 +25,97 @@ const getShortMonthLabel = (monthStr: string) => {
   return date.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
 };
 
+// ─── MODAL: DESPESAS DO MÊS ──────────────────────────────────────────────────
+
+function MonthExpensesModal({ month, onClose }: { month: string | null; onClose: () => void }) {
+  const colors = useColors();
+  const { colorMap, labelMap, iconMap } = useCategories();
+  const { data, isLoading } = trpc.expense.getByMonth.useQuery(
+    { month: month ?? "" },
+    { enabled: !!month },
+  );
+
+  const expenses: Expense[] = useMemo(() => {
+    return (data ?? [])
+      .map((row) => ({
+        id: String(row.id),
+        name: row.name,
+        category: row.category as Expense["category"],
+        value: parseFloat(String(row.value)),
+        date: row.date,
+        month: row.month,
+        quantity: row.quantity ?? undefined,
+        paid: row.paid ?? undefined,
+        bank: row.bank ?? null,
+        paymentType: (row.paymentType as Expense["paymentType"]) ?? null,
+        expenseType: (row.expenseType as Expense["expenseType"]) ?? null,
+        debtorName: (row as { debtorName?: string | null }).debtorName ?? null,
+      }))
+      .sort((a, b) => {
+        // Ordena por data (dia) crescente; sem data vai para o fim
+        if (a.date && b.date) return a.date.localeCompare(b.date);
+        if (a.date) return -1;
+        if (b.date) return 1;
+        return 0;
+      });
+  }, [data]);
+
+  const total = useMemo(() => expenses.reduce((s, e) => s + e.value, 0), [expenses]);
+
+  return (
+    <Modal visible={!!month} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }} onPress={onClose}>
+        <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, maxHeight: '85%' }}>
+          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, marginBottom: 12 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#0a7ea415', alignItems: 'center', justifyContent: 'center' }}>
+              <MaterialIcons name="receipt-long" size={20} color="#0a7ea4" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground, textTransform: 'capitalize' }}>
+                {month ? getMonthLabel(month) : ''}
+              </Text>
+              <Text style={{ fontSize: 12, color: colors.muted }}>
+                {expenses.length} {expenses.length === 1 ? 'despesa' : 'despesas'}
+              </Text>
+            </View>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: colors.error }}>
+              R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Text>
+          </View>
+          {isLoading ? (
+            <ActivityIndicator color="#0a7ea4" style={{ marginVertical: 32 }} />
+          ) : expenses.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Nenhuma despesa</Text>
+              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4, textAlign: 'center' }}>Este mês não possui despesas registradas.</Text>
+            </View>
+          ) : (
+            <ScrollView style={{ paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+              {expenses.map((exp) => (
+                <ExpenseItem
+                  key={exp.id}
+                  expense={exp}
+                  onPress={() => {}}
+                  colorMap={colorMap}
+                  labelMap={labelMap}
+                  iconMap={iconMap}
+                />
+              ))}
+            </ScrollView>
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 // ─── HISTÓRICO DESPESAS PESSOAIS ─────────────────────────────────────────────
 
 function PersonalHistory() {
   const colors = useColors();
   const [year, setYear] = useState(String(new Date().getFullYear()));
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.history.getSummaries.useQuery();
 
@@ -44,7 +136,7 @@ function PersonalHistory() {
       const totalExpenses = parseFloat(m.totalExpenses ?? "0");
       return { month: m.month, totalIncome, totalExpenses, balance: totalIncome - totalExpenses };
     })
-    .sort((a, b) => (a.month < b.month ? 1 : -1));
+    .sort((a, b) => (a.month < b.month ? -1 : 1));
 
   const totalExpensesYear = summaries.reduce((s, m) => s + m.totalExpenses, 0);
   // totalIncome é um valor mensal fixo — não multiplicar pelo nº de meses
@@ -89,8 +181,12 @@ function PersonalHistory() {
             {isLoading ? (
               <ActivityIndicator color="#93C5FD" size="large" style={{ marginVertical: 8 }} />
             ) : (
-              <Text style={{ color: totalBalanceYear >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54 }}>
-                R$ {totalBalanceYear.toFixed(2)}
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={{ color: totalBalanceYear >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54, textAlign: 'center', alignSelf: 'stretch' }}
+              >
+                R$ {fmt(totalBalanceYear)}
               </Text>
             )}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
@@ -105,12 +201,12 @@ function PersonalHistory() {
           <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 28, gap: 10 }}>
             <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(147,197,253,0.25)' }}>
               <Text style={{ color: '#93C5FD', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 }}>Renda Mensal</Text>
-              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>R$ {totalIncome.toFixed(2)}</Text>
+              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>R$ {fmt(totalIncome)}</Text>
               <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>valor fixo por mês</Text>
             </View>
             <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(252,165,165,0.25)' }}>
               <Text style={{ color: '#FCA5A5', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 }}>Total Despesas</Text>
-              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>R$ {totalExpensesYear.toFixed(2)}</Text>
+              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>R$ {fmt(totalExpensesYear)}</Text>
               <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>{summaries.length} meses rastreados</Text>
             </View>
           </View>
@@ -137,22 +233,22 @@ function PersonalHistory() {
                 ) : summaries.map((m) => {
                   const ratio = maxExpenses > 0 ? Math.max(0.04, m.totalExpenses / maxExpenses) : 0;
                   return (
-                    <View key={m.month} style={{ marginBottom: 10 }}>
+                    <Pressable key={m.month} onPress={() => setSelectedMonth(m.month)} style={({ pressed }) => [{ marginBottom: 10, opacity: pressed ? 0.6 : 1 }]}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
                         <Text style={{ fontSize: 12, color: colors.foreground, fontWeight: '500', textTransform: 'capitalize' }}>
                           {getShortMonthLabel(m.month)}
                         </Text>
                         <View style={{ flexDirection: 'row', gap: 8 }}>
-                          <Text style={{ fontSize: 11, color: colors.error, fontWeight: '600' }}>-R$ {m.totalExpenses.toFixed(2)}</Text>
+                          <Text style={{ fontSize: 11, color: colors.error, fontWeight: '600' }}>-R$ {fmt(m.totalExpenses)}</Text>
                           <Text style={{ fontSize: 11, color: m.balance >= 0 ? '#0a7ea4' : colors.error }}>
-                            {m.balance >= 0 ? '▲' : '▼'} R$ {Math.abs(m.balance).toFixed(2)}
+                            {m.balance >= 0 ? '▲' : '▼'} R$ {fmt(Math.abs(m.balance))}
                           </Text>
                         </View>
                       </View>
                       <View style={{ height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden' }}>
                         <View style={{ height: 8, borderRadius: 4, backgroundColor: colors.error, width: `${ratio * 100}%` }} />
                       </View>
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>
@@ -163,33 +259,43 @@ function PersonalHistory() {
                 {isLoading ? (
                   <ActivityIndicator color="#0a7ea4" style={{ marginVertical: 24 }} />
                 ) : summaries.map((m) => (
-                  <View key={m.month} style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.border }}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: colors.foreground, marginBottom: 12, textTransform: 'capitalize' }}>
-                      {getMonthLabel(m.month)}
-                    </Text>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                      <View style={{ flex: 1, backgroundColor: '#0a7ea410', borderRadius: 12, padding: 10 }}>
-                        <Text style={{ fontSize: 9, color: colors.muted, marginBottom: 3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Renda</Text>
-                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#0a7ea4' }}>R$ {m.totalIncome.toFixed(2)}</Text>
-                      </View>
-                      <View style={{ flex: 1, backgroundColor: colors.error + '12', borderRadius: 12, padding: 10 }}>
-                        <Text style={{ fontSize: 9, color: colors.muted, marginBottom: 3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Despesas</Text>
-                        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.error }}>R$ {m.totalExpenses.toFixed(2)}</Text>
-                      </View>
-                      <View style={{ flex: 1, backgroundColor: m.balance >= 0 ? '#0a7ea410' : colors.error + '12', borderRadius: 12, padding: 10 }}>
-                        <Text style={{ fontSize: 9, color: colors.muted, marginBottom: 3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Saldo</Text>
-                        <Text style={{ fontSize: 15, fontWeight: '700', color: m.balance >= 0 ? '#0a7ea4' : colors.error }}>
-                          R$ {m.balance.toFixed(2)}
+                  <Pressable key={m.month} onPress={() => setSelectedMonth(m.month)} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}>
+                    <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.border }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: colors.foreground, textTransform: 'capitalize' }}>
+                          {getMonthLabel(m.month)}
                         </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: '#0a7ea4' }}>Ver despesas</Text>
+                          <MaterialIcons name="chevron-right" size={16} color="#0a7ea4" />
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <View style={{ flex: 1, backgroundColor: '#0a7ea410', borderRadius: 12, padding: 10 }}>
+                          <Text style={{ fontSize: 9, color: colors.muted, marginBottom: 3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Renda</Text>
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: '#0a7ea4' }}>R$ {fmt(m.totalIncome)}</Text>
+                        </View>
+                        <View style={{ flex: 1, backgroundColor: colors.error + '12', borderRadius: 12, padding: 10 }}>
+                          <Text style={{ fontSize: 9, color: colors.muted, marginBottom: 3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Despesas</Text>
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: colors.error }}>R$ {fmt(m.totalExpenses)}</Text>
+                        </View>
+                        <View style={{ flex: 1, backgroundColor: m.balance >= 0 ? '#0a7ea410' : colors.error + '12', borderRadius: 12, padding: 10 }}>
+                          <Text style={{ fontSize: 9, color: colors.muted, marginBottom: 3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Saldo</Text>
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: m.balance >= 0 ? '#0a7ea4' : colors.error }}>
+                            R$ {fmt(m.balance)}
+                          </Text>
+                        </View>
                       </View>
                     </View>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             </>
           )}
         </View>
       </ScrollView>
+
+      <MonthExpensesModal month={selectedMonth} onClose={() => setSelectedMonth(null)} />
     </ScreenContainer>
   );
 }
@@ -259,7 +365,7 @@ function UberHistory() {
               <ActivityIndicator color="#93C5FD" size="large" style={{ marginVertical: 8 }} />
             ) : (
               <Text style={{ color: totalLucro >= 0 ? '#93C5FD' : '#FCA5A5', fontSize: 46, fontWeight: '800', letterSpacing: -2, lineHeight: 54 }}>
-                R$ {totalLucro.toFixed(2)}
+                R$ {fmt(totalLucro)}
               </Text>
             )}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
@@ -274,12 +380,12 @@ function UberHistory() {
           <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 28, gap: 10 }}>
             <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(147,197,253,0.25)' }}>
               <Text style={{ color: '#93C5FD', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 }}>Total Ganhos</Text>
-              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>R$ {totalGanhos.toFixed(2)}</Text>
+              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>R$ {fmt(totalGanhos)}</Text>
               <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>acumulado no ano</Text>
             </View>
             <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(252,165,165,0.25)' }}>
               <Text style={{ color: '#FCA5A5', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 }}>Total Gastos</Text>
-              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>R$ {totalGastos.toFixed(2)}</Text>
+              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>R$ {fmt(totalGastos)}</Text>
               <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 3 }}>acumulado no ano</Text>
             </View>
           </View>
@@ -313,9 +419,9 @@ function UberHistory() {
                           {getShortMonthLabel(m.month)}
                         </Text>
                         <View style={{ flexDirection: 'row', gap: 8 }}>
-                          <Text style={{ fontSize: 11, color: '#0a7ea4', fontWeight: '600' }}>+R$ {m.ganhos.toFixed(2)}</Text>
+                          <Text style={{ fontSize: 11, color: '#0a7ea4', fontWeight: '600' }}>+R$ {fmt(m.ganhos)}</Text>
                           <Text style={{ fontSize: 11, color: lucroPositivo ? colors.muted : colors.error }}>
-                            {lucroPositivo ? '▲' : '▼'} R$ {Math.abs(m.lucro).toFixed(2)}
+                            {lucroPositivo ? '▲' : '▼'} R$ {fmt(Math.abs(m.lucro))}
                           </Text>
                         </View>
                       </View>
@@ -342,16 +448,16 @@ function UberHistory() {
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <View style={{ flex: 1, backgroundColor: '#0a7ea410', borderRadius: 12, padding: 10 }}>
                         <Text style={{ fontSize: 9, color: colors.muted, marginBottom: 3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Ganhos</Text>
-                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#0a7ea4' }}>R$ {m.ganhos.toFixed(2)}</Text>
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#0a7ea4' }}>R$ {fmt(m.ganhos)}</Text>
                       </View>
                       <View style={{ flex: 1, backgroundColor: colors.error + '12', borderRadius: 12, padding: 10 }}>
                         <Text style={{ fontSize: 9, color: colors.muted, marginBottom: 3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Gastos</Text>
-                        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.error }}>R$ {m.gastos.toFixed(2)}</Text>
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.error }}>R$ {fmt(m.gastos)}</Text>
                       </View>
                       <View style={{ flex: 1, backgroundColor: m.lucro >= 0 ? '#0a7ea410' : colors.error + '12', borderRadius: 12, padding: 10 }}>
                         <Text style={{ fontSize: 9, color: colors.muted, marginBottom: 3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Lucro</Text>
                         <Text style={{ fontSize: 15, fontWeight: '700', color: m.lucro >= 0 ? '#0a7ea4' : colors.error }}>
-                          R$ {m.lucro.toFixed(2)}
+                          R$ {fmt(m.lucro)}
                         </Text>
                       </View>
                     </View>

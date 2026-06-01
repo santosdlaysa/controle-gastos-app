@@ -19,6 +19,7 @@ import { ActivityIndicator, Platform, Text, View } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { useColors } from "@/hooks/use-colors";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ThemeProvider } from "@/lib/theme-provider";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -205,7 +206,7 @@ function NavLayout() {
   );
 }
 
-export default function RootLayout() {
+function RootLayoutInner() {
   const initialInsets =
       initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
 
@@ -310,5 +311,13 @@ export default function RootLayout() {
             </SafeAreaProvider>
         )}
       </NavThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+      <ThemeProvider>
+        <RootLayoutInner />
+      </ThemeProvider>
   );
 }

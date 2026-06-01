@@ -132,7 +132,7 @@ export function ExpenseItem({ expense, onPress, onTogglePaid, colorMap, labelMap
           <Text style={{ fontSize: 15, fontWeight: '700', color: accentColor }}>
             R$ {expense.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </Text>
-          {onTogglePaid && (expense.quantity || expense.paymentType !== 'debit') && (
+          {onTogglePaid && (
             <Pressable
               onPress={() => onTogglePaid(expense)}
               hitSlop={10}

@@ -256,7 +256,7 @@ function DebtorsShortcut() {
   const totalOwed = debtors.reduce((sum, d) => sum + parseFloat(String(d.totalOwed)), 0);
   return (
     <Pressable onPress={() => router.navigate('/(tabs)/debtors')} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
-      <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
+      <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 2 }}>
         <View style={{ height: 3, backgroundColor: '#EF4444' }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
           <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: '#EF444415', alignItems: 'center', justifyContent: 'center' }}>
@@ -444,51 +444,54 @@ export default function HomeScreen() {
       >
 
         {/* HERO */}
-        <View style={{ backgroundColor: '#0c3a5e', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 48 }}>
+        <View style={{ backgroundColor: '#0c3a5e', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 56 }}>
           {/* Avatar + saudação + nome + menu */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)' }}>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>
+            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 19, fontWeight: '700', color: '#fff' }}>
                 {user?.name ? user.name.trim()[0].toUpperCase() : '?'}
               </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: '500' }}>Bem-vindo de volta</Text>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: '#fff' }}>
+              <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: '500', letterSpacing: 0.2 }}>Bem-vindo de volta</Text>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff', letterSpacing: -0.4, marginTop: 1 }}>
                 {user?.name ? user.name.split(' ')[0] : 'Usuário'}
               </Text>
             </View>
-            <Pressable onPress={openDrawer} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}>
-              <MaterialIcons name="menu" size={24} color="rgba(255,255,255,0.9)" />
+            <Pressable onPress={openDrawer} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }]}>
+              <MaterialIcons name="menu" size={22} color="rgba(255,255,255,0.95)" />
             </Pressable>
           </View>
         </View>
 
         {/* CONTENT */}
-        <View className="bg-background" style={{ borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -20, paddingTop: 20, paddingHorizontal: 16, paddingBottom: 100 }}>
+        <View className="bg-background" style={{ borderTopLeftRadius: 28, borderTopRightRadius: 28, marginTop: -28, paddingTop: 24, paddingHorizontal: 20, paddingBottom: 100 }}>
 
           {/* Banner: despesas sem banco */}
           {unbankedExpenses.length > 0 && (
             <Pressable onPress={() => setUnbankedModalVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, marginBottom: 16 }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F59E0B', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 }}>
-                <MaterialIcons name="warning" size={18} color="#fff" />
-                <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: '#fff' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#F59E0B14', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: '#F59E0B33' }}>
+                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F59E0B22', alignItems: 'center', justifyContent: 'center' }}>
+                  <MaterialIcons name="warning-amber" size={18} color="#F59E0B" />
+                </View>
+                <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: colors.foreground }}>
                   {unbankedExpenses.length} {unbankedExpenses.length === 1 ? 'despesa sem conta atribuída' : 'despesas sem conta atribuída'}
                 </Text>
-                <MaterialIcons name="chevron-right" size={18} color="#fff" />
+                <MaterialIcons name="chevron-right" size={18} color={colors.muted} />
               </View>
             </Pressable>
           )}
           {loading ? (
             <ActivityIndicator color={colors.tint} style={{ marginTop: 40 }} />
           ) : allBanks.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingTop: 60, gap: 16 }}>
-              <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#0a7ea415', alignItems: 'center', justifyContent: 'center' }}>
-                <MaterialIcons name="account-balance" size={36} color="#0a7ea4" />
+            <View style={{ alignItems: 'center', paddingTop: 56, paddingHorizontal: 24, gap: 14 }}>
+              <View style={{ width: 80, height: 80, borderRadius: 28, backgroundColor: '#0a7ea412', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="account-balance" size={38} color="#0a7ea4" />
               </View>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.foreground, textAlign: 'center' }}>Nenhuma conta cadastrada</Text>
-              <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 20 }}>Adicione uma conta ou cartão para visualizar seu painel financeiro.</Text>
-              <Pressable onPress={() => router.navigate('/(tabs)/banks')} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, backgroundColor: '#0a7ea4', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14 }]}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, textAlign: 'center', letterSpacing: -0.3 }}>Nenhuma conta cadastrada</Text>
+              <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 20, maxWidth: 280 }}>Adicione uma conta ou cartão para visualizar seu painel financeiro.</Text>
+              <Pressable onPress={() => router.navigate('/(tabs)/banks')} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0a7ea4', paddingHorizontal: 22, paddingVertical: 13, borderRadius: 14, marginTop: 4 }]}>
+                <MaterialIcons name="add" size={18} color="#fff" />
                 <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Adicionar conta</Text>
               </Pressable>
             </View>
@@ -505,33 +508,66 @@ export default function HomeScreen() {
             const totalAvailable = banks.reduce((sum, b) => {
               return sum + (b.debitBalance != null ? parseFloat(String(b.debitBalance)) : 0);
             }, 0);
-            const hasSaldo = banks.some(b => b.debitBalance != null);
+            const faturaTotal = Object.values(bankSummaries).reduce((sum, s) => sum + s.creditTotal, 0);
+            const quickActions: { icon: React.ComponentProps<typeof MaterialIcons>['name']; label: string; color: string; onPress: () => void }[] = [
+              { icon: 'bar-chart', label: 'Histórico', color: '#6366F1', onPress: () => router.navigate('/(tabs)/history') },
+              { icon: 'category', label: 'Categorias', color: '#F59E0B', onPress: () => router.navigate('/(tabs)/categories') },
+              { icon: 'people', label: 'Devedores', color: '#EC4899', onPress: () => router.navigate('/(tabs)/debtors') },
+              { icon: 'file-download', label: 'Exportar', color: '#10B981', onPress: () => setShowExportModal(true) },
+            ];
 
             return (
-              <View style={{ gap: 24 }}>
+              <View style={{ gap: 20 }}>
+
+                {/* ── Resumo financeiro (destaque) ── */}
+                <View style={{ backgroundColor: colors.surface, borderRadius: 24, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 16, elevation: 3 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.6 }}>Saldo disponível</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+                    <Text numberOfLines={1} adjustsFontSizeToFit style={{ flex: 1, fontSize: 34, fontWeight: '800', color: colors.foreground, letterSpacing: -1.2 }}>
+                      R$ {fmt(totalAvailable)}
+                    </Text>
+                    <View style={{ width: 46, height: 46, borderRadius: 16, backgroundColor: '#0a7ea415', alignItems: 'center', justifyContent: 'center', marginLeft: 12 }}>
+                      <MaterialIcons name="account-balance-wallet" size={24} color="#0a7ea4" />
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 18, gap: 16 }}>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444' }} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, color: colors.muted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 }}>Faturas</Text>
+                        <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>R$ {fmt(faturaTotal)}</Text>
+                      </View>
+                    </View>
+                    <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: colors.border }} />
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#0a7ea4' }} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, color: colors.muted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 }}>Contas ativas</Text>
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>{banks.length}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {/* ── Ações rápidas ── */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  {quickActions.map((a) => (
+                    <Pressable key={a.label} onPress={a.onPress} style={({ pressed }) => [{ opacity: pressed ? 0.65 : 1, alignItems: 'center', gap: 7, flex: 1 }]}>
+                      <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: a.color + '15', alignItems: 'center', justifyContent: 'center' }}>
+                        <MaterialIcons name={a.icon} size={24} color={a.color} />
+                      </View>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: colors.foreground }}>{a.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
 
                 {/* ── Ad Banner ── */}
                 {!isPremium && <AdBanner />}
 
-                {/* ── Saldo Geral ── */}
-                {hasSaldo && (
-                  <View style={{ backgroundColor: '#0a7ea4', borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <View>
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Saldo Disponível Total</Text>
-                      <Text style={{ fontSize: 28, fontWeight: '900', color: '#fff', letterSpacing: -1 }}>
-                        R$ {fmt(totalAvailable)}
-                      </Text>
-                    </View>
-                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' }}>
-                      <MaterialIcons name="account-balance-wallet" size={24} color="#fff" />
-                    </View>
-                  </View>
-                )}
-
                 {/* ── Próximo Mês ── */}
                 {nextMonthExpenses.length > 0 && (
                   <Pressable onPress={() => setNextMonthModalVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
-                    <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
+                    <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 2 }}>
                       <View style={{ gap: 4 }}>
                         <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Despesas do próximo mês</Text>
                         <Text style={{ fontSize: 10, color: colors.muted }}>{getMonthName(nextMonth)} · {nextMonthExpenses.length} {nextMonthExpenses.length === 1 ? 'despesa' : 'despesas'}</Text>
@@ -601,7 +637,7 @@ export default function HomeScreen() {
                             </View>
                           )}
                           <Pressable style={{ flex: 1 }} onPress={() => !reorderMode && router.push(`/bank/${bank.id}`)}>
-                            <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
+                            <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 2 }}>
                               <View style={{ height: 3, backgroundColor: bc }} />
                               <View style={{ padding: 16, gap: 12 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -693,7 +729,7 @@ export default function HomeScreen() {
                             </View>
                           )}
                           <Pressable style={{ flex: 1 }} onPress={() => !reorderMode && router.push(`/bank/${bank.id}`)}>
-                            <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
+                            <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 2 }}>
                               <View style={{ height: 3, backgroundColor: bc }} />
                               <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
                                 <BankLogo name={bank.name} size={38} />
@@ -830,6 +866,7 @@ export default function HomeScreen() {
       <ExpenseModal
         visible={editNextMonthVisible}
         expense={selectedNextMonthExpense}
+        month={nextMonth}
         onClose={() => { setEditNextMonthVisible(false); setSelectedNextMonthExpense(undefined); }}
         onSave={async (data) => {
           if (selectedNextMonthExpense) {
@@ -838,6 +875,7 @@ export default function HomeScreen() {
               ...(data.name !== undefined && { name: data.name }),
               ...(data.category !== undefined && { category: data.category }),
               ...(data.value !== undefined && { value: data.value }),
+              ...(data.date !== undefined && { date: data.date }),
               ...(data.quantity !== undefined && { quantity: data.quantity ?? null }),
               ...(data.paid !== undefined && { paid: data.paid }),
               ...('bank' in data && { bank: data.bank ?? null }),
@@ -859,6 +897,7 @@ export default function HomeScreen() {
       <ExpenseModal
         visible={editExpenseVisible}
         expense={selectedExpense}
+        month={currentMonth}
         onClose={() => { setEditExpenseVisible(false); setSelectedExpense(undefined); }}
         onSave={async (data) => { if (selectedExpense) { await updateExpense(selectedExpense.id, data); showToast('Despesa atualizada!'); } }}
         onDelete={async (id) => { await deleteExpense(id); showToast('Despesa removida', 'info'); }}

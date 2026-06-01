@@ -122,12 +122,14 @@ export function useExpenses(month: string) {
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
 
-  const addExpense = async (expense: Omit<Expense, "id" | "date" | "month">) => {
+  const addExpense = async (
+    expense: Omit<Expense, "id" | "date" | "month"> & { date?: string },
+  ) => {
     await createMut.mutateAsync({
       name: expense.name,
       category: expense.category,
       value: expense.value,
-      date: new Date().toISOString(),
+      date: expense.date ?? new Date().toISOString(),
       month,
       quantity: expense.quantity,
       paid: expense.paid,
@@ -141,13 +143,14 @@ export function useExpenses(month: string) {
 
   const updateExpense = async (
     id: string,
-    updates: Partial<Omit<Expense, "id" | "date" | "month">>,
+    updates: Partial<Omit<Expense, "id" | "month">>,
   ) => {
     await updateMut.mutateAsync({
       id: parseInt(id, 10),
       ...(updates.name !== undefined && { name: updates.name }),
       ...(updates.category !== undefined && { category: updates.category }),
       ...(updates.value !== undefined && { value: updates.value }),
+      ...(updates.date !== undefined && { date: updates.date }),
       ...(updates.quantity !== undefined && { quantity: updates.quantity ?? null }),
       ...(updates.paid !== undefined && { paid: updates.paid }),
       ...("bank" in updates && { bank: updates.bank ?? null }),
