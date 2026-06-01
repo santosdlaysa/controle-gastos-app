@@ -77,7 +77,7 @@ export async function apiCall<T>(endpoint: string, options: RequestInit & { time
     return (text ? JSON.parse(text) : {}) as T;
   } catch (error) {
     console.log("[API] Request failed:", error);
-    if (error instanceof DOMException && error.name === "AbortError") {
+    if (error instanceof Error && error.name === "AbortError") {
       throw new Error(`Request timeout after ${timeoutMs}ms`);
     }
     if (error instanceof Error) {
