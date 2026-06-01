@@ -31,16 +31,25 @@ export async function apiCall<T>(endpoint: string, options: RequestInit & { time
   console.log("[API] Full URL:", url);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  // Use Promise.race for reliable timeout on Android (AbortController alone
+  // doesn't always cancel fetch on React Native Android)
+  const fetchPromise = fetch(url, {
+    ...fetchOptions,
+    headers,
+    credentials: "include",
+    signal: controller.signal,
+  });
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => {
+      controller.abort();
+      reject(new Error(`Request timeout after ${timeoutMs}ms`));
+    }, timeoutMs),
+  );
 
   try {
     console.log("[API] Making request...");
-    const response = await fetch(url, {
-      ...fetchOptions,
-      headers,
-      credentials: "include",
-      signal: controller.signal,
-    });
+    const response = await Promise.race([fetchPromise, timeoutPromise]);
 
     console.log("[API] Response status:", response.status, response.statusText);
     const responseHeaders = Object.fromEntries(response.headers.entries());
@@ -77,15 +86,10 @@ export async function apiCall<T>(endpoint: string, options: RequestInit & { time
     return (text ? JSON.parse(text) : {}) as T;
   } catch (error) {
     console.log("[API] Request failed:", error);
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Request timeout after ${timeoutMs}ms`);
-    }
     if (error instanceof Error) {
       throw error;
     }
     throw new Error("Unknown error occurred");
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 

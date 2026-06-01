@@ -30,14 +30,24 @@ export function createTRPCClient() {
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
         // Custom fetch with timeout and credentials for cookie-based auth
+        // Uses Promise.race for reliable timeout on Android (AbortController
+        // alone doesn't always cancel fetch on React Native Android)
         fetch(url, options) {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000);
-          return fetch(url, {
+          const fetchPromise = fetch(url, {
             ...options,
             credentials: "include",
             signal: controller.signal,
-          }).finally(() => clearTimeout(timeoutId));
+          });
+          return Promise.race([
+            fetchPromise,
+            new Promise<never>((_, reject) =>
+              setTimeout(() => {
+                controller.abort();
+                reject(new Error("Request timeout after 15000ms"));
+              }, 15000),
+            ),
+          ]);
         },
       }),
     ],
