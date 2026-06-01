@@ -10,12 +10,10 @@ import { callFabListener } from '@/lib/fab-action';
 
 // ── medidas ───────────────────────────────────────────────────────
 const FAB_SIZE = 56;
-const FAB_R    = FAB_SIZE / 2; // 28
-const BAR_H    = 56;           // altura da barra de navegação
-
-// O FAB fica metade acima da barra, metade dentro — sem notch
-// O topo do container é o topo do FAB; a barra começa em FAB_R
-const BAR_TOP  = FAB_R;       // 28 — onde a barra começa
+const FAB_R    = FAB_SIZE / 2;
+const BAR_H    = 64;
+const BAR_MX   = 16;          // margem horizontal da barra
+const BAR_RADIUS = 20;        // cantos arredondados
 
 // ── abas ──────────────────────────────────────────────────────────
 const TABS = [
@@ -33,12 +31,12 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const isDark = scheme === 'dark';
 
-  const bottomPad = insets.bottom;
+  const bottomPad = Math.max(insets.bottom, 8);
   const [containerW, setContainerW] = useState(Dimensions.get('window').width);
   const activeRoute = state.routes[state.index]?.name;
 
-  // Altura total: FAB_R (acima da barra) + BAR_H + safe area
-  const totalH = BAR_TOP + BAR_H + bottomPad;
+  // Altura total: metade do FAB acima + barra + safe area
+  const totalH = FAB_R + BAR_H + bottomPad;
 
   function press(name: string) {
     if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -53,40 +51,44 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View
-      style={{ height: totalH, backgroundColor: 'transparent' }}
+      pointerEvents="box-none"
+      style={{ height: totalH }}
       onLayout={(e) => setContainerW(e.nativeEvent.layout.width)}
     >
-      {/* ── 1. Barra (começa em BAR_TOP, vai até o fundo incluindo safe area) ── */}
+      {/* ── 1. Barra com cantos arredondados ── */}
       <View
         style={{
           position:        'absolute',
-          top:             BAR_TOP,
-          left:            0,
-          right:           0,
-          bottom:          0,
+          top:             FAB_R,
+          left:            BAR_MX,
+          right:           BAR_MX,
+          height:          BAR_H + bottomPad,
           backgroundColor: colors.surface,
+          borderTopLeftRadius:  BAR_RADIUS,
+          borderTopRightRadius: BAR_RADIUS,
           zIndex:          1,
           ...Platform.select({
             ios: {
               shadowColor:   '#000',
-              shadowOffset:  { width: 0, height: -2 },
-              shadowOpacity: isDark ? 0.2 : 0.07,
-              shadowRadius:  8,
+              shadowOffset:  { width: 0, height: -4 },
+              shadowOpacity: isDark ? 0.25 : 0.08,
+              shadowRadius:  12,
             },
-            android: { elevation: 0 },
+            android: { elevation: 12 },
           }),
         }}
       />
 
-      {/* ── 2. Itens de navegação ─────────────────────────────────── */}
+      {/* ── 2. Itens de navegação ── */}
       <View
         style={{
           position:      'absolute',
-          top:           BAR_TOP,
-          left:          0,
-          right:         0,
+          top:           FAB_R,
+          left:          BAR_MX,
+          right:         BAR_MX,
           height:        BAR_H,
           flexDirection: 'row',
+          alignItems:    'center',
           zIndex:        2,
         }}
       >
@@ -99,24 +101,28 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
               onPress={() => press(tab.name)}
               style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.6 : 1 })}
             >
-              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+              <View style={{ alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 <MaterialIcons
                   name={tab.icon as any}
-                  size={22}
+                  size={24}
                   color={active ? colors.tint : colors.tabIconDefault}
                 />
-                {active && (
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.tint }}>
-                    {tab.label}
-                  </Text>
-                )}
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: active ? '700' : '500',
+                    color: active ? colors.tint : colors.tabIconDefault,
+                  }}
+                >
+                  {tab.label}
+                </Text>
               </View>
             </Pressable>
           );
         })}
 
         {/* espaço central para o FAB */}
-        <View style={{ width: FAB_SIZE + 16 }} />
+        <View style={{ width: FAB_SIZE + 20 }} />
 
         {/* direita */}
         {TABS.slice(2).map((tab) => {
@@ -127,24 +133,28 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
               onPress={() => press(tab.name)}
               style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.6 : 1 })}
             >
-              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+              <View style={{ alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 <MaterialIcons
                   name={tab.icon as any}
-                  size={22}
+                  size={24}
                   color={active ? colors.tint : colors.tabIconDefault}
                 />
-                {active && (
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.tint }}>
-                    {tab.label}
-                  </Text>
-                )}
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: active ? '700' : '500',
+                    color: active ? colors.tint : colors.tabIconDefault,
+                  }}
+                >
+                  {tab.label}
+                </Text>
               </View>
             </Pressable>
           );
         })}
       </View>
 
-      {/* ── 3. FAB — flutua sobre a barra, sem notch ─────────────── */}
+      {/* ── 3. FAB flutuante ── */}
       <Pressable
         onPress={pressFAB}
         style={({ pressed }) => ({
@@ -157,16 +167,16 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           backgroundColor: colors.tint,
           alignItems:      'center',
           justifyContent:  'center',
-          opacity:         pressed ? 0.85 : 1,
+          transform:       [{ scale: pressed ? 0.92 : 1 }],
           zIndex:          3,
           ...Platform.select({
             ios: {
               shadowColor:   colors.tint,
               shadowOffset:  { width: 0, height: 4 },
-              shadowOpacity: isDark ? 0.8 : 0.5,
-              shadowRadius:  isDark ? 20 : 12,
+              shadowOpacity: 0.4,
+              shadowRadius:  12,
             },
-            android: { elevation: 8 },
+            android: { elevation: 10 },
           }),
         })}
       >
