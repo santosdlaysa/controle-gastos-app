@@ -61,7 +61,8 @@
       "Bash(npx create-next-app@latest controle-gastos-web --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-pnpm --no-turbopack)",
       "Bash(xargs basename:*)",
       "Bash(npx next:*)",
-      "Bash(pnpm remove:*)"
+      "Bash(pnpm remove:*)",
+      "Bash(rm:*)"
     ]
   }
 }
