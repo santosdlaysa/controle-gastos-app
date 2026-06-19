@@ -9,9 +9,10 @@ import type { ExpoConfig } from "expo/config";
  */
 
 
-const rawBundleId = "com.orgenyx";
+const rawIosBundleId = "com.orgenyx";
+const rawAndroidPackage = "com.orgenyx.controlegastos";
 
-const bundleId =
+const normalizeBundleId = (rawBundleId: string) =>
   rawBundleId
     .replace(/[-_]/g, ".")
     .replace(/[^a-zA-Z0-9.]/g, "")
@@ -24,8 +25,11 @@ const bundleId =
     )
     .join(".") || "space.manus.app";
 
+const iosBundleId = normalizeBundleId(rawIosBundleId);
+const androidPackage = normalizeBundleId(rawAndroidPackage);
+
 // Deep link scheme baseado no timestamp final
-const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
+const timestamp = iosBundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
 
 const config: ExpoConfig = {
@@ -58,7 +62,7 @@ const config: ExpoConfig = {
 
   ios: {
     supportsTablet: true,
-    bundleIdentifier: bundleId,
+    bundleIdentifier: iosBundleId,
     buildNumber: "21",
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
@@ -66,7 +70,7 @@ const config: ExpoConfig = {
   },
 
   android: {
-    package: bundleId,
+    package: androidPackage,
 
     // 🔢 OBRIGATÓRIO PARA PLAY STORE
     versionCode: 6,
@@ -118,12 +122,24 @@ const config: ExpoConfig = {
     [
       "expo-splash-screen",
       {
-        image: "./assets/images/splash-icon.png",
-        imageWidth: 200,
-        resizeMode: "contain",
         backgroundColor: "#ffffff",
         dark: {
           backgroundColor: "#000000",
+        },
+        ios: {
+          backgroundColor: "#ffffff",
+          dark: {
+            backgroundColor: "#000000",
+          },
+        },
+        android: {
+          image: "./assets/images/splash-icon.png",
+          imageWidth: 200,
+          resizeMode: "contain",
+          backgroundColor: "#ffffff",
+          dark: {
+            backgroundColor: "#000000",
+          },
         },
       },
     ],
