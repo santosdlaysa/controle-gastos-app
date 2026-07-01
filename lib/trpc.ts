@@ -39,13 +39,18 @@ export function createTRPCClient() {
             credentials: "include",
             signal: controller.signal,
           });
+          // 90s para sobreviver a um eventual cold start do backend (Render
+          // free tier hiberna). Com o keep-warm ativo o servidor fica quente e
+          // as respostas são rápidas; esta margem só evita abortar os dados
+          // caso o ping de keep-warm atrase e o servidor esteja acordando.
+          const TIMEOUT_MS = 90000;
           return Promise.race([
             fetchPromise,
             new Promise<never>((_, reject) =>
               setTimeout(() => {
                 controller.abort();
-                reject(new Error("Request timeout after 15000ms"));
-              }, 15000),
+                reject(new Error(`Request timeout after ${TIMEOUT_MS}ms`));
+              }, TIMEOUT_MS),
             ),
           ]);
         },

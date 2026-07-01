@@ -62,8 +62,7 @@
       "Bash(xargs basename:*)",
       "Bash(npx next:*)",
       "Bash(pnpm remove:*)",
-      "WebFetch(domain:www.behance.net)"
-      "Bash(pnpm remove:*)",
+      "WebFetch(domain:www.behance.net)",
       "Bash(rm:*)"
     ]
   }

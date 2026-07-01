@@ -10,7 +10,9 @@ type ApiResponse<T> = {
 // Default timeout for normal requests. Auth endpoints use a larger value to
 // absorb the backend's cold start (Render free tier hibernates after idle).
 const DEFAULT_TIMEOUT_MS = 30000;
-const AUTH_TIMEOUT_MS = 60000;
+// Render free tier hibernates after idle; the first request cold-starts the
+// backend, which can take 80s+ to wake. Keep this comfortably above that.
+const AUTH_TIMEOUT_MS = 120000;
 
 export async function apiCall<T>(endpoint: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
   const { timeoutMs = DEFAULT_TIMEOUT_MS, ...fetchOptions } = options;

@@ -1,0 +1,31 @@
+name: keep-backend-warm
+
+# Mantém o backend do Render (free tier) acordado. O Render hiberna após ~15
+# min de inatividade, causando cold starts de ~80s. Este job pinga o endpoint
+# de health a cada ~10 min para evitar a hibernação.
+#
+# Observação: o GitHub costuma atrasar/agrupar crons sob carga, então o
+# intervalo real pode variar. Se precisar de precisão, um monitor dedicado
+# (ex.: UptimeRobot) é mais confiável e não consome minutos de Actions.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {} # permite disparar manualmente pela aba Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping /api/health
+        run: |
+          echo "Pingando backend em $(date -u)"
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 \
+            https://controle-gastos-app-xnbw.onrender.com/api/health)
+          echo "HTTP $code"
+          # 200 = acordado. Outros códigos não falham o job (o objetivo é só
+          # acordar o servidor), mas ficam registrados no log.
+          if [ "$code" != "200" ]; then
+            echo "::warning::Health check retornou HTTP $code"
+          fi

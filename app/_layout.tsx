@@ -1,5 +1,7 @@
 import "@/global.css";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import {
   Stack,
   useRouter,
@@ -257,9 +259,20 @@ function RootLayoutInner() {
               queries: {
                 refetchOnWindowFocus: false,
                 retry: 1,
+                // Considera os dados "frescos" por 5 min: evita refetch a cada
+                // navegação de tela. Mantém em cache por 24h para persistência.
+                staleTime: 5 * 60 * 1000,
+                gcTime: 24 * 60 * 60 * 1000,
               },
             },
           })
+  );
+
+  // Persiste o cache do react-query no AsyncStorage. Assim, ao reabrir o app,
+  // os dados aparecem instantaneamente (do cache) enquanto atualizam em
+  // segundo plano — sem tela vazia esperando o backend (que pode estar frio).
+  const [persister] = useState(() =>
+      createAsyncStoragePersister({ storage: AsyncStorage }),
   );
 
   const [trpcClient] = useState(() => createTRPCClient());
@@ -284,11 +297,14 @@ function RootLayoutInner() {
   const content = (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+          >
             <AuthProvider>
               <NavLayout />
             </AuthProvider>
-          </QueryClientProvider>
+          </PersistQueryClientProvider>
         </trpc.Provider>
       </GestureHandlerRootView>
   );
