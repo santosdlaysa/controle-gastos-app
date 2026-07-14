@@ -37,7 +37,7 @@ const config: ExpoConfig = {
   slug: "controle-gastos-app",
 
   // 🔢 Versão visível ao usuário
-  version: "2.1.1",
+  version: "1.0.1",
 
   // 🔥 IMPORTANTE PARA EAS UPDATE (boa prática)
   runtimeVersion: {
@@ -73,7 +73,7 @@ const config: ExpoConfig = {
     package: androidPackage,
 
     // 🔢 OBRIGATÓRIO PARA PLAY STORE
-    versionCode: 6,
+    versionCode: 8,
 
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",

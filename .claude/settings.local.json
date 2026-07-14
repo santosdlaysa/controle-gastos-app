@@ -63,7 +63,14 @@
       "Bash(npx next:*)",
       "Bash(pnpm remove:*)",
       "WebFetch(domain:www.behance.net)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "WebFetch(domain:github.com)",
+      "PowerShell(pnpm update *)",
+      "PowerShell(pnpm check *)",
+      "PowerShell(eas whoami *)",
+      "PowerShell(eas build *)",
+      "PowerShell(eas build:cancel *)",
+      "PowerShell(Select-String -Path .env -Pattern 'EXPO_PUBLIC_API_BASE_URL' | ForEach-Object Line)"
     ]
   }
 }
