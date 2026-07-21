@@ -32,6 +32,15 @@ export function useAuth(options?: UseAuthOptions) {
         return;
       }
 
+      // Do not block the whole application while the backend wakes up.
+      // The user saved locally is enough to render the authenticated shell;
+      // getMe below refreshes it in the background.
+      const storedUser = await Auth.getUserInfo();
+      if (storedUser) {
+        setUser(storedUser);
+        setLoading(false);
+      }
+
       // Try to get fresh user data from the API
       const apiUser = await Api.getMe();
       if (apiUser) {
@@ -47,7 +56,6 @@ export function useAuth(options?: UseAuthOptions) {
         await Auth.setUserInfo(userInfo);
       } else {
         // getMe failed — fall back to stored user info instead of logging out
-        const storedUser = await Auth.getUserInfo();
         if (storedUser) {
           console.log("[useAuth] getMe failed, using stored user info as fallback");
           setUser(storedUser);
