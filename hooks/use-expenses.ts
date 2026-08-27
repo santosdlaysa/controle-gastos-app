@@ -123,14 +123,15 @@ export function useExpenses(month: string) {
   // ─── Actions ─────────────────────────────────────────────────────────────────
 
   const addExpense = async (
-    expense: Omit<Expense, "id" | "date" | "month"> & { date?: string },
+    expense: Omit<Expense, "id" | "date" | "month"> & { date?: string; targetMonth?: string },
   ) => {
+    const targetMonth = expense.targetMonth ?? month;
     await createMut.mutateAsync({
       name: expense.name,
       category: expense.category,
       value: expense.value,
       date: expense.date ?? new Date().toISOString(),
-      month,
+      month: targetMonth,
       quantity: expense.quantity,
       paid: expense.paid,
       source: "manual",
@@ -139,6 +140,10 @@ export function useExpenses(month: string) {
       expenseType: expense.expenseType ?? undefined,
       debtorId: expense.debtorId ?? undefined,
     });
+    if (targetMonth !== month) {
+      await utils.expense.getByMonth.invalidate({ month: targetMonth });
+    }
+
   };
 
   const updateExpense = async (

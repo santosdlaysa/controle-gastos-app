@@ -73,7 +73,7 @@ const config: ExpoConfig = {
     package: androidPackage,
 
     // 🔢 OBRIGATÓRIO PARA PLAY STORE
-    versionCode: 8,
+    versionCode: 9,
 
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Expense, ExpenseCategory } from '@/types/expense';
 import { trpc } from '@/lib/trpc';
+import { getNextMonth } from '@/shared/expense-utils';
 
 interface ExpenseModalProps {
   visible: boolean;
@@ -22,10 +23,11 @@ interface ExpenseModalProps {
   defaultPaymentType?: 'debit' | 'credit';
   /** Mês corrente (YYYY-MM) ao qual a despesa pertence; usado para montar a data do dia escolhido */
   month?: string;
+  allowMonthSelection?: boolean;
   hideBankField?: boolean;
   hidePaymentTypeField?: boolean;
   onClose: () => void;
-  onSave: (data: Omit<Expense, 'id' | 'date' | 'month'> & { date?: string }) => void;
+  onSave: (data: Omit<Expense, 'id' | 'date' | 'month'> & { date?: string; targetMonth?: string }) => void;
   onDelete?: (id: string) => void;
   onMoveToNextMonth?: (id: string) => void;
   onGenerateRemainingInstallments?: (id: string) => void;
@@ -37,6 +39,7 @@ export function ExpenseModal({
   defaultBank,
   defaultPaymentType,
   month,
+  allowMonthSelection = false,
   hideBankField,
   hidePaymentTypeField,
   onClose,
@@ -54,6 +57,7 @@ export function ExpenseModal({
   const [paymentType, setPaymentType] = useState<'debit' | 'credit' | null>(null);
   const [expenseType, setExpenseType] = useState<'fixed' | 'variable' | null>(null);
   const [debtorId, setDebtorId] = useState<number | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState(month ?? '');
 
   const { data: bankSuggestions = [] } = trpc.bank.getAll.useQuery();
   const { data: categoryList = [] } = trpc.category.getAll.useQuery();
@@ -71,6 +75,7 @@ export function ExpenseModal({
       setDebtorId(expense.debtorId ?? null);
       setDay(expense.date ? String(new Date(expense.date).getDate()) : '');
     } else {
+      setSelectedMonth(month ?? '');
       setName('');
       setCategory(categoryList[0]?.name ?? 'outro');
       setQuantity('');
@@ -102,7 +107,7 @@ export function ExpenseModal({
     let date: string | undefined;
     if (day.trim()) {
       const dayNum = parseInt(day.trim(), 10);
-      const [y, m] = (month ?? `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
+      const [y, m] = (selectedMonth || month || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
         .split('-')
         .map(Number);
       const daysInMonth = new Date(y, m, 0).getDate();
@@ -123,6 +128,7 @@ export function ExpenseModal({
       paymentType: paymentType ?? null,
       expenseType: expenseType ?? null,
       debtorId: debtorId ?? null,
+      ...(!expense && selectedMonth && { targetMonth: selectedMonth }),
       ...(date && { date }),
     });
 
@@ -281,6 +287,29 @@ export function ExpenseModal({
             </View>
 
             {/* Day field */}
+            {!expense && allowMonthSelection && month && (
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-foreground mb-2">Mês do lançamento</Text>
+                <View className="flex-row gap-2">
+                  {[month, getNextMonth(month)].map((option) => (
+                    <Pressable key={option} onPress={() => setSelectedMonth(option)} style={{ flex: 1 }}>
+                      <View className={cn(
+                        'rounded-lg border-2 px-3 py-3 items-center',
+                        selectedMonth === option ? 'bg-primary border-primary' : 'bg-surface border-border',
+                      )}>
+                        <Text className={cn('text-sm font-semibold', selectedMonth === option ? 'text-background' : 'text-foreground')}>
+                          {option === month ? 'Este mês' : 'Próximo mês'}
+                        </Text>
+                        <Text className={cn('text-xs mt-1', selectedMonth === option ? 'text-background' : 'text-muted')}>
+                          {option}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+
             <View className="mb-4">
               <Text className="text-sm font-semibold text-foreground mb-2">
                 Dia do mês (opcional)

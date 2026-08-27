@@ -502,6 +502,18 @@ export default function HomeScreen() {
                 <MaterialIcons name="add" size={18} color="#fff" />
                 <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Adicionar conta</Text>
               </Pressable>
+              {nextMonthExpenses.length > 0 && (
+                <Pressable onPress={() => setNextMonthModalVisible(true)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, width: '100%', marginTop: 12 }]}>
+                  <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ gap: 4, flex: 1 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Despesas do próximo mês</Text>
+                      <Text style={{ fontSize: 10, color: colors.muted }}>{getMonthName(nextMonth)} · {nextMonthExpenses.length} {nextMonthExpenses.length === 1 ? 'despesa' : 'despesas'}</Text>
+                      <Text style={{ fontSize: 24, fontWeight: '900', color: '#EF4444', marginTop: 2 }}>R$ {fmt(nextMonthTotal)}</Text>
+                    </View>
+                    <MaterialIcons name="calendar-today" size={22} color="#EF4444" />
+                  </View>
+                </Pressable>
+              )}
             </View>
           ) : (() => {
             const banks = (orderedBanks.length > 0 ? orderedBanks : allBanks).filter(b => b.id != null);
@@ -878,6 +890,11 @@ export default function HomeScreen() {
         onClose={() => { setEditNextMonthVisible(false); setSelectedNextMonthExpense(undefined); }}
         onSave={async (data) => {
           if (selectedNextMonthExpense) {
+            if (selectedNextMonthExpense.month === currentMonth) {
+              await updateExpense(selectedNextMonthExpense.id, data);
+              showToast('Despesa atualizada!');
+              return;
+            }
             await updateNextMonthExp.mutateAsync({
               id: parseInt(selectedNextMonthExpense.id, 10),
               ...(data.name !== undefined && { name: data.name }),
@@ -894,6 +911,13 @@ export default function HomeScreen() {
           }
         }}
         onDelete={async (id) => {
+          if (selectedNextMonthExpense?.month === currentMonth) {
+            await deleteExpense(id);
+            setEditNextMonthVisible(false);
+            setSelectedNextMonthExpense(undefined);
+            showToast('Despesa removida', 'info');
+            return;
+          }
           await deleteNextMonthExp.mutateAsync({ id: parseInt(id, 10) });
           setEditNextMonthVisible(false);
           setSelectedNextMonthExpense(undefined);
@@ -917,6 +941,7 @@ export default function HomeScreen() {
       <ExpenseModal
         visible={addExpenseVisible}
         month={currentMonth}
+        allowMonthSelection
         onClose={() => setAddExpenseVisible(false)}
         onSave={async (data) => { await addExpense(data); showToast('Despesa adicionada!'); }}
       />
