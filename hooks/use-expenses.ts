@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { keepPreviousData } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { CategoryBudgets, Expense, Income } from "@/types/expense";
 import { getNextMonth, parseQuantity } from "@/shared/expense-utils";
@@ -42,9 +43,11 @@ export function useExpenses(month: string) {
   const utils = trpc.useUtils();
 
   // ─── Queries ────────────────────────────────────────────────────────────────
-  const expensesQuery = trpc.expense.getByMonth.useQuery({ month });
+  // keepPreviousData: ao trocar de mês, mantém o mês anterior na tela enquanto
+  // o novo carrega, em vez de esvaziar a lista e mostrar o spinner.
+  const expensesQuery = trpc.expense.getByMonth.useQuery({ month }, { placeholderData: keepPreviousData });
   const incomeQuery = trpc.income.get.useQuery();
-  const budgetQuery = trpc.budget.get.useQuery({ month });
+  const budgetQuery = trpc.budget.get.useQuery({ month }, { placeholderData: keepPreviousData });
 
   const loading =
     expensesQuery.isLoading || incomeQuery.isLoading || budgetQuery.isLoading;
