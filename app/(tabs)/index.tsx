@@ -368,6 +368,23 @@ export default function HomeScreen() {
   const nextMonthTotal = useMemo(() => nextMonthExpenses.reduce((sum, e) => sum + parseFloat(String(e.value)), 0), [nextMonthExpenses]);
   const [editNextMonthVisible, setEditNextMonthVisible] = useState(false);
   const [selectedNextMonthExpense, setSelectedNextMonthExpense] = useState<Expense | undefined>();
+  // iOS não apresenta um Modal enquanto outro está aberto: fecha a lista e só
+  // abre a edição quando a lista terminar de sair (onDismiss).
+  const pendingNextMonthEditRef = useRef(false);
+  const openNextMonthEdit = useCallback((exp: Expense) => {
+    setSelectedNextMonthExpense(exp);
+    setNextMonthModalVisible(false);
+    if (Platform.OS === 'ios') {
+      pendingNextMonthEditRef.current = true;
+    } else {
+      setEditNextMonthVisible(true);
+    }
+  }, []);
+  const handleNextMonthListDismiss = useCallback(() => {
+    if (!pendingNextMonthEditRef.current) return;
+    pendingNextMonthEditRef.current = false;
+    setEditNextMonthVisible(true);
+  }, []);
 
   const expUtils = trpc.useUtils();
   const updateNextMonthExp = trpc.expense.update.useMutation({ onSuccess: () => expUtils.expense.getByMonth.invalidate({ month: nextMonth }) });
@@ -819,9 +836,10 @@ export default function HomeScreen() {
       </Modal>
 
       {/* Modal: despesas do próximo mês */}
-      <Modal visible={nextMonthModalVisible} transparent animationType="slide" onRequestClose={() => setNextMonthModalVisible(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }} onPress={() => setNextMonthModalVisible(false)}>
-          <Pressable onPress={() => {}} style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, maxHeight: '80%' }}>
+      <Modal visible={nextMonthModalVisible} transparent animationType="slide" onRequestClose={() => setNextMonthModalVisible(false)} onDismiss={handleNextMonthListDismiss}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+          <Pressable style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} onPress={() => setNextMonthModalVisible(false)} />
+          <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, maxHeight: '80%' }}>
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, marginBottom: 12 }}>
               <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#EF444415', alignItems: 'center', justifyContent: 'center' }}>
@@ -860,7 +878,7 @@ export default function HomeScreen() {
                       expenseType: (exp.expenseType as Expense['expenseType']) ?? null,
                     };
                     return (
-                      <Pressable key={exp.id} onPress={() => { setSelectedNextMonthExpense(asExpense); setEditNextMonthVisible(true); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                      <Pressable key={exp.id} onPress={() => openNextMonthEdit(asExpense)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
                           <View style={{ flex: 1 }}>
                             <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{exp.name}</Text>
@@ -878,8 +896,8 @@ export default function HomeScreen() {
                   });
               })()}
             </ScrollView>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
 
       {/* ExpenseModal para editar despesas do próximo mês */}

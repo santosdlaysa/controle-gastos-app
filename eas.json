@@ -11,7 +11,13 @@
         "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com",
         "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_pzLeJaDnomFldqSsdJSSFJGzPvK",
-        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr"
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr",
+        "EXPO_PUBLIC_ADMOB_IOS_APP_ID": "ca-app-pub-6632812168210069~8921012511",
+        "EXPO_PUBLIC_ADMOB_ANDROID_APP_ID": "ca-app-pub-6632812168210069~8756904139",
+        "EXPO_PUBLIC_ADMOB_IOS_BANNER": "ca-app-pub-6632812168210069/4992586777",
+        "EXPO_PUBLIC_ADMOB_ANDROID_BANNER": "ca-app-pub-6632812168210069/1436485143",
+        "EXPO_PUBLIC_ADMOB_ANDROID_APP_OPEN": "ca-app-pub-6632812168210069/1363105598",
+        "EXPO_PUBLIC_ADMOB_IOS_APP_OPEN": "ca-app-pub-6632812168210069/3685632167"
       }
     },
     "preview": {
@@ -21,7 +27,13 @@
         "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com",
         "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_pzLeJaDnomFldqSsdJSSFJGzPvK",
-        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr"
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr",
+        "EXPO_PUBLIC_ADMOB_IOS_APP_ID": "ca-app-pub-6632812168210069~8921012511",
+        "EXPO_PUBLIC_ADMOB_ANDROID_APP_ID": "ca-app-pub-6632812168210069~8756904139",
+        "EXPO_PUBLIC_ADMOB_IOS_BANNER": "ca-app-pub-6632812168210069/4992586777",
+        "EXPO_PUBLIC_ADMOB_ANDROID_BANNER": "ca-app-pub-6632812168210069/1436485143",
+        "EXPO_PUBLIC_ADMOB_ANDROID_APP_OPEN": "ca-app-pub-6632812168210069/1363105598",
+        "EXPO_PUBLIC_ADMOB_IOS_APP_OPEN": "ca-app-pub-6632812168210069/3685632167"
       }
     },
     "production": {
@@ -37,11 +49,21 @@
         "EXPO_PUBLIC_API_BASE_URL": "https://controle-gastos-app-xnbw.onrender.com",
         "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_pzLeJaDnomFldqSsdJSSFJGzPvK",
-        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr"
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_eVncLvjYmDvcojKvupfBryNWYpr",
+        "EXPO_PUBLIC_ADMOB_IOS_APP_ID": "ca-app-pub-6632812168210069~8921012511",
+        "EXPO_PUBLIC_ADMOB_ANDROID_APP_ID": "ca-app-pub-6632812168210069~8756904139",
+        "EXPO_PUBLIC_ADMOB_IOS_BANNER": "ca-app-pub-6632812168210069/4992586777",
+        "EXPO_PUBLIC_ADMOB_ANDROID_BANNER": "ca-app-pub-6632812168210069/1436485143",
+        "EXPO_PUBLIC_ADMOB_ANDROID_APP_OPEN": "ca-app-pub-6632812168210069/1363105598",
+        "EXPO_PUBLIC_ADMOB_IOS_APP_OPEN": "ca-app-pub-6632812168210069/3685632167"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6760567600"
+      }
+    }
   }
 }

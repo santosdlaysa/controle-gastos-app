@@ -38,8 +38,8 @@ import {
 import { AuthProvider, useAuthContext } from "@/lib/auth-context";
 import { useMigration } from "@/hooks/use-migration";
 import {
-  getUberFeatureEnabled,
   isUberFeatureUnconfigured,
+  setUberFeatureEnabled,
 } from "@/lib/uber-feature";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initPurchases } from "@/hooks/use-purchases";
@@ -109,6 +109,33 @@ function NavLayout() {
   const navigationState = useRootNavigationState();
 
   const hasNavigatedRef = useRef(false);
+  const utils = trpc.useUtils();
+
+  // Retorna null se não conseguir consultar (mantém o fluxo padrão).
+  const fetchExistingUserData = useCallback(async () => {
+    try {
+      const year = new Date().getFullYear();
+      const years = [String(year), String(year - 1)];
+      const [banks, income, expensesByYear, uberByYear] = await Promise.all([
+        utils.bank.getAll.fetch(),
+        utils.income.get.fetch(),
+        Promise.all(years.map((y) => utils.expense.getByYear.fetch({ year: y }))),
+        Promise.all(
+            years.map((y) => utils.uberEarnings.getByYear.fetch({ year: y }))
+        ),
+      ]);
+      const hasUberEarnings = uberByYear.some((list) => list.length > 0);
+      const hasData =
+          banks.length > 0 ||
+          income != null ||
+          expensesByYear.some((list) => list.length > 0) ||
+          hasUberEarnings;
+      return { hasData, hasUberEarnings };
+    } catch (error) {
+      console.warn("[Nav] Falha ao verificar dados existentes:", error);
+      return null;
+    }
+  }, [utils]);
 
   useAppOpenAd();
 
@@ -133,11 +160,25 @@ function NavLayout() {
       hasNavigatedRef.current = true;
 
       (async () => {
-        const unconfigured = await isUberFeatureUnconfigured();
-        const uberEnabled = await getUberFeatureEnabled();
-        const onboardingDone = await AsyncStorage.getItem(
+        let unconfigured = await isUberFeatureUnconfigured();
+        let onboardingDone = await AsyncStorage.getItem(
             "onboarding_checklist_dismissed"
         );
+
+        // Essas flags ficam só no aparelho. Em instalação nova (ou outro
+        // aparelho), um usuário que já tem dados no servidor não deve passar
+        // pela configuração inicial de novo.
+        if (unconfigured || onboardingDone !== "true") {
+          const existing = await fetchExistingUserData();
+          if (existing?.hasData) {
+            await AsyncStorage.setItem("onboarding_checklist_dismissed", "true");
+            onboardingDone = "true";
+            if (unconfigured) {
+              await setUberFeatureEnabled(existing.hasUberEarnings);
+              unconfigured = false;
+            }
+          }
+        }
 
         if (unconfigured) {
           router.replace("/mode-select");
