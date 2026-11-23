@@ -381,12 +381,23 @@ export default function UberEarningsScreen() {
                 Ganhos Uber
               </Text>
             </View>
-            <Pressable
-              onPress={() => setShowExportModal(true)}
-              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}
-            >
-              <MaterialIcons name="file-download" size={22} color="rgba(255,255,255,0.9)" />
-            </Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Pressable
+                onPress={() => { setAppMode('personal'); router.replace('/(tabs)'); }}
+                accessibilityRole="button"
+                accessibilityLabel="Ir para despesas pessoais"
+                hitSlop={6}
+                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(10,126,164,0.35)', alignItems: 'center', justifyContent: 'center' }]}
+              >
+                <MaterialIcons name="account-balance-wallet" size={19} color="#7DD3FC" />
+              </Pressable>
+              <Pressable
+                onPress={() => setShowExportModal(true)}
+                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}
+              >
+                <MaterialIcons name="file-download" size={22} color="rgba(255,255,255,0.9)" />
+              </Pressable>
+            </View>
           </View>
 
           {/* Month navigation */}

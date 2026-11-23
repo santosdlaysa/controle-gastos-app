@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Orgenyx — Documentação do Aplicativo</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  @page :first { margin: 0; }
+  :root {
+    --brand: #0a7ea4; --brand-dark: #065a78; --ink: #11181C; --muted: #5b646b;
+    --line: #e3e7ea; --soft: #f3f7f9; --red: #dc2626; --amber: #b45309; --green: #15803d;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Segoe UI", -apple-system, Roboto, Arial, sans-serif; color: var(--ink); font-size: 10.2pt; line-height: 1.55; margin: 0; }
+  h1, h2, h3 { line-height: 1.2; color: var(--ink); }
+  h2 { font-size: 19pt; margin: 0 0 4mm; padding-bottom: 2.5mm; border-bottom: 2.5px solid var(--brand); break-after: avoid; }
+  h2 .n { color: var(--brand); margin-right: 3mm; }
+  h3 { font-size: 12.5pt; margin: 6mm 0 2mm; color: var(--brand-dark); break-after: avoid; }
+  p { margin: 0 0 3mm; }
+  ul { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin-bottom: 1mm; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 8.8pt; background: var(--soft); padding: .2mm 1.2mm; border-radius: 1mm; color: #0b4f68; }
+  section { break-before: page; }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9pt; break-inside: auto; }
+  th { background: var(--brand); color: #fff; text-align: left; padding: 2mm 2.5mm; font-weight: 600; }
+  td { padding: 1.8mm 2.5mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr { break-inside: avoid; }
+  tbody tr:nth-child(even) td { background: #fafcfd; }
+  .note { background: var(--soft); border-left: 3.5px solid var(--brand); padding: 3mm 4mm; border-radius: 0 2mm 2mm 0; margin: 3mm 0 4mm; break-inside: avoid; }
+  .warn { background: #fef2f2; border-left-color: var(--red); }
+  .warn b.t { color: var(--red); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 2mm 0 4mm; }
+  .card { border: 1px solid var(--line); border-radius: 2.5mm; padding: 3.5mm 4mm; break-inside: avoid; }
+  .card h4 { margin: 0 0 1.5mm; font-size: 10.5pt; color: var(--brand-dark); }
+  .card p, .card ul { margin: 0; font-size: 9.3pt; }
+  .tag { display: inline-block; font-size: 7.8pt; font-weight: 700; padding: .4mm 2mm; border-radius: 10mm; background: #e0f2f8; color: var(--brand-dark); margin-right: 1mm; }
+
+  /* capa */
+  .cover { height: 297mm; width: 210mm; position: relative; color: #fff; overflow: hidden;
+           background: radial-gradient(ellipse 120mm 120mm at 85% 15%, rgba(56,189,248,.35), transparent 70%),
+                       linear-gradient(150deg, #0a7ea4 0%, #075f80 55%, #053f57 100%); }
+  .cover .in { position: absolute; left: 22mm; right: 22mm; top: 70mm; }
+  .cover img { width: 30mm; height: 30mm; border-radius: 7mm; border: 1.2mm solid rgba(255,255,255,.35); }
+  .cover h1 { color: #fff; font-size: 46pt; margin: 9mm 0 2mm; letter-spacing: -1px; }
+  .cover .sub { font-size: 17pt; opacity: .9; margin: 0; }
+  .cover .kind { margin-top: 16mm; font-size: 12pt; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; opacity: .85; }
+  .cover .meta { position: absolute; left: 22mm; right: 22mm; bottom: 22mm; display: flex; justify-content: space-between; font-size: 10pt; opacity: .85; border-top: 1px solid rgba(255,255,255,.3); padding-top: 5mm; }
+
+  /* sumário */
+  .toc { list-style: none; padding: 0; margin: 4mm 0 0; counter-reset: t; }
+  .toc li { display: flex; align-items: baseline; gap: 3mm; padding: 2.2mm 0; border-bottom: 1px dashed var(--line); font-size: 11pt; }
+  .toc li span.n { color: var(--brand); font-weight: 700; width: 9mm; }
+  .toc li small { color: var(--muted); margin-left: auto; font-size: 9pt; }
+
+  /* diagrama */
+  .arch { width: 100%; margin: 2mm 0 4mm; }
+  section.compact td { padding: 1.2mm 2.5mm; }
+  section.compact th { padding: 1.5mm 2.5mm; }
+  section.compact h3 { margin-top: 4mm; }
+</style>
+</head>
+<body>
+
+<!-- CAPA -->
+<div class="cover">
+  <div class="in">
+    <img src="../../assets/images/icon.png" alt="">
+    <h1>Orgenyx</h1>
+    <p class="sub">Suas finanças, mês a mês, sob controle.</p>
+    <div class="kind">Documentação do aplicativo</div>
+  </div>
+  <div class="meta"><span>Versão 2.1.2 · build 32</span><span>Novembro de 2026</span></div>
+</div>
+
+<!-- SUMÁRIO -->
+<section>
+  <h2>Sumário</h2>
+  <ol class="toc">
+    <li><span class="n">1</span>Visão geral<small>propósito, público e plataformas</small></li>
+    <li><span class="n">2</span>Funcionalidades<small>módulos do app</small></li>
+    <li><span class="n">3</span>Telas e fluxos de uso<small>navegação e jornadas</small></li>
+    <li><span class="n">4</span>Arquitetura<small>componentes e fluxo de dados</small></li>
+    <li><span class="n">5</span>Stack tecnológica</li>
+    <li><span class="n">6</span>Modelo de dados<small>tabelas PostgreSQL</small></li>
+    <li><span class="n">7</span>API<small>rotas REST e procedures tRPC</small></li>
+    <li><span class="n">8</span>Autenticação e segurança</li>
+    <li><span class="n">9</span>Monetização<small>anúncios e Premium</small></li>
+    <li><span class="n">10</span>Integrações externas</li>
+    <li><span class="n">11</span>Infraestrutura, build e publicação</li>
+    <li><span class="n">12</span>Configuração e ambiente de desenvolvimento</li>
+    <li><span class="n">13</span>Histórico de versões<small>novidades da 2.1.2</small></li>
+    <li><span class="n">14</span>Pontos de atenção e próximos passos</li>
+  </ol>
+</section>
+
+<!-- 1 -->
+<section>
+  <h2><span class="n">1</span>Visão geral</h2>
+  <p><b>Orgenyx</b> é um aplicativo de controle financeiro pessoal para iOS, Android e web. O usuário registra despesas mês a mês, organiza por categoria, banco e cartão, acompanha o saldo disponível, planeja o mês seguinte e recebe análises de um assistente com IA.</p>
+  <p>O app tem dois modos de uso:</p>
+  <div class="grid2">
+    <div class="card"><h4>Modo pessoal</h4><p>Despesas, renda, orçamentos, contas e cartões, devedores, histórico, exportação e assistente financeiro.</p></div>
+    <div class="card"><h4>Modo Uber (motorista)</h4><p>Registro de ganhos (corridas, entregas) e gastos (combustível, manutenção, pedágio etc.), com visão mensal de lucro e exportação.</p></div>
+  </div>
+  <h3>Princípios do produto</h3>
+  <ul>
+    <li><b>Mês como unidade de planejamento:</b> toda despesa pertence a um mês (<code>YYYY-MM</code>); o app facilita lançar no mês atual ou no próximo e mover parcelas adiante.</li>
+    <li><b>Banco/cartão é opcional:</b> despesas avulsas (dinheiro, empréstimos, Pix) são um caso legítimo, exibidas à parte como “despesas sem conta”.</li>
+    <li><b>Dados na nuvem:</b> tudo é salvo no servidor por usuário; o aparelho guarda cache para abrir rápido e funcionar com conexão lenta.</li>
+    <li><b>Gratuito com anúncios</b>, com assinatura Premium que remove os anúncios.</li>
+  </ul>
+  <h3>Plataformas</h3>
+  <table>
+    <thead><tr><th>Plataforma</th><th>Identificador</th><th>Distribuição</th></tr></thead>
+    <tbody>
+      <tr><td>iOS / iPadOS</td><td><code>com.orgenyx</code> · App Store ID 6760567600</td><td>App Store e TestFlight (via EAS Submit)</td></tr>
+      <tr><td>Android</td><td><code>com.orgenyx.controlegastos</code></td><td>Google Play (App Bundle via EAS Build)</td></tr>
+      <tr><td>Web</td><td>Expo Router (saída estática)</td><td>Navegador (sem anúncios nem compras)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 2 -->
+<section>
+  <h2><span class="n">2</span>Funcionalidades</h2>
+
+  <h3>2.1 Despesas</h3>
+  <ul>
+    <li>Criar, editar e excluir despesas com nome, categoria, valor, dia, parcelas (ex.: <code>3/12</code>), banco/cartão, forma de pagamento (débito ou crédito) e tipo (fixa ou variável).</li>
+    <li>Escolher, ao adicionar, se a despesa vai para <b>este mês</b> ou para o <b>próximo mês</b>.</li>
+    <li>Marcar como paga / não paga; mover a próxima parcela para o mês seguinte; gerar automaticamente as parcelas restantes.</li>
+    <li>Card “Despesas do próximo mês” com lista em folha deslizante; tocar em uma despesa abre a edição.</li>
+    <li>Despesas sem conta vinculada aparecem em um banner próprio na tela inicial.</li>
+    <li>Origem registrada: manual, importada via Pluggy ou capturada de notificação do Nubank.</li>
+  </ul>
+
+  <h3>2.2 Contas, cartões e saldo</h3>
+  <ul>
+    <li>Cadastro de bancos com saldo da conta (débito), limite de crédito e ordem personalizada (modo reordenar).</li>
+    <li><b>Saldo disponível</b>: soma dos saldos das contas. Tocar no card abre a lista das contas que compõem o total; tocar em uma conta permite editar o saldo e somar valores recebidos.</li>
+    <li>Seções “Minhas contas” e “Cartões de crédito” com fatura do mês por cartão.</li>
+    <li>Tocar e segurar uma conta em “Minhas contas” permite excluí-la (com confirmação; as despesas são mantidas).</li>
+    <li>Transferência entre contas e tela de detalhe por banco com as despesas daquele banco.</li>
+  </ul>
+
+  <h3>2.3 Renda e orçamento</h3>
+  <ul>
+    <li>Renda mensal: salário, vale e outros; possibilidade de ajustar a renda de um mês específico.</li>
+    <li>Orçamento total do mês e orçamento por categoria, com indicação visual de consumo.</li>
+  </ul>
+
+  <h3>2.4 Categorias personalizadas</h3>
+  <p>Categorias padrão (Transporte, Alimentação, Moradia, Saúde, Educação, Lazer, Outros) e categorias criadas pelo usuário, com nome, cor e ícone próprios.</p>
+
+  <h3>2.5 Devedores</h3>
+  <p>Cadastro de pessoas que devem dinheiro ao usuário, com valor total devido; despesas podem ser vinculadas a um devedor.</p>
+
+  <h3>2.6 Histórico e exportação</h3>
+  <ul>
+    <li>Resumo mensal (renda, despesas, saldo) e comparação entre meses.</li>
+    <li>Exportação das despesas de um ano.</li>
+  </ul>
+
+  <h3>2.7 Assistente financeiro (IA)</h3>
+  <p>Chat em português que recebe como contexto as despesas, a renda e o orçamento do mês e responde com análises, padrões de gasto e sugestões de economia. Modelo padrão: <code>gpt-4o-mini</code> (configurável por variável de ambiente).</p>
+
+  <h3>2.8 Modo Uber</h3>
+  <ul>
+    <li>Ganhos: corridas, entregas e outros. Gastos: combustível, manutenção, pedágio, lavagem, seguro e outros.</li>
+    <li>Resumo mensal de ganho, gasto e lucro; exportação em CSV e PDF.</li>
+    <li>Quando o modo Uber está ativo, um botão com ícone de carro no topo da tela inicial leva direto aos ganhos.</li>
+  </ul>
+
+  <h3>2.9 Integrações de captura automática</h3>
+  <ul>
+    <li><b>Pluggy (Open Finance):</b> conexão com bancos brasileiros e importação de transações, com mapeamento de categorias e deduplicação.</li>
+    <li><b>Notificações do Nubank (Android):</b> leitura de notificações de compra para sugerir despesas.</li>
+  </ul>
+
+  <h3>2.10 Conta do usuário</h3>
+  <ul>
+    <li>Cadastro e login por e-mail e senha; recuperação de senha por código enviado por e-mail (válido por 15 minutos).</li>
+    <li>Edição do nome, exclusão da conta com remoção dos dados, tema claro/escuro automático.</li>
+    <li>Configuração inicial guiada (banco e renda) para novos usuários; usuários que já têm dados vão direto ao app.</li>
+  </ul>
+</section>
+
+<!-- 3 -->
+<section>
+  <h2><span class="n">3</span>Telas e fluxos de uso</h2>
+  <h3>3.1 Mapa de telas</h3>
+  <table>
+    <thead><tr><th style="width:34%">Rota</th><th>Tela e conteúdo</th></tr></thead>
+    <tbody>
+      <tr><td><code>/login</code></td><td>Login e cadastro (seletor Entrar / Criar conta, mostrar senha, “Esqueceu a senha?”).</td></tr>
+      <tr><td><code>/forgot-password</code></td><td>Envio do código por e-mail e definição de nova senha.</td></tr>
+      <tr><td><code>/mode-select</code></td><td>Escolha do modo de uso (pessoal ou Uber) na primeira utilização.</td></tr>
+      <tr><td><code>/onboarding</code></td><td>Configuração inicial: primeiro banco/cartão e renda.</td></tr>
+      <tr><td><code>/(tabs)</code> — Início</td><td>Saldo disponível, ações rápidas, despesas do próximo mês, despesas sem conta, cartões de crédito, minhas contas e menu lateral.</td></tr>
+      <tr><td><code>/(tabs)/banks</code></td><td>Cadastro e gestão de bancos e cartões.</td></tr>
+      <tr><td><code>/bank/[id]</code></td><td>Detalhe de um banco: despesas do mês, débito × crédito, edição.</td></tr>
+      <tr><td><code>/bank-select</code></td><td>Seleção de banco ao lançar despesa.</td></tr>
+      <tr><td><code>/(tabs)/categories</code></td><td>Categorias e orçamentos por categoria.</td></tr>
+      <tr><td><code>/(tabs)/debtors</code></td><td>Devedores e valores a receber.</td></tr>
+      <tr><td><code>/(tabs)/history</code></td><td>Histórico mensal e comparativos.</td></tr>
+      <tr><td><code>/(tabs)/assistant</code></td><td>Assistente financeiro com IA.</td></tr>
+      <tr><td><code>/(tabs)/uber-earnings</code></td><td>Ganhos e gastos do modo Uber.</td></tr>
+      <tr><td><code>/(tabs)/settings</code></td><td>Renda, orçamento, Premium, integrações, perfil, exclusão de conta, painel admin.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Fluxo de entrada no app</h3>
+  <svg class="arch" viewBox="0 0 900 150" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial" font-size="13">
+    <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#0a7ea4"/></marker></defs>
+    <g fill="#e0f2f8" stroke="#0a7ea4" stroke-width="1.5">
+      <rect x="10" y="50" width="130" height="50" rx="10"/><rect x="190" y="50" width="150" height="50" rx="10"/>
+      <rect x="400" y="5" width="170" height="44" rx="10"/><rect x="400" y="100" width="170" height="44" rx="10"/>
+      <rect x="640" y="5" width="120" height="44" rx="10"/><rect x="640" y="100" width="250" height="44" rx="10"/>
+    </g>
+    <g fill="#11181C" text-anchor="middle">
+      <text x="75" y="80">Login</text><text x="265" y="72">Consulta dados</text><text x="265" y="90" font-size="11" fill="#5b646b">no servidor</text>
+      <text x="485" y="32">Usuário novo</text><text x="485" y="127">Já tem dados</text>
+      <text x="700" y="32">Modo + Onboarding</text><text x="765" y="127">Início (pula configuração)</text>
+    </g>
+    <g stroke="#0a7ea4" stroke-width="1.6" fill="none" marker-end="url(#a)">
+      <path d="M140 75 H186"/><path d="M340 70 L396 30"/><path d="M340 80 L396 120"/><path d="M570 27 H636"/><path d="M570 122 H636"/>
+    </g>
+  </svg>
+
+  <h3>3.3 Fluxos principais</h3>
+  <div class="grid2">
+    <div class="card"><h4>Lançar uma despesa</h4><ul><li>Botão central “+” da barra inferior</li><li>Preencher nome, valor, categoria e conta (opcional)</li><li>Escolher “Este mês” ou “Próximo mês” e salvar</li></ul></div>
+    <div class="card"><h4>Planejar o próximo mês</h4><ul><li>Card “Despesas do próximo mês”</li><li>Tocar em uma despesa para editar</li><li>Ou mover parcelas a partir do modal da despesa</li></ul></div>
+    <div class="card"><h4>Ajustar o saldo</h4><ul><li>Tocar em “Saldo disponível”</li><li>Escolher a conta na lista</li><li>Editar o saldo ou somar um valor recebido</li></ul></div>
+    <div class="card"><h4>Alternar para o modo Uber</h4><ul><li>Botão do carro no topo (se ativado)</li><li>Ou menu lateral → Ganhos de Uber</li><li>Ativação em Configurações</li></ul></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section>
+  <h2><span class="n">4</span>Arquitetura</h2>
+  <p>Aplicação <i>full-stack</i> em TypeScript com um único repositório: o app (Expo/React Native) e o servidor (Node.js/Express) compartilham tipos via tRPC, garantindo que cliente e API estejam sempre consistentes.</p>
+  <svg class="arch" viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial" font-size="13">
+    <defs><marker id="b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#065a78"/></marker></defs>
+    <rect x="10" y="10" width="270" height="310" rx="14" fill="#f3f7f9" stroke="#0a7ea4" stroke-width="1.5"/>
+    <text x="145" y="36" text-anchor="middle" font-weight="700" fill="#065a78">App (iOS · Android · Web)</text>
+    <g fill="#fff" stroke="#c9dfe8"><rect x="30" y="52" width="230" height="40" rx="8"/><rect x="30" y="102" width="230" height="40" rx="8"/><rect x="30" y="152" width="230" height="40" rx="8"/><rect x="30" y="202" width="230" height="40" rx="8"/><rect x="30" y="252" width="230" height="52" rx="8"/></g>
+    <g fill="#11181C" text-anchor="middle"><text x="145" y="77">Telas · Expo Router</text><text x="145" y="127">React Query + cache persistido</text><text x="145" y="177">Cliente tRPC + fetch (token)</text><text x="145" y="227">AdMob · RevenueCat</text><text x="145" y="275">expo-updates (OTA)</text><text x="145" y="293" font-size="11" fill="#5b646b">canal production</text></g>
+
+    <rect x="340" y="10" width="250" height="310" rx="14" fill="#f3f7f9" stroke="#0a7ea4" stroke-width="1.5"/>
+    <text x="465" y="36" text-anchor="middle" font-weight="700" fill="#065a78">Servidor · Render</text>
+    <g fill="#fff" stroke="#c9dfe8"><rect x="360" y="52" width="210" height="40" rx="8"/><rect x="360" y="102" width="210" height="40" rx="8"/><rect x="360" y="152" width="210" height="40" rx="8"/><rect x="360" y="202" width="210" height="40" rx="8"/><rect x="360" y="252" width="210" height="52" rx="8"/></g>
+    <g fill="#11181C" text-anchor="middle"><text x="465" y="77">Express · /api/health</text><text x="465" y="127">REST /api/auth/*</text><text x="465" y="177">tRPC /api/trpc (13 routers)</text><text x="465" y="227">Sessão JWT (HS256)</text><text x="465" y="275">Drizzle ORM</text><text x="465" y="293" font-size="11" fill="#5b646b">migração automática</text></g>
+
+    <g fill="#fff" stroke="#0a7ea4" stroke-width="1.5"><rect x="650" y="10" width="240" height="56" rx="12"/><rect x="650" y="80" width="240" height="44" rx="12"/><rect x="650" y="136" width="240" height="44" rx="12"/><rect x="650" y="192" width="240" height="44" rx="12"/><rect x="650" y="248" width="240" height="44" rx="12"/></g>
+    <g fill="#11181C" text-anchor="middle"><text x="770" y="35" font-weight="700">PostgreSQL</text><text x="770" y="53" font-size="11" fill="#5b646b">dados por usuário (userId)</text><text x="770" y="107">OpenAI · assistente</text><text x="770" y="163">Pluggy · Open Finance</text><text x="770" y="219">Resend · e-mails</text><text x="770" y="275">OAuth (opcional)</text></g>
+
+    <g stroke="#065a78" stroke-width="1.6" fill="none" marker-end="url(#b)">
+      <path d="M260 172 H356"/><path d="M570 280 C610 280 610 40 646 40"/><path d="M570 172 C610 172 610 102 646 102"/><path d="M570 172 H646 V158"/><path d="M570 127 C615 127 615 214 646 214"/><path d="M570 127 C620 127 620 270 646 270"/>
+    </g>
+    <text x="308" y="164" text-anchor="middle" font-size="11" fill="#5b646b">HTTPS</text>
+  </svg>
+  <h3>4.1 Fluxo de dados</h3>
+  <ul>
+    <li>As telas consultam dados com hooks do <b>React Query</b> gerados pelo tRPC (ex.: <code>trpc.expense.getByMonth.useQuery</code>).</li>
+    <li>O cache é <b>persistido no AsyncStorage</b>: ao abrir, o app mostra os últimos dados e atualiza em segundo plano. Ao trocar de mês, os dados anteriores permanecem na tela até os novos chegarem.</li>
+    <li>Toda chamada envia o token de sessão; o servidor identifica o usuário e filtra cada consulta por <code>userId</code>.</li>
+    <li>Preferências locais (modo de uso, configuração inicial concluída, Uber ativado) ficam no AsyncStorage do aparelho.</li>
+  </ul>
+  <h3>4.2 Organização do código</h3>
+  <table>
+    <thead><tr><th style="width:24%">Pasta</th><th>Conteúdo</th></tr></thead>
+    <tbody>
+      <tr><td><code>app/</code></td><td>Telas (roteamento por arquivos do Expo Router).</td></tr>
+      <tr><td><code>components/</code></td><td>Componentes reutilizáveis: modal de despesa, tab bar, banner de anúncio, toast, modal de transferência.</td></tr>
+      <tr><td><code>hooks/</code></td><td>Lógica de dados e integrações: <code>use-expenses</code>, <code>use-auth</code>, <code>use-purchases</code>, <code>use-pluggy</code>, <code>use-uber-earnings</code>.</td></tr>
+      <tr><td><code>lib/</code></td><td>Cliente tRPC, contexto de autenticação, tema, armazenamento local, parsers.</td></tr>
+      <tr><td><code>server/</code></td><td>API: routers tRPC, acesso a banco, autenticação, integrações.</td></tr>
+      <tr><td><code>drizzle/</code></td><td>Schema do banco e migrações.</td></tr>
+      <tr><td><code>shared/</code></td><td>Código comum a app e servidor (constantes, utilitários de despesa).</td></tr>
+      <tr><td><code>tests/</code></td><td>Testes automatizados (Vitest).</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 5 -->
+<section>
+  <h2><span class="n">5</span>Stack tecnológica</h2>
+  <table>
+    <thead><tr><th style="width:32%">Camada</th><th>Tecnologia</th></tr></thead>
+    <tbody>
+      <tr><td>App multiplataforma</td><td>React Native 0.85 · React 19.2 · Expo SDK 56 (nova arquitetura habilitada, React Compiler)</td></tr>
+      <tr><td>Navegação</td><td>Expo Router (rotas por arquivo, rotas tipadas)</td></tr>
+      <tr><td>Estilo</td><td>NativeWind (Tailwind CSS) + tokens de tema claro/escuro</td></tr>
+      <tr><td>Dados no app</td><td>TanStack React Query 5 com persistência em AsyncStorage</td></tr>
+      <tr><td>API tipada</td><td>tRPC 11 + Zod para validação de entrada</td></tr>
+      <tr><td>Servidor</td><td>Node.js · Express · build com esbuild (<code>dist/index.mjs</code>)</td></tr>
+      <tr><td>Banco de dados</td><td>PostgreSQL + Drizzle ORM</td></tr>
+      <tr><td>Autenticação</td><td>E-mail/senha (hash scrypt) + sessão JWT (jose) · OAuth opcional</td></tr>
+      <tr><td>Anúncios</td><td>Google Mobile Ads (AdMob): banner e App Open</td></tr>
+      <tr><td>Assinaturas</td><td>RevenueCat (<code>react-native-purchases</code> 10.4.2)</td></tr>
+      <tr><td>Atualizações OTA</td><td>expo-updates · EAS Update (runtime = versão do app)</td></tr>
+      <tr><td>IA</td><td>OpenAI SDK (modelo padrão <code>gpt-4o-mini</code>)</td></tr>
+      <tr><td>Open Finance</td><td>Pluggy API + <code>react-native-pluggy-connect</code></td></tr>
+      <tr><td>E-mail</td><td>Resend</td></tr>
+      <tr><td>Testes</td><td>Vitest</td></tr>
+      <tr><td>Build e lojas</td><td>EAS Build · EAS Submit · Render (servidor)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 6 -->
+<section>
+  <h2><span class="n">6</span>Modelo de dados</h2>
+  <p>Todas as tabelas de conteúdo têm a coluna <code>userId</code>; o servidor sempre filtra por ela. Valores monetários usam <code>numeric(10,2)</code>.</p>
+  <table>
+    <thead><tr><th style="width:22%">Tabela</th><th style="width:40%">Colunas principais</th><th>Observações</th></tr></thead>
+    <tbody>
+      <tr><td><code>users</code></td><td>openId, email, name, passwordHash, loginMethod, role, lastSignedIn</td><td><code>role</code>: user ou admin. Login por e-mail usa <code>openId = email:&lt;email&gt;</code>.</td></tr>
+      <tr><td><code>expenses</code></td><td>name, category, value, date, month, quantity, paid, source, bank, paymentType, expenseType, debtorId, clientId</td><td>month no formato <code>YYYY-MM</code>; source: manual, pluggy, nubank; paymentType: debit, credit; expenseType: fixed, variable.</td></tr>
+      <tr><td><code>banks</code></td><td>name, isCredit, creditLimit, debitBalance, position</td><td>Saldo da conta e limite do cartão no mesmo registro; <code>position</code> define a ordem.</td></tr>
+      <tr><td><code>incomes</code></td><td>salary, vale, other</td><td>Renda padrão do usuário.</td></tr>
+      <tr><td><code>budgets</code></td><td>orçamento total e ajuste de renda por mês</td><td>Por usuário e mês.</td></tr>
+      <tr><td><code>category_budgets</code></td><td>categoria, limite</td><td>Orçamento por categoria.</td></tr>
+      <tr><td><code>user_categories</code></td><td>name, label, color, icon, isDefault</td><td>Único por (userId, name).</td></tr>
+      <tr><td><code>debtors</code></td><td>name, totalOwed</td><td>Único por (userId, name).</td></tr>
+      <tr><td><code>uber_earnings</code></td><td>tipo, categoria, valor, data, mês</td><td>Ganhos e gastos do modo Uber.</td></tr>
+      <tr><td><code>password_reset_tokens</code></td><td>email, code, expiresAt, usedAt</td><td>Código de 6 dígitos, válido por 15 min, uso único.</td></tr>
+    </tbody>
+  </table>
+  <div class="note">O vínculo entre despesa e banco é feito pelo <b>nome</b> do banco (<code>expenses.bank</code>), não por chave estrangeira. Por isso, excluir um banco não apaga as despesas, e renomear um banco exige cuidado.</div>
+</section>
+
+<!-- 7 -->
+<section class="compact">
+  <h2><span class="n">7</span>API</h2>
+  <h3>7.1 Rotas REST</h3>
+  <table>
+    <thead><tr><th style="width:36%">Rota</th><th>Função</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET /api/health</code></td><td>Verificação de saúde (usada pelo Render e pelo keep-warm).</td></tr>
+      <tr><td><code>POST /api/auth/register</code></td><td>Cadastro por e-mail e senha (mín. 8 caracteres); retorna token e usuário.</td></tr>
+      <tr><td><code>POST /api/auth/login</code></td><td>Login; 401 com mensagem única para e-mail inexistente ou senha errada.</td></tr>
+      <tr><td><code>POST /api/auth/forgot-password</code></td><td>Envia código por e-mail; sempre responde sucesso (evita descobrir e-mails cadastrados).</td></tr>
+      <tr><td><code>POST /api/auth/reset-password</code></td><td>Valida o código e define a nova senha.</td></tr>
+      <tr><td><code>GET /api/auth/me</code> · <code>POST /api/auth/session</code> · <code>POST /api/auth/logout</code></td><td>Sessão atual, troca de sessão e saída.</td></tr>
+      <tr><td><code>GET /api/oauth/callback</code> · <code>GET /api/oauth/mobile</code></td><td>Retorno do login OAuth.</td></tr>
+    </tbody>
+  </table>
+  <h3>7.2 Procedures tRPC (<code>/api/trpc</code>)</h3>
+  <table>
+    <thead><tr><th style="width:20%">Router</th><th>Procedures</th></tr></thead>
+    <tbody>
+      <tr><td><code>expense</code></td><td>getByMonth, getByYear, getByBank, create, update, delete, bulkCreate</td></tr>
+      <tr><td><code>bank</code></td><td>getAll, getById, create, delete, reorder, updateLimits, transfer</td></tr>
+      <tr><td><code>income</code></td><td>get, update</td></tr>
+      <tr><td><code>budget</code></td><td>get, updateTotal, updateIncomeOverride, updateCategories</td></tr>
+      <tr><td><code>category</code></td><td>getAll, create, update, delete</td></tr>
+      <tr><td><code>debtor</code></td><td>getAll, create, update, delete</td></tr>
+      <tr><td><code>history</code></td><td>getSummaries</td></tr>
+      <tr><td><code>uberEarnings</code></td><td>getByMonth, getByYear, create, update, delete</td></tr>
+      <tr><td><code>assistant</code></td><td>chat</td></tr>
+      <tr><td><code>pluggy</code></td><td>createConnectToken, syncTransactions, syncAndSave</td></tr>
+      <tr><td><code>profile</code></td><td>updateName, deleteAccount</td></tr>
+      <tr><td><code>migration</code></td><td>status, importAll, applyMigrations</td></tr>
+      <tr><td><code>admin</code></td><td>getTables, getTableData, executeSQL</td></tr>
+      <tr><td><code>auth</code></td><td>me, logout</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 8 -->
+<section>
+  <h2><span class="n">8</span>Autenticação e segurança</h2>
+  <ul>
+    <li><b>Senhas</b> armazenadas com <code>scrypt</code> (sal aleatório de 16 bytes) e comparação em tempo constante.</li>
+    <li><b>Sessão</b>: JWT HS256 assinado com <code>JWT_SECRET</code>, validade de 1 ano, enviado no cabeçalho e em cookie <code>httpOnly</code> (<code>sameSite=none; secure</code> em HTTPS).</li>
+    <li><b>Isolamento</b>: procedures protegidas exigem usuário autenticado e filtram os dados por <code>userId</code>.</li>
+    <li><b>Mensagens neutras</b> no login e na recuperação de senha, sem revelar se o e-mail existe.</li>
+    <li><b>Exclusão de conta</b> remove despesas, renda, orçamentos, ganhos Uber e o usuário.</li>
+    <li>Comunicação com o servidor sempre por HTTPS.</li>
+  </ul>
+  <div class="note warn"><b class="t">Atenção — vulnerabilidade crítica.</b> As procedures do router <code>admin</code> (<code>getTables</code>, <code>getTableData</code> e <code>executeSQL</code>) usam <code>protectedProcedure</code>, que só exige estar logado. Como qualquer pessoa pode criar uma conta, qualquer usuário consegue executar SQL arbitrário no banco (ler dados de todos os usuários ou apagar tabelas). O projeto já tem <code>adminProcedure</code> em <code>server/_core/trpc.ts</code>; essas três procedures devem passar a usá-lo com urgência.</div>
+  <h3>Outros pontos de segurança</h3>
+  <ul>
+    <li>A exclusão de conta não remove <code>banks</code>, <code>user_categories</code> e <code>debtors</code>; recomenda-se incluí-las.</li>
+    <li>Chaves públicas (RevenueCat, AdMob) ficam no <code>eas.json</code>; segredos do servidor (<code>DATABASE_URL</code>, <code>JWT_SECRET</code>, Pluggy) ficam apenas nas variáveis do Render.</li>
+  </ul>
+</section>
+
+<!-- 9 -->
+<section>
+  <h2><span class="n">9</span>Monetização</h2>
+  <div class="grid2">
+    <div class="card"><h4>Gratuito com anúncios</h4><ul><li>Banner AdMob nas telas principais</li><li>Anúncio App Open ao abrir o app</li><li>Não exibidos na versão web</li></ul></div>
+    <div class="card"><h4>Premium (assinatura)</h4><ul><li>Assinatura mensal via App Store / Google Play</li><li>Gerenciada pelo RevenueCat</li><li>Remove todos os anúncios; botão de restaurar compras</li></ul></div>
+  </div>
+  <p>O estado Premium é lido pelo hook <code>usePurchases</code>, que inicializa o RevenueCat com a chave da plataforma e expõe <code>isPremium</code>, os pacotes, a compra e a restauração.</p>
+  <div class="note">O SDK de anúncios exige o ID do app AdMob no build. A ausência desse ID fez a versão 2.1.1 fechar ao abrir e ser rejeitada pela Apple; desde a 2.1.2 os IDs estão no <code>env</code> dos perfis do <code>eas.json</code>.</div>
+</section>
+
+<!-- 10 -->
+<section>
+  <h2><span class="n">10</span>Integrações externas</h2>
+  <table>
+    <thead><tr><th style="width:20%">Serviço</th><th style="width:40%">Uso no app</th><th>Configuração</th></tr></thead>
+    <tbody>
+      <tr><td>Render</td><td>Hospeda a API e o PostgreSQL</td><td><code>render.yaml</code>; health check em <code>/api/health</code></td></tr>
+      <tr><td>Expo EAS</td><td>Builds, envio às lojas e atualizações OTA</td><td><code>eas.json</code>, projeto <code>@orgenyx/controle-gastos-app</code></td></tr>
+      <tr><td>AdMob</td><td>Anúncios banner e App Open</td><td><code>EXPO_PUBLIC_ADMOB_*</code></td></tr>
+      <tr><td>RevenueCat</td><td>Assinatura Premium</td><td><code>EXPO_PUBLIC_REVENUECAT_IOS_KEY</code> / <code>_ANDROID_KEY</code></td></tr>
+      <tr><td>OpenAI</td><td>Assistente financeiro</td><td>Chave e modelo nas variáveis do servidor</td></tr>
+      <tr><td>Pluggy</td><td>Conexão bancária e importação</td><td><code>PLUGGY_CLIENT_ID</code> / <code>PLUGGY_CLIENT_SECRET</code></td></tr>
+      <tr><td>Resend</td><td>E-mail de recuperação de senha</td><td><code>RESEND_API_KEY</code>, <code>RESEND_FROM</code></td></tr>
+      <tr><td>GitHub Actions</td><td>Keep-warm: pinga a API a cada 10 min</td><td><code>.github/workflows/keep-warm.yml</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 11 -->
+<section>
+  <h2><span class="n">11</span>Infraestrutura, build e publicação</h2>
+  <h3>11.1 Servidor</h3>
+  <ul>
+    <li>Serviço web no Render: <code>pnpm install</code> → <code>pnpm run build</code> → <code>node dist/index.mjs</code>.</li>
+    <li>URL de produção: <code>https://controle-gastos-app-xnbw.onrender.com</code>.</li>
+    <li>Plano gratuito: o serviço hiberna após inatividade; o keep-warm evita a hibernação, mas consome ~720 h/mês do limite de 750 h compartilhado entre serviços gratuitos. Estourar o limite suspende o serviço (“Service suspended”).</li>
+  </ul>
+  <h3>11.2 App</h3>
+  <table>
+    <thead><tr><th style="width:24%">Perfil EAS</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td><code>development</code></td><td>Development client, distribuição interna.</td></tr>
+      <tr><td><code>preview</code></td><td>Distribuição interna, canal <code>preview</code>.</td></tr>
+      <tr><td><code>production</code></td><td>Lojas; canal <code>production</code>; número de build incrementado automaticamente (versão gerenciada remotamente).</td></tr>
+    </tbody>
+  </table>
+  <h3>11.3 Publicando uma versão</h3>
+  <ol>
+    <li>Atualizar <code>version</code> em <code>app.config.ts</code> (deve ser maior que a última publicada).</li>
+    <li><code>eas build -p ios --profile production</code> (e <code>-p android</code>).</li>
+    <li><code>eas submit -p ios --profile production</code> — envia ao App Store Connect / TestFlight (<code>ascAppId</code> configurado).</li>
+    <li>Testar no TestFlight e enviar para revisão.</li>
+  </ol>
+  <h3>11.4 Atualizações sem passar pela loja (EAS Update)</h3>
+  <ul>
+    <li><code>eas update --channel production</code> publica apenas mudanças em JavaScript.</li>
+    <li>A atualização só chega a builds da mesma versão (<code>runtimeVersion</code> = versão do app).</li>
+    <li>O app baixa na abertura e aplica na abertura seguinte.</li>
+    <li>Mudanças nativas (novas bibliotecas, permissões, IDs no <code>Info.plist</code>) exigem build novo.</li>
+    <li>O <code>eas update</code> lê variáveis do <code>.env</code> local, não do <code>eas.json</code>; mantenha os dois com os mesmos valores.</li>
+  </ul>
+</section>
+
+<!-- 12 -->
+<section>
+  <h2><span class="n">12</span>Configuração e ambiente de desenvolvimento</h2>
+  <h3>12.1 Pré-requisitos e instalação</h3>
+  <ul>
+    <li>Node.js 20+, pnpm 9, acesso a um PostgreSQL.</li>
+    <li><code>pnpm install</code> → configurar <code>.env</code> → <code>pnpm db:push</code> → <code>pnpm dev</code> (API na porta 3000 e Metro na 8081).</li>
+  </ul>
+  <h3>12.2 Scripts</h3>
+  <table>
+    <thead><tr><th style="width:28%">Script</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>pnpm dev</code></td><td>Servidor + Metro (web)</td></tr>
+      <tr><td><code>pnpm dev:android</code></td><td>Servidor + Metro com Android</td></tr>
+      <tr><td><code>pnpm build</code> / <code>pnpm start</code></td><td>Build e execução do servidor em produção</td></tr>
+      <tr><td><code>pnpm check</code></td><td>Checagem de tipos (TypeScript)</td></tr>
+      <tr><td><code>pnpm lint</code> / <code>pnpm format</code></td><td>ESLint / Prettier</td></tr>
+      <tr><td><code>pnpm test</code></td><td>Testes (Vitest)</td></tr>
+      <tr><td><code>pnpm db:push</code></td><td>Aplica o schema no banco</td></tr>
+    </tbody>
+  </table>
+  <h3>12.3 Variáveis de ambiente</h3>
+  <table>
+    <thead><tr><th style="width:40%">Variável</th><th>Onde / para quê</th></tr></thead>
+    <tbody>
+      <tr><td><code>DATABASE_URL</code>, <code>JWT_SECRET</code></td><td>Servidor — banco e assinatura de sessões (obrigatórias)</td></tr>
+      <tr><td><code>PLUGGY_CLIENT_ID</code>, <code>PLUGGY_CLIENT_SECRET</code></td><td>Servidor — Open Finance</td></tr>
+      <tr><td><code>RESEND_API_KEY</code>, <code>RESEND_FROM</code></td><td>Servidor — e-mails</td></tr>
+      <tr><td><code>OAUTH_SERVER_URL</code>, <code>OWNER_OPEN_ID</code></td><td>Servidor — OAuth e administrador</td></tr>
+      <tr><td><code>EXPO_PUBLIC_API_BASE_URL</code></td><td>App — endereço da API</td></tr>
+      <tr><td><code>EXPO_PUBLIC_REVENUECAT_*</code></td><td>App — assinaturas</td></tr>
+      <tr><td><code>EXPO_PUBLIC_ADMOB_*</code></td><td>App — IDs do app e dos blocos de anúncio (obrigatórios no build nativo)</td></tr>
+    </tbody>
+  </table>
+  <h3>12.4 Testes</h3>
+  <p><code>tests/auth.login.test.ts</code> cobre o login: sucesso com token e cookie, senha errada, usuário inexistente, conta sem senha, campos ausentes e falhas de banco (10 casos). <code>tests/mailer.test.ts</code> cobre o envio de e-mail de recuperação.</p>
+</section>
+
+<!-- 13 -->
+<section>
+  <h2><span class="n">13</span>Histórico de versões</h2>
+  <h3>Versão 2.1.2 (build 32 · novembro de 2026)</h3>
+  <ul>
+    <li><span class="tag">Correção</span>O app fechava ao abrir (inclusive no iPad): o build não incluía o ID do AdMob.</li>
+    <li><span class="tag">Novo</span>Escolha entre “Este mês” e “Próximo mês” ao adicionar despesa.</li>
+    <li><span class="tag">Novo</span>Editar despesas a partir da lista “Despesas do próximo mês”.</li>
+    <li><span class="tag">Novo</span>Nova tela de login (seletor Entrar/Criar conta, mostrar senha, cabeçalho da marca).</li>
+    <li><span class="tag">Novo</span>Tocar em “Saldo disponível” para editar o saldo de cada conta.</li>
+    <li><span class="tag">Novo</span>Tocar e segurar uma conta para excluí-la.</li>
+    <li><span class="tag">Novo</span>Atalho para Ganhos de Uber no topo da tela inicial.</li>
+    <li><span class="tag">Melhoria</span>Cache persistido: abertura mais rápida e troca de mês sem tela piscando.</li>
+    <li><span class="tag">Melhoria</span>Usuário com dados no servidor não refaz a configuração inicial em novo aparelho.</li>
+    <li><span class="tag">Correção</span>Modal de despesa não passa mais por baixo da barra de status do iOS.</li>
+    <li><span class="tag">Técnico</span>RevenueCat 10.4.2, keep-warm do servidor, teste automatizado do login.</li>
+  </ul>
+  <h3>Versões anteriores</h3>
+  <ul>
+    <li><b>2.1.1 (build 31)</b> — rejeitada pela Apple (Guideline 2.1(a)): fechava ao abrir.</li>
+    <li><b>2.1.0</b> — versão disponível nas lojas antes da 2.1.2.</li>
+  </ul>
+</section>
+
+<!-- 14 -->
+<section>
+  <h2><span class="n">14</span>Pontos de atenção e próximos passos</h2>
+  <table>
+    <thead><tr><th style="width:8%">Prior.</th><th style="width:38%">Item</th><th>Recomendação</th></tr></thead>
+    <tbody>
+      <tr><td><b style="color:var(--red)">Alta</b></td><td>SQL arbitrário pelo router <code>admin</code></td><td>Trocar <code>protectedProcedure</code> por <code>adminProcedure</code> em <code>getTables</code>, <code>getTableData</code> e <code>executeSQL</code> e publicar o servidor.</td></tr>
+      <tr><td><b style="color:var(--red)">Alta</b></td><td>Build Android desatualizado</td><td>O último build Android foi cancelado; gerar e publicar a 2.1.2 na Google Play.</td></tr>
+      <tr><td><b style="color:var(--amber)">Média</b></td><td>Exclusão de conta incompleta</td><td>Incluir <code>banks</code>, <code>user_categories</code> e <code>debtors</code> no <code>deleteAccount</code>.</td></tr>
+      <tr><td><b style="color:var(--amber)">Média</b></td><td>Limite do plano gratuito do Render</td><td>Monitorar horas consumidas ou migrar para plano pago para evitar suspensão.</td></tr>
+      <tr><td><b style="color:var(--amber)">Média</b></td><td><code>scripts/load-env.js</code> não lê <code>.env</code> com quebras de linha do Windows</td><td>Aceitar <code>\r\n</code> no parser.</td></tr>
+      <tr><td><b style="color:var(--amber)">Média</b></td><td>Saldo negativo não aceito na edição de saldo</td><td>Permitir valores negativos (cheque especial), se fizer sentido para o produto.</td></tr>
+      <tr><td>Baixa</td><td>Erros de tipo pré-existentes</td><td>Corrigir os erros do <code>tsc</code> em <code>app/(tabs)/_layout.tsx</code> e <code>app/(tabs)/index.tsx</code> (linha 93).</td></tr>
+      <tr><td>Baixa</td><td>Versão do servidor não exposta</td><td>Incluir versão e commit na resposta de <code>/api/health</code>.</td></tr>
+      <tr><td>Baixa</td><td>README desatualizado</td><td>Atualizar versões (Expo 56, RN 0.85) e funcionalidades novas.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</body>
+</html>

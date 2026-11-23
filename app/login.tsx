@@ -49,6 +49,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const passwordRef = useRef<TextInput>(null);
+  const [heroSize, setHeroSize] = useState({ width: 0, height: 0 });
 
   const handleSubmit = async () => {
     setError(null);
@@ -125,19 +126,27 @@ export default function LoginScreen() {
               borderBottomLeftRadius: 36,
               borderBottomRightRadius: 36,
               overflow: "hidden",
+              // Cor sólida de base: garante o texto branco legível mesmo se o SVG não renderizar
+              backgroundColor: BRAND,
+            }}
+            onLayout={(e) => {
+              const { width, height } = e.nativeEvent.layout;
+              setHeroSize((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
             }}
           >
-            <Svg style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} width="100%" height="100%">
+            {heroSize.width > 0 && (
+            <Svg style={{ position: "absolute", top: 0, left: 0 }} width={heroSize.width} height={heroSize.height}>
               <Defs>
                 <LinearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
                   <Stop offset="0" stopColor={BRAND} />
                   <Stop offset="1" stopColor={BRAND_DARK} />
                 </LinearGradient>
               </Defs>
-              <Rect width="100%" height="100%" fill="url(#hero)" />
-              <Circle cx="88%" cy="8%" r="120" fill="#ffffff" opacity={0.07} />
-              <Circle cx="6%" cy="92%" r="90" fill="#ffffff" opacity={0.06} />
+              <Rect x={0} y={0} width={heroSize.width} height={heroSize.height} fill="url(#hero)" />
+              <Circle cx={heroSize.width * 0.88} cy={heroSize.height * 0.08} r={120} fill="#ffffff" opacity={0.07} />
+              <Circle cx={heroSize.width * 0.06} cy={heroSize.height * 0.92} r={90} fill="#ffffff" opacity={0.06} />
             </Svg>
+            )}
 
             <View
               style={{

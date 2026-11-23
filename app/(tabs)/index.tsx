@@ -552,6 +552,17 @@ export default function HomeScreen() {
                 {user?.name ? user.name.split(' ')[0] : 'Usuário'}
               </Text>
             </View>
+            {uberEnabled && (
+              <Pressable
+                onPress={() => { setAppMode('uber'); router.replace('/(tabs)/uber-earnings'); }}
+                accessibilityRole="button"
+                accessibilityLabel="Ir para Ganhos de Uber"
+                hitSlop={6}
+                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(245,158,11,0.22)', alignItems: 'center', justifyContent: 'center' }]}
+              >
+                <MaterialIcons name="directions-car" size={21} color="#FBBF24" />
+              </Pressable>
+            )}
             <Pressable onPress={openDrawer} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }]}>
               <MaterialIcons name="menu" size={22} color="rgba(255,255,255,0.95)" />
             </Pressable>
