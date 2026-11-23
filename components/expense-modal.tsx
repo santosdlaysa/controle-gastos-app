@@ -12,6 +12,7 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Expense, ExpenseCategory } from '@/types/expense';
 import { trpc } from '@/lib/trpc';
 import { getNextMonth } from '@/shared/expense-utils';
@@ -48,6 +49,7 @@ export function ExpenseModal({
   onMoveToNextMonth,
   onGenerateRemainingInstallments,
 }: ExpenseModalProps) {
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [category, setCategory] = useState<string>('');
   const [quantity, setQuantity] = useState('');
@@ -200,12 +202,15 @@ export function ExpenseModal({
       transparent={true}
       onRequestClose={onClose}
     >
-      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} onPress={onClose} />
+      {/* paddingTop mantém o modal abaixo da barra de status (hora/bateria);
+          flexShrink deixa o conteúdo encolher e rolar quando o teclado abre */}
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)', paddingTop: insets.top + 12 }}>
+      <Pressable style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} onPress={onClose} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-        style={{ width: '100%' }}
+        style={{ width: '100%', flexShrink: 1 }}
       >
-        <View className="bg-background rounded-t-3xl p-6 pb-8" style={{ maxHeight: Dimensions.get('window').height * 0.85 }}>
+        <View className="bg-background rounded-t-3xl p-6 pb-8" style={{ maxHeight: Dimensions.get('window').height * 0.85, flexShrink: 1 }}>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {/* Header */}
             <View className="flex-row justify-between items-center mb-6">
@@ -612,6 +617,7 @@ export function ExpenseModal({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

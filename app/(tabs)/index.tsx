@@ -30,6 +30,7 @@ import { setAppMode } from '@/lib/mode';
 import { setFabListener } from '@/lib/fab-action';
 import { getUberFeatureEnabled } from '@/lib/uber-feature';
 import { Toast, useToast } from '@/components/toast';
+import * as Haptics from 'expo-haptics';
 import { AdBanner } from '@/components/ad-banner';
 import { usePurchases } from '@/hooks/use-purchases';
 
@@ -335,6 +336,34 @@ export default function HomeScreen() {
   const bankUtils = trpc.useUtils();
   const updateBankLimits = trpc.bank.updateLimits.useMutation();
   const reorderBanks = trpc.bank.reorder.useMutation();
+  const deleteBankMut = trpc.bank.delete.useMutation({
+    onSuccess: () => bankUtils.bank.getAll.invalidate(),
+  });
+  const confirmDeleteBank = useCallback((bank: { id: number; name: string; isCredit?: boolean | null; creditLimit?: unknown }) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
+    const alsoCard = bank.isCredit || bank.creditLimit != null;
+    Alert.alert(
+      'Excluir conta',
+      `Deseja excluir "${bank.name}"?${alsoCard ? ' O cartão de crédito desse banco também será removido.' : ''} As despesas já lançadas não serão apagadas.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteBankMut.mutateAsync({ id: bank.id });
+              showToast('Conta excluída', 'info');
+            } catch {
+              Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
+            }
+          },
+        },
+      ],
+    );
+  }, [deleteBankMut, showToast]);
   const [reorderMode, setReorderMode] = useState(false);
   const [orderedBanks, setOrderedBanks] = useState<typeof allBanks>([]);
   const reorderModeRef = useRef(false);
@@ -345,6 +374,46 @@ export default function HomeScreen() {
       setOrderedBanks([...allBanks]);
     }
   }, [allBanks]);
+
+  // Saldo disponível → lista das contas que compõem o total → edição do saldo.
+  // iOS não abre um Modal com outro aberto: fecha a lista e abre a edição no onDismiss.
+  const [balanceBreakdownVisible, setBalanceBreakdownVisible] = useState(false);
+  const pendingBalanceEditRef = useRef(false);
+  type BalanceBank = { id: number | null; name: string; debitBalance?: unknown; creditLimit?: unknown };
+  const openBankBalanceEdit = useCallback((bank: BalanceBank, fromBreakdown: boolean) => {
+    if (bank.id == null) return;
+    const bal = bank.debitBalance != null ? parseFloat(String(bank.debitBalance)) : null;
+    const limit = bank.creditLimit != null ? parseFloat(String(bank.creditLimit)) : null;
+    setBankBalanceTarget({ id: bank.id, name: bank.name, debitBalance: bal, creditLimit: limit });
+    setBankBalanceInput(bal != null ? bal.toFixed(2).replace('.', ',') : '');
+    setBankReceivedInput('');
+    if (fromBreakdown && Platform.OS === 'ios') {
+      pendingBalanceEditRef.current = true;
+      setBalanceBreakdownVisible(false);
+    } else {
+      setBalanceBreakdownVisible(false);
+      setBankBalanceEditVisible(true);
+    }
+  }, []);
+  const handleBalanceBreakdownDismiss = useCallback(() => {
+    if (!pendingBalanceEditRef.current) return;
+    pendingBalanceEditRef.current = false;
+    setBankBalanceEditVisible(true);
+  }, []);
+  const balanceBanks = useMemo(() => {
+    const list = (orderedBanks.length > 0 ? orderedBanks : allBanks).filter(b => b.id != null);
+    // Contas com saldo preenchido primeiro
+    return [...list].sort((a, b) => Number(b.debitBalance != null) - Number(a.debitBalance != null));
+  }, [orderedBanks, allBanks]);
+  const openBalanceBreakdown = useCallback(() => {
+    const filled = balanceBanks.filter(b => b.debitBalance != null);
+    if (filled.length === 1) {
+      openBankBalanceEdit(filled[0], false);
+    } else {
+      setBalanceBreakdownVisible(true);
+    }
+  }, [balanceBanks, openBankBalanceEdit]);
+
 
   function moveBank(list: typeof allBanks, fromIdx: number, toIdx: number) {
     const next = [...list];
@@ -557,8 +626,17 @@ export default function HomeScreen() {
               <View style={{ gap: 20 }}>
 
                 {/* ── Resumo financeiro (destaque) ── */}
+                <Pressable
+                  onPress={openBalanceBreakdown}
+                  accessibilityRole="button"
+                  accessibilityHint="Toque para ver e editar o saldo de cada conta"
+                  style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.99 : 1 }] }]}
+                >
                 <View style={{ backgroundColor: colors.surface, borderRadius: 24, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 16, elevation: 3 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.6 }}>Saldo disponível</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.6 }}>Saldo disponível</Text>
+                    <MaterialIcons name="edit" size={12} color={colors.muted} />
+                  </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
                     <Text numberOfLines={1} adjustsFontSizeToFit style={{ flex: 1, fontSize: 34, fontWeight: '800', color: colors.foreground, letterSpacing: -1.2 }}>
                       R$ {fmt(totalAvailable)}
@@ -585,6 +663,7 @@ export default function HomeScreen() {
                     </View>
                   </View>
                 </View>
+                </Pressable>
 
                 {/* ── Ações rápidas ── */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -765,7 +844,13 @@ export default function HomeScreen() {
                               </Pressable>
                             </View>
                           )}
-                          <Pressable style={{ flex: 1 }} onPress={() => !reorderMode && router.push(`/bank/${bank.id}`)}>
+                          <Pressable
+                            style={({ pressed }) => [{ flex: 1, opacity: pressed && !reorderMode ? 0.85 : 1 }]}
+                            onPress={() => !reorderMode && router.push(`/bank/${bank.id}`)}
+                            onLongPress={() => { if (!reorderMode && bank.id != null) confirmDeleteBank({ ...bank, id: bank.id }); }}
+                            delayLongPress={400}
+                            accessibilityHint="Toque e segure para excluir a conta"
+                          >
                             <View style={{ backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 2 }}>
                               <View style={{ height: 3, backgroundColor: bc }} />
                               <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
@@ -1158,6 +1243,52 @@ export default function HomeScreen() {
             </View>
           </Pressable>
         </Pressable>
+      </Modal>
+
+      {/* Saldo disponível: de onde vem o total */}
+      <Modal visible={balanceBreakdownVisible} transparent animationType="slide" onRequestClose={() => setBalanceBreakdownVisible(false)} onDismiss={handleBalanceBreakdownDismiss}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+          <Pressable style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} onPress={() => setBalanceBreakdownVisible(false)} />
+          <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, maxHeight: '80%' }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, marginBottom: 4 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#0a7ea415', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="account-balance-wallet" size={20} color="#0a7ea4" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>Saldo disponível</Text>
+                <Text style={{ fontSize: 12, color: colors.muted }}>Toque em uma conta para editar o saldo</Text>
+              </View>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: colors.foreground }}>
+                R$ {fmt(balanceBanks.reduce((sum, b) => sum + (b.debitBalance != null ? parseFloat(String(b.debitBalance)) : 0), 0))}
+              </Text>
+            </View>
+            <ScrollView style={{ paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+              {balanceBanks.length === 0 ? (
+                <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center', paddingVertical: 24 }}>Nenhuma conta cadastrada.</Text>
+              ) : balanceBanks.map((bank) => {
+                const bal = bank.debitBalance != null ? parseFloat(String(bank.debitBalance)) : null;
+                return (
+                  <Pressable key={`bal-${bank.id}`} onPress={() => openBankBalanceEdit(bank, true)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
+                      <BankLogo name={bank.name} size={34} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{bank.name}</Text>
+                        <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{bal != null ? 'Saldo da conta' : 'Saldo não informado'}</Text>
+                      </View>
+                      {bal != null ? (
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: bal >= 0 ? '#10B981' : '#EF4444' }}>R$ {fmt(bal)}</Text>
+                      ) : (
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.tint }}>Definir</Text>
+                      )}
+                      <MaterialIcons name="edit" size={16} color={colors.muted} />
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
 
       {/* Bank balance edit modal */}

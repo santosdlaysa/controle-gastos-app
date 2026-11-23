@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100vw; height: 100vh; overflow: hidden; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
+    background:
+      radial-gradient(ellipse 60vw 70vh at 85% 30%, rgba(56,189,248,.35), transparent 60%),
+      radial-gradient(ellipse 50vw 60vh at 10% 100%, rgba(255,255,255,.10), transparent 60%),
+      linear-gradient(135deg, #0a7ea4 0%, #075f80 55%, #053f57 100%);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6vw; padding: 0 8vw;
+  }
+  /* grade sutil */
+  body::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 6vh 6vh;
+    mask-image: radial-gradient(ellipse at 70% 50%, #000 20%, transparent 75%);
+  }
+  .brand { position: relative; flex: 0 1 auto; max-width: 42vw; }
+  .logo { width: 15vh; height: 15vh; border-radius: 3.6vh; overflow: hidden;
+          border: .5vh solid rgba(255,255,255,.35);
+          box-shadow: 0 2vh 5vh rgba(0,0,0,.25); }
+  .logo img { width: 100%; height: 100%; display: block; }
+  h1 { font-size: 13vh; font-weight: 800; letter-spacing: -.4vh; margin-top: 3.5vh; line-height: 1; }
+  .tag { font-size: 4.4vh; font-weight: 500; opacity: .88; margin-top: 2.4vh; line-height: 1.25; }
+  .pills { display: flex; gap: 1.4vh; margin-top: 4vh; flex-wrap: wrap; }
+  .pill { font-size: 2.3vh; font-weight: 600; padding: 1.1vh 2.2vh; border-radius: 99vh;
+          background: rgba(255,255,255,.14); border: .15vh solid rgba(255,255,255,.25); }
+
+  /* mockup */
+  .stage { position: relative; height: 78vh; aspect-ratio: 0.5; flex: none; }
+  .phone { position: absolute; inset: 0; border-radius: 6vh; background: #0b1620;
+           padding: 1.4vh; box-shadow: 0 4vh 10vh rgba(0,0,0,.4), inset 0 0 0 .3vh rgba(255,255,255,.12);
+           transform: rotate(-6deg); }
+  .screen { width: 100%; height: 100%; border-radius: 4.8vh; background: #f5f7f9; overflow: hidden;
+            color: #11181C; padding: 4.5vh 2.4vh 2vh; display: flex; flex-direction: column; gap: 1.6vh; }
+  .month { font-size: 1.9vh; font-weight: 700; color: #687076; text-align: center; }
+  .balance { background: linear-gradient(135deg, #0a7ea4, #065a78); color: #fff; border-radius: 2.4vh; padding: 2.2vh; }
+  .balance small { font-size: 1.5vh; opacity: .8; display: block; }
+  .balance b { font-size: 3.6vh; font-weight: 800; display: block; margin-top: .4vh; }
+  .balance .row { display: flex; justify-content: space-between; margin-top: 1.4vh; font-size: 1.5vh; }
+  .card { background: #fff; border-radius: 2vh; padding: 1.6vh 1.8vh; box-shadow: 0 .4vh 1.2vh rgba(0,0,0,.05); }
+  .card h4 { font-size: 1.6vh; font-weight: 700; margin-bottom: 1vh; }
+  .item { display: flex; align-items: center; gap: 1.2vh; padding: .9vh 0; border-top: .1vh solid #eef0f2; }
+  .item:first-of-type { border-top: 0; }
+  .dot { width: 3.4vh; height: 3.4vh; border-radius: 1vh; flex: none; }
+  .item span { flex: 1; font-size: 1.6vh; font-weight: 600; }
+  .item em { font-style: normal; font-size: 1.6vh; font-weight: 700; color: #EF4444; }
+  .bars { display: flex; align-items: flex-end; gap: 1vh; height: 9vh; }
+  .bars i { flex: 1; border-radius: .8vh .8vh .3vh .3vh; background: #cfe7f0; }
+  .bars i.on { background: #0a7ea4; }
+
+  /* cartões flutuantes */
+  .float { position: absolute; background: #fff; color: #11181C; border-radius: 2.4vh; padding: 1.8vh 2.2vh;
+           box-shadow: 0 2.4vh 5vh rgba(0,0,0,.28); display: flex; align-items: center; gap: 1.4vh; }
+  .float .ic { width: 4.6vh; height: 4.6vh; border-radius: 1.4vh; display: grid; place-items: center;
+               font-size: 2.6vh; font-weight: 800; color: #fff; }
+  .float small { display: block; font-size: 1.5vh; color: #687076; }
+  .float b { font-size: 2.4vh; font-weight: 800; }
+  .f1 { left: -27vh; top: 20vh; }
+  .f2 { right: -17vh; bottom: 30vh; }
+
+  body.notext .brand { display: none; }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <div class="logo"><img src="../../../assets/images/icon.png"></div>
+    <h1>Orgenyx</h1>
+    <p class="tag">Suas finanças, mês a mês,<br>sob controle.</p>
+    <div class="pills">
+      <div class="pill">Despesas</div><div class="pill">Orçamentos</div>
+      <div class="pill">Cartões e bancos</div><div class="pill">Relatórios</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="phone"><div class="screen">
+      <div class="month">‹ Novembro 2026 ›</div>
+      <div class="balance">
+        <small>Saldo restante</small>
+        <b>R$ 1.842,60</b>
+        <div class="row"><span>Renda R$ 5.200</span><span>Gasto R$ 3.357</span></div>
+      </div>
+      <div class="card">
+        <h4>Despesas</h4>
+        <div class="item"><div class="dot" style="background:#F59E0B"></div><span>Aluguel</span><em>R$ 1.450</em></div>
+        <div class="item"><div class="dot" style="background:#10B981"></div><span>Mercado</span><em>R$ 612</em></div>
+        <div class="item"><div class="dot" style="background:#3B82F6"></div><span>Transporte</span><em>R$ 238</em></div>
+        <div class="item"><div class="dot" style="background:#EC4899"></div><span>Saúde</span><em>R$ 180</em></div>
+        <div class="item"><div class="dot" style="background:#06B6D4"></div><span>Lazer</span><em>R$ 145</em></div>
+      </div>
+      <div class="card">
+        <h4>Últimos 6 meses</h4>
+        <div class="bars"><i style="height:55%"></i><i style="height:70%"></i><i style="height:48%"></i><i style="height:82%"></i><i style="height:64%"></i><i class="on" style="height:90%"></i></div>
+      </div>
+    </div></div>
+
+    <div class="float f1">
+      <div class="ic" style="background:#22C55E">✓</div>
+      <div><small>Orçamento</small><b>Dentro do plano</b></div>
+    </div>
+    <div class="float f2">
+      <div class="ic" style="background:#0a7ea4">↗</div>
+      <div><small>Economia no mês</small><b>+ 18%</b></div>
+    </div>
+  </div>
+  <script>if (location.hash === '#notext') document.body.classList.add('notext');</script>
+</body>
+</html>
